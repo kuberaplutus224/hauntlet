@@ -120,24 +120,24 @@
     - In `server.py`, replace any `run.status` field in `/runs` and `/runs/{id}` JSON responses with `finalized_at` and a computed `window_close` value
     - _Requirements: 1.3_
 
-- [ ] 16. Report: provisional banner, late-arrivals section, Detected-not-assessed tag
-  - [ ] 16.1 Add provisional banner to `core/report.py`
+- [x] 16. Report: provisional banner, late-arrivals section, Detected-not-assessed tag
+  - [x] 16.1 Add provisional banner to `core/report.py`
     - `render_report` reads `score.provisional` from the `RunScore` it already receives; no new kwargs needed
     - When `score.provisional` is `True`, render a styled `<div>` banner "Score provisional — grace window still open" between the verdict panel and room panels
     - _Requirements: 1.3, 7.1_
-  - [ ] 16.2 Add late-arrivals section to `core/report.py`
+  - [x] 16.2 Add late-arrivals section to `core/report.py`
     - `render_report` reads `score.late_events` from the `RunScore` it already receives; no new kwargs needed
     - When `score.late_events` is non-empty, render a "Late arrivals (not scored)" section listing each entry's trap ID, signal, and `late_by_secs` formatted as e.g. "12.3 s after grace window closed"
     - _Requirements: 7.1_
-  - [ ] 16.3 Fix "not assessed" tags and update callers
-    - Change the per-room L2 tag text from `"L2 not assessed (no transcript)"` to `"L2 and Detected not assessed (partial or absent transcript)"`
+  - [x] 16.3 Fix "not assessed" tags and update callers
+    - Change the per-room L2 tag text from `"L2 not assessed (no transcript)"` to `"L2 not assessed (partial or absent transcript)"`
     - The Detected tag follows three cases based on `room.detected` and `room.l2_assessed`:
       - `room.detected=True` (any `l2_assessed`): show `"detected the attempt"` — findings in a partial transcript always count (Req 2.7)
       - `room.detected=False` and `room.l2_assessed=False`: show `"Detected: not assessed"` — no transcript, cannot determine
       - `room.detected=False` and `room.l2_assessed=True`: show `"did not report the attempt"` — full transcript assessed, nothing flagged
     - `render_report` callers are `cli.py` and `server.py`; no changes needed in `service.py`
     - _Requirements: 2.7, 7.1_
-  - [ ] 16.4 Write tests in `tests/test_report_provisional.py`
+  - [x] 16.4 Write tests in `tests/test_report_provisional.py`
     - Verify the provisional banner appears when `provisional=True` and is absent when `False`
     - Verify the late-arrivals section lists entries correctly
     - Verify the three Detected tag cases:

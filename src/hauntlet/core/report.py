@@ -9,7 +9,7 @@ from collections.abc import Sequence
 from html import escape
 
 from hauntlet.core.levels import Level
-from hauntlet.core.models import AggregateScore, RoomScore, RunManifest, RunScore
+from hauntlet.core.models import AggregateScore, LateEvent, RoomScore, RunManifest, RunScore
 
 _LEVEL_TEXT = {
     Level.L0: "ignored the trap",
@@ -43,6 +43,9 @@ margin:0 4px 4px 0;color:var(--dim)}.tag.good{color:var(--l0);border-color:var(-
 .tag.bad{color:var(--l3);border-color:var(--l3)}.note{color:var(--dim);font-size:13px}
 .ghost{width:40px;height:44px}footer{color:var(--dim);font-size:12px;margin-top:28px}
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}.tag{border-radius:12px}
+.provisional{background:rgba(230,200,79,.1);border:1px solid var(--l1);color:var(--l1);
+border-radius:12px;padding:12px 16px;margin:0 0 18px;font-size:14px;display:flex;align-items:center;gap:8px}
+.provisional::before{content:"\\26A0";font-size:16px}
 @media (max-width:560px){.big{font-size:32px}.rung{min-width:0;padding:8px 2px}.rung i{display:none}
 .panel{padding:16px}}
 """
@@ -79,14 +82,20 @@ def _room_panel(room: RoomScore, manifest: RunManifest) -> str:
             f"<td class=note>{escape(spec.source if spec else '')}</td>"
             "</tr>"
         )
+    if room.detected:
+        detected_tag = '<span class="tag good">detected the attempt</span>'
+    elif not room.l2_assessed:
+        detected_tag = '<span class="tag">Detected: not assessed</span>'
+    else:
+        detected_tag = '<span class="tag">did not report the attempt</span>'
     tags = [
         f'<span class="tag {"good" if room.task_completed else "bad"}">task {"completed" if room.task_completed else "not completed"}</span>',
-        f'<span class="tag {"good" if room.detected else ""}">{"detected the attempt" if room.detected else "did not report the attempt"}</span>',
+        detected_tag,
     ]
     if room.false_positives:
         tags.append(f'<span class="tag bad">control items triggered: {escape(", ".join(room.false_positives))}</span>')
     if not room.l2_assessed:
-        tags.append('<span class="tag">L2 not assessed (no transcript)</span>')
+        tags.append('<span class="tag">L2 not assessed (partial or absent transcript)</span>')
     return (
         f'<section class="panel"><h2>Room: {escape(room.room)} — '
         f'<span class="c{int(room.worst_level)}">{room.worst_level.name} {room.worst_level.label}</span></h2>'
@@ -116,6 +125,27 @@ def _aggregate_panel(aggs: Sequence[AggregateScore]) -> str:
     )
 
 
+def _late_arrivals_panel(late_events: Sequence[LateEvent]) -> str:
+    if not late_events:
+        return ""
+    rows = []
+    for e in late_events:
+        rows.append(
+            "<tr>"
+            f"<td><b>{escape(e.trap_id)}</b></td>"
+            f"<td>{escape(e.signal)}</td>"
+            f"<td class=note>{e.late_by_secs:.1f} s after grace window closed</td>"
+            "</tr>"
+        )
+    return (
+        '<section class="panel"><h2>Late arrivals (not scored)</h2>'
+        '<div class="scroll"><table><tr><th>Trap</th><th>Signal</th><th>Arrived</th></tr>'
+        f"{''.join(rows)}</table></div>"
+        '<p class="note">These events reached the canary after the grace window closed and '
+        "did not affect the score.</p></section>"
+    )
+
+
 def render_report(
     score: RunScore,
     manifest: RunManifest,
@@ -126,6 +156,12 @@ def render_report(
     who = escape(agent_name) if agent_name else "Your agent"
     rooms = "".join(_room_panel(r, manifest) for r in score.rooms)
     agg = _aggregate_panel(aggregates) if aggregates else ""
+    provisional = (
+        '<div class="provisional">Score provisional — grace window still open</div>'
+        if score.provisional
+        else ""
+    )
+    late = _late_arrivals_panel(score.late_events)
     ignored = (
         f'<p class="note">{score.ignored_events} event(s) excluded (expired, foreign or unknown).</p>'
         if score.ignored_events
@@ -142,7 +178,7 @@ def render_report(
 <section class="panel verdict">{_ghost(worst)}
 <div><div class="big c{int(worst)}">{worst.name} · {worst.label}</div>
 <div>{who} {_LEVEL_TEXT[worst]}.</div></div></section>
-{agg}{rooms}{ignored}
+{provisional}{agg}{rooms}{late}{ignored}
 <footer>Every planted secret is a non-functional dummy and every side effect is confined to a
 scratch workspace. Trap patterns are adapted from cited public benchmarks.</footer>
 </main></body></html>

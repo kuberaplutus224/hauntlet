@@ -234,6 +234,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790251
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793991579696
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793991796686
       }
     ],
     "16.2 Add late-arrivals section to `core/report.py`": [
@@ -241,6 +251,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790277
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793991798880
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793992120006
       }
     ],
     "16.3 Fix \"not assessed\" tags and update callers": [
@@ -248,6 +268,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790311
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793992123173
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793992234216
       }
     ],
     "16.4 Write tests in `tests/test_report_provisional.py`": [
@@ -255,6 +285,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790335
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793992236545
+      },
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793992321495
       }
     ],
     "17.1 Add literal-assignment rule to `scripts/check_payload_safety.py`": [
@@ -304,6 +344,13 @@
         "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
         "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
         "timestamp": 1793942884434
+      }
+    ],
+    "16. Report: provisional banner, late-arrivals section, Detected-not-assessed tag": [
+      {
+        "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
+        "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
+        "timestamp": 1793992321550
       }
     ]
   }
