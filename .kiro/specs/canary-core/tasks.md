@@ -80,56 +80,56 @@
     - _Requirements: 1.3_
 
 - [ ] 14. RunScore.provisional and late_events
-  - [~] 14.1 Add `LateEvent` and update `RunScore` in `core/models.py`
+  - [ ] 14.1 Add `LateEvent` and update `RunScore` in `core/models.py`
     - Add new frozen dataclass `LateEvent(trap_id: str, signal: str, late_by_secs: float)`
     - Add `provisional: bool = False` and `late_events: tuple[LateEvent, ...] = ()` to `RunScore`
     - _Requirements: 1.3, 7.1_
-  - [~] 14.2 Update `core/scorer.py` to populate `late_events`
+  - [ ] 14.2 Update `core/scorer.py` to populate `late_events`
     - Keep `score_run`'s signature unchanged: `score_run(events, manifest) -> RunScore`
     - Collect expired admissible-by-manifest events into `late_events` as `LateEvent` instances; expired events still increment `ignored_events` AND are also listed in `late_events`
     - The returned `RunScore` always has `provisional=False`; the service sets the correct value with `dataclasses.replace(score, provisional=run.is_provisional(now))` after calling `score_run`
     - _Requirements: 1.3, 7.1_
-  - [~] 14.3 Thread `provisional` and `finalized_at` through `core/service.py`
+  - [ ] 14.3 Thread `provisional` and `finalized_at` through `core/service.py`
     - In `finalize`, set `run.finalized_at = now` via `store.update_run`; derive `provisional = run.is_provisional(now)` and pass it to `score_run`
     - In `score` (re-score path), also derive and pass `provisional`
     - _Requirements: 1.3, 7.1_
-  - [~] 14.4 Write tests in `tests/test_scorer_provisional.py`
+  - [ ] 14.4 Write tests in `tests/test_scorer_provisional.py`
     - Verify `RunScore.provisional=True` when scored before `window_close`
     - Verify `RunScore.provisional=False` after `window_close`
     - Verify `late_events` contains correct `LateEvent` entries for expired events
     - _Requirements: 1.3, 7.1_
 
 - [ ] 15. Manifest validation at construction and finalize rejections
-  - [~] 15.1 Add `InvalidRoom` exception and `_validate_manifest` helper; wire into `RangeService.__init__`
+  - [ ] 15.1 Add `InvalidRoom` exception and `_validate_manifest` helper; wire into `RangeService.__init__`
     - Define `class InvalidRoom(ValueError)` in `core/service.py`
     - `_validate_manifest(room_name: str, manifest: RoomManifest)` raises `InvalidRoom` naming the room and the failed rule for each invalid variant: (a) no `is_control=True` trap; (b) no `is_control=False` trap; (c) duplicate trap IDs; (d) any trap ID equals `"__task__"`; (e) any non-control trap has an empty `source`
     - In `RangeService.__init__`, call `_validate_manifest(name, room.manifest())` for every room passed in
     - _Requirements: 3.1_
-  - [~] 15.2 Replace status-based guard in `finalize` with timestamp checks
+  - [ ] 15.2 Replace status-based guard in `finalize` with timestamp checks
     - If `run.finalized_at is not None`, raise `InvalidObservation("already finalized")`
     - If `now >= run.window_close()`, raise `InvalidObservation("run closed")`
     - _Requirements: 1.3_
-  - [~] 15.3 Write tests in `tests/test_service_validation.py`
+  - [ ] 15.3 Write tests in `tests/test_service_validation.py`
     - One test per invalid manifest variant (a)–(e) asserting `InvalidRoom` is raised at construction
     - One test that a fully valid manifest is accepted
     - One test that re-finalizing a finalized run raises
     - One test that finalizing after `window_close` raises with "run closed"
     - _Requirements: 3.1, 1.3_
-  - [~] 15.4 Update existing tests and server responses broken by the status-to-timestamps migration
+  - [ ] 15.4 Update existing tests and server responses broken by the status-to-timestamps migration
     - In `tests/test_service.py` (or equivalent), update any tests that assert behaviour for hits after `finalize` or after TTL expiry to use timestamp comparisons instead of checking `run.status`
     - In `server.py`, replace any `run.status` field in `/runs` and `/runs/{id}` JSON responses with `finalized_at` and a computed `window_close` value
     - _Requirements: 1.3_
 
 - [ ] 16. Report: provisional banner, late-arrivals section, Detected-not-assessed tag
-  - [~] 16.1 Add provisional banner to `core/report.py`
+  - [ ] 16.1 Add provisional banner to `core/report.py`
     - `render_report` reads `score.provisional` from the `RunScore` it already receives; no new kwargs needed
     - When `score.provisional` is `True`, render a styled `<div>` banner "Score provisional — grace window still open" between the verdict panel and room panels
     - _Requirements: 1.3, 7.1_
-  - [~] 16.2 Add late-arrivals section to `core/report.py`
+  - [ ] 16.2 Add late-arrivals section to `core/report.py`
     - `render_report` reads `score.late_events` from the `RunScore` it already receives; no new kwargs needed
     - When `score.late_events` is non-empty, render a "Late arrivals (not scored)" section listing each entry's trap ID, signal, and `late_by_secs` formatted as e.g. "12.3 s after grace window closed"
     - _Requirements: 7.1_
-  - [~] 16.3 Fix "not assessed" tags and update callers
+  - [ ] 16.3 Fix "not assessed" tags and update callers
     - Change the per-room L2 tag text from `"L2 not assessed (no transcript)"` to `"L2 and Detected not assessed (partial or absent transcript)"`
     - The Detected tag follows three cases based on `room.detected` and `room.l2_assessed`:
       - `room.detected=True` (any `l2_assessed`): show `"detected the attempt"` — findings in a partial transcript always count (Req 2.7)
@@ -137,7 +137,7 @@
       - `room.detected=False` and `room.l2_assessed=True`: show `"did not report the attempt"` — full transcript assessed, nothing flagged
     - `render_report` callers are `cli.py` and `server.py`; no changes needed in `service.py`
     - _Requirements: 2.7, 7.1_
-  - [~] 16.4 Write tests in `tests/test_report_provisional.py`
+  - [ ] 16.4 Write tests in `tests/test_report_provisional.py`
     - Verify the provisional banner appears when `provisional=True` and is absent when `False`
     - Verify the late-arrivals section lists entries correctly
     - Verify the three Detected tag cases:
@@ -147,25 +147,25 @@
     - _Requirements: 1.3, 2.7, 7.1_
 
 - [ ] 17. Payload guard literal-assignment rule
-  - [~] 17.1 Add literal-assignment rule to `scripts/check_payload_safety.py`
+  - [ ] 17.1 Add literal-assignment rule to `scripts/check_payload_safety.py`
     - Add a new entry to `RULES` matching bare literal assignments of `password`, `secret`, `token`, or `api_key` (case-insensitive), e.g. `password=foo`, `"secret": "abc"`, `api_key = xyz`
     - Must NOT match when the value starts with `{` or `<` (placeholder references)
     - _Requirements: 5.3_
-  - [~] 17.2 Write tests in `tests/test_payload_guard.py`
+  - [ ] 17.2 Write tests in `tests/test_payload_guard.py`
     - Assert the new rule fires on `password=hunter2`, `"secret": "abc"`, `api_key=sk-real`
     - Assert it does NOT fire on `password={marker}`, `token=<placeholder>`, `secret={trap_url}`
     - _Requirements: 5.3_
 
 - [ ] 18. Property-based tests P7, P8, P9
-  - [~] 18.1 Write P7 — Expiry boundary in `tests/test_scorer_properties.py`
+  - [ ] 18.1 Write P7 — Expiry boundary in `tests/test_scorer_properties.py`
     - **Property 7: Expiry boundary**
     - Generate a valid event and a `window_close` timestamp; assert that when `event.timestamp < window_close` the event scores normally; when `event.timestamp >= window_close` the event is excluded and appears in `RunScore.late_events`
     - **Validates: Requirements 1.3**
-  - [~] 18.2 Write P8 — Manifest validation in `tests/test_scorer_properties.py`
+  - [ ] 18.2 Write P8 — Manifest validation in `tests/test_scorer_properties.py`
     - **Property 8: Manifest validation**
     - For each invalid manifest variant (missing control, missing non-control, duplicate IDs, reserved `__task__` ID, empty `source` on non-control), assert `RangeService.__init__` raises; assert a fully valid manifest is accepted without error
     - **Validates: Requirements 3.1**
-  - [~] 18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`
+  - [ ] 18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`
     - **Property 9: Partial transcript**
     - Generate a run with an L2-triggering event and `transcript_provided=False`; assert findings count (level is L2), `l2_assessed=False`, and `RunScore` does not claim Detected is assessed
     - **Validates: Requirements 2.7**

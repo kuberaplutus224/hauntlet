@@ -23,6 +23,11 @@
         "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
         "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
         "timestamp": 1793939673798
+      },
+      {
+        "executionId": "60b00c4f-a0b3-4029-a034-197110091a22",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793941305055
       }
     ],
     "13.3 Update `core/service.py` expiry stamping": [
@@ -35,6 +40,11 @@
         "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
         "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
         "timestamp": 1793939675435
+      },
+      {
+        "executionId": "60b00c4f-a0b3-4029-a034-197110091a22",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793941306622
       }
     ],
     "13.5 Set grace_window_secs=0 in the local runner and CLI": [
@@ -47,6 +57,11 @@
         "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
         "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
         "timestamp": 1793939677036
+      },
+      {
+        "executionId": "60b00c4f-a0b3-4029-a034-197110091a22",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793941308285
       }
     ],
     "13.4 Write tests in `tests/test_run_window.py`": [
@@ -59,6 +74,11 @@
         "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
         "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
         "timestamp": 1793939733038
+      },
+      {
+        "executionId": "60b00c4f-a0b3-4029-a034-197110091a22",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793941309855
       }
     ],
     "13. Timestamp-derived run window": [
@@ -66,6 +86,11 @@
         "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
         "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
         "timestamp": 1793939733079
+      },
+      {
+        "executionId": "60b00c4f-a0b3-4029-a034-197110091a22",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793941309887
       }
     ],
     "14.1 Add `LateEvent` and update `RunScore` in `core/models.py`": [
