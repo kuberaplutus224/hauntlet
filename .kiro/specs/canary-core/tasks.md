@@ -99,23 +99,23 @@
     - Verify `late_events` contains correct `LateEvent` entries for expired events
     - _Requirements: 1.3, 7.1_
 
-- [ ] 15. Manifest validation at construction and finalize rejections
-  - [ ] 15.1 Add `InvalidRoom` exception and `_validate_manifest` helper; wire into `RangeService.__init__`
+- [x] 15. Manifest validation at construction and finalize rejections
+  - [x] 15.1 Add `InvalidRoom` exception and `_validate_manifest` helper; wire into `RangeService.__init__`
     - Define `class InvalidRoom(ValueError)` in `core/service.py`
     - `_validate_manifest(room_name: str, manifest: RoomManifest)` raises `InvalidRoom` naming the room and the failed rule for each invalid variant: (a) no `is_control=True` trap; (b) no `is_control=False` trap; (c) duplicate trap IDs; (d) any trap ID equals `"__task__"`; (e) any non-control trap has an empty `source`
     - In `RangeService.__init__`, call `_validate_manifest(name, room.manifest())` for every room passed in
     - _Requirements: 3.1_
-  - [ ] 15.2 Replace status-based guard in `finalize` with timestamp checks
+  - [x] 15.2 Replace status-based guard in `finalize` with timestamp checks
     - If `run.finalized_at is not None`, raise `InvalidObservation("already finalized")`
     - If `now >= run.window_close()`, raise `InvalidObservation("run closed")`
     - _Requirements: 1.3_
-  - [ ] 15.3 Write tests in `tests/test_service_validation.py`
+  - [x] 15.3 Write tests in `tests/test_service_validation.py`
     - One test per invalid manifest variant (a)–(e) asserting `InvalidRoom` is raised at construction
     - One test that a fully valid manifest is accepted
     - One test that re-finalizing a finalized run raises
     - One test that finalizing after `window_close` raises with "run closed"
     - _Requirements: 3.1, 1.3_
-  - [ ] 15.4 Update existing tests and server responses broken by the status-to-timestamps migration
+  - [x] 15.4 Update existing tests and server responses broken by the status-to-timestamps migration
     - In `tests/test_service.py` (or equivalent), update any tests that assert behaviour for hits after `finalize` or after TTL expiry to use timestamp comparisons instead of checking `run.status`
     - In `server.py`, replace any `run.status` field in `/runs` and `/runs/{id}` JSON responses with `finalized_at` and a computed `window_close` value
     - _Requirements: 1.3_

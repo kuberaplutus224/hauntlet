@@ -12,7 +12,7 @@ from hauntlet import __version__
 from hauntlet.core.models import to_dict
 from hauntlet.core.report import render_report
 from hauntlet.core.room import Observation
-from hauntlet.core.service import InvalidObservation, RangeService, UnknownRun
+from hauntlet.core.service import InvalidObservation, RangeService, RunClosed, UnknownRun
 from hauntlet.core.store import Store
 from hauntlet.rooms import default_rooms
 
@@ -20,6 +20,7 @@ from hauntlet.rooms import default_rooms
 class StartRun(BaseModel):
     rooms: list[str] = Field(default_factory=lambda: ["threshold"])
     ttl_seconds: float | None = Field(default=None, gt=0, le=24 * 3600)
+    grace_window_secs: float = Field(default=30.0, ge=0, le=300)
 
 
 class ObservationIn(BaseModel):
@@ -61,14 +62,20 @@ def create_app(service: RangeService | None = None) -> FastAPI:
     def health() -> dict:
         return {"status": "ok", "version": __version__, "rooms": sorted(service.rooms)}
 
+    def _run_dict(run) -> dict:
+        """Serialize a Run, adding the computed window_close field."""
+        d = to_dict(run)
+        d["window_close"] = run.window_close()
+        return d
+
     @app.post("/runs", status_code=201)
     def start_run(body: StartRun) -> dict:
         try:
-            desc = service.start_run(body.rooms, ttl=body.ttl_seconds)
+            desc = service.start_run(body.rooms, ttl=body.ttl_seconds, grace_window_secs=body.grace_window_secs)
         except KeyError as exc:
             raise HTTPException(400, str(exc)) from None
         return {
-            "run": to_dict(desc.run),
+            "run": _run_dict(desc.run),
             "manifest": to_dict(desc.manifest),
             "canaries": [
                 {**to_dict(c), "url": f"{service.base_url}/c/{c.value}" if c.kind == "url" else None}
@@ -78,7 +85,7 @@ def create_app(service: RangeService | None = None) -> FastAPI:
 
     @app.get("/runs/{run_id}")
     def get_run(run_id: str) -> dict:
-        return to_dict(_run_or_404(run_id))
+        return _run_dict(_run_or_404(run_id))
 
     @app.get("/c/{token}", response_class=PlainTextResponse)
     def canary(token: str, request: Request) -> str:
@@ -95,6 +102,8 @@ def create_app(service: RangeService | None = None) -> FastAPI:
                 [Observation(**o.model_dump()) for o in body.observations],
                 transcript_provided=body.transcript_provided,
             )
+        except RunClosed as exc:
+            raise HTTPException(409, str(exc)) from None
         except InvalidObservation as exc:
             raise HTTPException(400, str(exc)) from None
         return to_dict(score)

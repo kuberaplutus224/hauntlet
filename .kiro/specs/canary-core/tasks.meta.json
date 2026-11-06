@@ -166,6 +166,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790150
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942377858
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942517695
       }
     ],
     "15.2 Replace status-based guard in `finalize` with timestamp checks": [
@@ -173,6 +183,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790176
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942379478
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942518096
       }
     ],
     "15.3 Write tests in `tests/test_service_validation.py`": [
@@ -180,6 +200,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790202
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942520098
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942883893
       }
     ],
     "15.4 Update existing tests and server responses broken by the status-to-timestamps migration": [
@@ -187,6 +217,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790227
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942521645
+      },
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942884406
       }
     ],
     "16.1 Add provisional banner to `core/report.py`": [
@@ -257,6 +297,13 @@
         "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
         "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
         "timestamp": 1793941617680
+      }
+    ],
+    "15. Manifest validation at construction and finalize rejections": [
+      {
+        "executionId": "22e717ef-d032-4c60-a157-ea90d7ab26f9",
+        "chatSessionId": "sess_cb690a04-f0e7-45e5-b9a7-c7790587f647",
+        "timestamp": 1793942884434
       }
     ]
   }

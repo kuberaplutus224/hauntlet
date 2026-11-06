@@ -15,7 +15,7 @@ from urllib.parse import unquote, urlsplit
 
 from hauntlet.core.canary import find_values, mint_canaries
 from hauntlet.core.levels import KNOWN_SIGNALS, TASK_TRAP_ID, Channel, Signal
-from hauntlet.core.models import Canary, Event, Run, RunManifest, RunScore
+from hauntlet.core.models import Canary, Event, RoomManifest, Run, RunManifest, RunScore
 from hauntlet.core.room import Observation, Room, RoomContext
 from hauntlet.core.scorer import score_run
 from hauntlet.core.store import Store
@@ -29,6 +29,68 @@ class UnknownRun(KeyError):
 
 class InvalidObservation(ValueError):
     pass
+
+
+class RunClosed(InvalidObservation):
+    """Raised when finalize is rejected because the run is already finalized or closed."""
+    pass
+
+
+class InvalidRoom(ValueError):
+    pass
+
+
+def _validate_manifest(room_name: str, manifest: RoomManifest) -> None:
+    """Raise InvalidRoom with a descriptive message for any invalid manifest variant.
+
+    Checks in order:
+    (a) At least one control trap (is_control=True)
+    (b) At least one non-control trap (is_control=False)
+    (c) No duplicate trap IDs
+    (d) No trap uses the reserved ID "__task__"
+    (e) Every non-control trap has a non-empty source citation
+    """
+    traps = manifest.traps
+
+    # (a) must have at least one control trap
+    if not any(t.is_control for t in traps):
+        raise InvalidRoom(
+            f"Room {room_name!r}: manifest has no control trap (is_control=True). "
+            "At least one control trap is required."
+        )
+
+    # (b) must have at least one non-control trap
+    if not any(not t.is_control for t in traps):
+        raise InvalidRoom(
+            f"Room {room_name!r}: manifest has no non-control trap (is_control=False). "
+            "At least one non-control trap is required."
+        )
+
+    # (c) no duplicate trap IDs
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for t in traps:
+        if t.trap_id in seen:
+            duplicates.append(t.trap_id)
+        seen.add(t.trap_id)
+    if duplicates:
+        raise InvalidRoom(
+            f"Room {room_name!r}: duplicate trap IDs: {sorted(set(duplicates))}."
+        )
+
+    # (d) no trap uses the reserved ID "__task__"
+    reserved = [t.trap_id for t in traps if t.trap_id == TASK_TRAP_ID]
+    if reserved:
+        raise InvalidRoom(
+            f"Room {room_name!r}: trap ID {TASK_TRAP_ID!r} is reserved and cannot be used."
+        )
+
+    # (e) every non-control trap must have a non-empty source citation
+    missing_source = [t.trap_id for t in traps if not t.is_control and not t.source.strip()]
+    if missing_source:
+        raise InvalidRoom(
+            f"Room {room_name!r}: non-control traps missing a source citation: {missing_source}."
+        )
 
 
 @dataclass(frozen=True)
@@ -47,6 +109,8 @@ class RangeService:
         clock: Callable[[], float] = time.time,
         default_ttl: float = DEFAULT_TTL_SECONDS,
     ) -> None:
+        for name, room in rooms.items():
+            _validate_manifest(name, room.manifest())
         self.store = store
         self.rooms = dict(rooms)
         self.base_url = base_url.rstrip("/")
@@ -140,9 +204,11 @@ class RangeService:
     ) -> RunScore:
         run = self.get_run(run_id)
         if run.finalized_at is not None:
-            raise InvalidObservation(f"run {run_id} is already finalized")
-        manifest = self.manifest(run_id)
+            raise RunClosed("already finalized")
         now = self.clock()
+        if now >= run.window_close():
+            raise RunClosed("run closed")
+        manifest = self.manifest(run_id)
         events: list[Event] = []
         for o in observations:
             rm = manifest.room(o.room)
