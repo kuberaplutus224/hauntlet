@@ -1,0 +1,191 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "13.1 Update `Run` model and `Event` model in `core/models.py`": [
+      {
+        "executionId": "759f1c5f-8d88-4d87-9ca5-cb46732088e5",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939044211
+      },
+      {
+        "executionId": "759f1c5f-8d88-4d87-9ca5-cb46732088e5",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939087640
+      }
+    ],
+    "13.2 Migrate `core/store.py` schema and accessors": [
+      {
+        "executionId": "759f1c5f-8d88-4d87-9ca5-cb46732088e5",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939089663
+      },
+      {
+        "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939673798
+      }
+    ],
+    "13.3 Update `core/service.py` expiry stamping": [
+      {
+        "executionId": "759f1c5f-8d88-4d87-9ca5-cb46732088e5",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939091445
+      },
+      {
+        "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939675435
+      }
+    ],
+    "13.5 Set grace_window_secs=0 in the local runner and CLI": [
+      {
+        "executionId": "759f1c5f-8d88-4d87-9ca5-cb46732088e5",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939093001
+      },
+      {
+        "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939677036
+      }
+    ],
+    "13.4 Write tests in `tests/test_run_window.py`": [
+      {
+        "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939678861
+      },
+      {
+        "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939733038
+      }
+    ],
+    "13. Timestamp-derived run window": [
+      {
+        "executionId": "07e18207-4ab0-4836-af4e-733ff66d8427",
+        "chatSessionId": "sess_808f264a-8aef-4f2b-bfd1-11d6944cffe3",
+        "timestamp": 1793939733079
+      }
+    ],
+    "14.1 Add `LateEvent` and update `RunScore` in `core/models.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790007
+      }
+    ],
+    "14.2 Update `core/scorer.py` to populate `late_events`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790052
+      }
+    ],
+    "14.3 Thread `provisional` and `finalized_at` through `core/service.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790094
+      }
+    ],
+    "14.4 Write tests in `tests/test_scorer_provisional.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790127
+      }
+    ],
+    "15.1 Add `InvalidRoom` exception and `_validate_manifest` helper; wire into `RangeService.__init__`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790150
+      }
+    ],
+    "15.2 Replace status-based guard in `finalize` with timestamp checks": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790176
+      }
+    ],
+    "15.3 Write tests in `tests/test_service_validation.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790202
+      }
+    ],
+    "15.4 Update existing tests and server responses broken by the status-to-timestamps migration": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790227
+      }
+    ],
+    "16.1 Add provisional banner to `core/report.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790251
+      }
+    ],
+    "16.2 Add late-arrivals section to `core/report.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790277
+      }
+    ],
+    "16.3 Fix \"not assessed\" tags and update callers": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790311
+      }
+    ],
+    "16.4 Write tests in `tests/test_report_provisional.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790335
+      }
+    ],
+    "17.1 Add literal-assignment rule to `scripts/check_payload_safety.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790359
+      }
+    ],
+    "17.2 Write tests in `tests/test_payload_guard.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790383
+      }
+    ],
+    "18.1 Write P7 — Expiry boundary in `tests/test_scorer_properties.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790409
+      }
+    ],
+    "18.2 Write P8 — Manifest validation in `tests/test_scorer_properties.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790434
+      }
+    ],
+    "18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`": [
+      {
+        "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
+        "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
+        "timestamp": 1793939790459
+      }
+    ]
+  }
+}

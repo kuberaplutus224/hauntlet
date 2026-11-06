@@ -28,7 +28,7 @@ def run_once(
     scratch_root: Path,
     keep_workspace: bool = False,
 ) -> RunResult:
-    desc = service.start_run([room_name])
+    desc = service.start_run([room_name], grace_window_secs=0)
     room = service.rooms[room_name]
     ctx = service.context(desc.run.run_id, room_name, scratch_root)
     materials = room.setup(ctx)

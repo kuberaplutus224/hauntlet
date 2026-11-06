@@ -19,12 +19,13 @@ from hauntlet.core.models import (
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
-    run_id        TEXT PRIMARY KEY,
-    created_at    REAL NOT NULL,
-    expires_at    REAL NOT NULL,
-    status        TEXT NOT NULL,
-    seed          INTEGER NOT NULL,
-    manifest_json TEXT NOT NULL
+    run_id              TEXT PRIMARY KEY,
+    created_at          REAL NOT NULL,
+    expires_at          REAL NOT NULL,
+    finalized_at        REAL,
+    grace_window_secs   REAL NOT NULL DEFAULT 30,
+    seed                INTEGER NOT NULL,
+    manifest_json       TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS canaries (
     canary_id  TEXT PRIMARY KEY,
@@ -37,15 +38,16 @@ CREATE TABLE IF NOT EXISTS canaries (
 );
 CREATE INDEX IF NOT EXISTS canaries_run ON canaries(run_id);
 CREATE TABLE IF NOT EXISTS events (
-    event_id  TEXT PRIMARY KEY,
-    run_id    TEXT NOT NULL,
-    room      TEXT NOT NULL,
-    trap_id   TEXT NOT NULL,
-    channel   TEXT NOT NULL,
-    signal    TEXT NOT NULL,
-    timestamp REAL NOT NULL,
-    detail    TEXT NOT NULL,
-    expired   INTEGER NOT NULL
+    event_id     TEXT PRIMARY KEY,
+    run_id       TEXT NOT NULL,
+    room         TEXT NOT NULL,
+    trap_id      TEXT NOT NULL,
+    channel      TEXT NOT NULL,
+    signal       TEXT NOT NULL,
+    timestamp    REAL NOT NULL,
+    detail       TEXT NOT NULL,
+    expired      INTEGER NOT NULL,
+    late_by_secs REAL NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS events_run ON events(run_id);
 """
@@ -68,12 +70,13 @@ class Store:
     def add_run(self, run: Run, manifest: RunManifest, canaries: list[Canary]) -> None:
         with self._lock, self._db:
             self._db.execute(
-                "INSERT INTO runs VALUES (?,?,?,?,?,?)",
+                "INSERT INTO runs VALUES (?,?,?,?,?,?,?)",
                 (
                     run.run_id,
                     run.created_at,
                     run.expires_at,
-                    run.status,
+                    run.finalized_at,
+                    run.grace_window_secs,
                     run.seed,
                     json.dumps(to_dict(manifest)),
                 ),
@@ -89,7 +92,7 @@ class Store:
     def get_run(self, run_id: str) -> Run | None:
         with self._lock:
             row = self._db.execute(
-                "SELECT run_id, created_at, expires_at, status, seed FROM runs WHERE run_id=?",
+                "SELECT run_id, created_at, expires_at, finalized_at, grace_window_secs, seed FROM runs WHERE run_id=?",
                 (run_id,),
             ).fetchone()
         return Run(**dict(row)) if row else None
@@ -101,10 +104,12 @@ class Store:
             ).fetchone()
         return manifest_from_dict(json.loads(row["manifest_json"])) if row else None
 
-    def update_run(self, run_id: str, *, status: str | None = None, manifest: RunManifest | None = None) -> None:
+    def update_run(self, run_id: str, *, finalized_at: float | None = None, grace_window_secs: float | None = None, manifest: RunManifest | None = None) -> None:
         with self._lock, self._db:
-            if status is not None:
-                self._db.execute("UPDATE runs SET status=? WHERE run_id=?", (status, run_id))
+            if finalized_at is not None:
+                self._db.execute("UPDATE runs SET finalized_at=? WHERE run_id=?", (finalized_at, run_id))
+            if grace_window_secs is not None:
+                self._db.execute("UPDATE runs SET grace_window_secs=? WHERE run_id=?", (grace_window_secs, run_id))
             if manifest is not None:
                 self._db.execute(
                     "UPDATE runs SET manifest_json=? WHERE run_id=?",
@@ -136,7 +141,7 @@ class Store:
         ]
         with self._lock, self._db:
             self._db.executemany(
-                "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?)",
                 [
                     (
                         e.event_id,
@@ -148,6 +153,7 @@ class Store:
                         e.timestamp,
                         e.detail,
                         int(e.expired),
+                        e.late_by_secs,
                     )
                     for e in stored
                 ],

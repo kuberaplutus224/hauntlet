@@ -78,11 +78,26 @@ class Run:
     run_id: str
     created_at: float
     expires_at: float
-    status: str  # "active" | "ended"
     seed: int
+    finalized_at: float | None = None
+    grace_window_secs: float = 30.0
+
+    def window_close(self) -> float:
+        """Timestamp after which canary arrivals are expired (not scored)."""
+        base = (
+            min(self.finalized_at, self.expires_at)
+            if self.finalized_at is not None
+            else self.expires_at
+        )
+        return base + self.grace_window_secs
 
     def is_active(self, now: float) -> bool:
-        return self.status == "active" and now < self.expires_at
+        """True while the run has not been finalized and has not yet expired."""
+        return self.finalized_at is None and now < self.expires_at
+
+    def is_provisional(self, now: float) -> bool:
+        """True until the grace window closes (late arrivals still possible)."""
+        return now < self.window_close()
 
 
 @dataclass(frozen=True)
@@ -108,6 +123,7 @@ class Event:
     timestamp: float
     detail: str = ""
     expired: bool = False
+    late_by_secs: float = 0.0
     event_id: str = ""
 
 

@@ -55,7 +55,12 @@ class RangeService:
 
     # -- lifecycle ----------------------------------------------------------
 
-    def start_run(self, room_names: Iterable[str], ttl: float | None = None) -> RunDescriptor:
+    def start_run(
+        self,
+        room_names: Iterable[str],
+        ttl: float | None = None,
+        grace_window_secs: float = 30.0,
+    ) -> RunDescriptor:
         names = list(room_names)
         unknown = [n for n in names if n not in self.rooms]
         if not names or unknown:
@@ -66,8 +71,8 @@ class RangeService:
             run_id=run_id,
             created_at=now,
             expires_at=now + (ttl if ttl is not None else self.default_ttl),
-            status="active",
             seed=secrets.randbelow(2**31),
+            grace_window_secs=grace_window_secs,
         )
         manifest = RunManifest(
             run_id=run_id, rooms=tuple(self.rooms[n].manifest() for n in names)
@@ -102,16 +107,18 @@ class RangeService:
             return None
         run = self.get_run(canary.run_id)
         now = self.clock()
-        expired = not run.is_active(now)
+        expired = now >= run.window_close()
+        late_by_secs = max(0.0, now - run.window_close())
         events = [
             Event(canary.run_id, canary.room, canary.trap_id, Channel.NETWORK, Signal.REACHED, now,
-                  detail="canary URL fetched", expired=expired)
+                  detail="canary URL fetched", expired=expired, late_by_secs=late_by_secs)
         ]
         decoded = unquote(query or "")
         for s in find_values(decoded, self.store.canaries_for_run(canary.run_id), "secret"):
             events.append(
                 Event(s.run_id, s.room, s.trap_id, Channel.NETWORK, Signal.EXPOSED, now,
-                      detail="dummy secret received at canary endpoint", expired=expired)
+                      detail="dummy secret received at canary endpoint", expired=expired,
+                      late_by_secs=late_by_secs)
             )
         return self.store.append_events(events)
 
@@ -131,7 +138,8 @@ class RangeService:
     def finalize(
         self, run_id: str, observations: Iterable[Observation], transcript_provided: bool
     ) -> RunScore:
-        if self.get_run(run_id).status == "ended":
+        run = self.get_run(run_id)
+        if run.finalized_at is not None:
             raise InvalidObservation(f"run {run_id} is already finalized")
         manifest = self.manifest(run_id)
         now = self.clock()
@@ -150,7 +158,7 @@ class RangeService:
         self.store.append_events(events)
         self.store.update_run(
             run_id,
-            status="ended",
+            finalized_at=now,
             manifest=replace(manifest, transcript_provided=manifest.transcript_provided or transcript_provided),
         )
         return self.score(run_id)

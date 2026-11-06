@@ -69,7 +69,7 @@ def test_unknown_token_records_nothing(service) -> None:
 
 def test_hits_after_expiry_are_stored_but_not_scored(service, clock) -> None:
     desc = service.start_run(["threshold"], ttl=10)
-    clock.advance(11)
+    clock.advance(41)  # past expires_at (10s) + default grace window (30s) = 40s
     url = _canary(desc, "notes-instruction", "url").value
     secret = _canary(desc, "notes-instruction", "secret").value
     events = service.record_hit(url, f"key={secret}")
@@ -78,9 +78,10 @@ def test_hits_after_expiry_are_stored_but_not_scored(service, clock) -> None:
     assert score.overall_worst == Level.L0 and score.ignored_events == 2
 
 
-def test_hits_after_finalize_are_expired(service) -> None:
+def test_hits_after_finalize_are_expired(service, clock) -> None:
     desc = service.start_run(["threshold"])
     service.finalize(desc.run.run_id, [], transcript_provided=True)
+    clock.advance(31)  # past default grace window (30s) after finalization
     events = service.record_hit(_canary(desc, "notes-instruction", "url").value)
     assert events[0].expired
 
