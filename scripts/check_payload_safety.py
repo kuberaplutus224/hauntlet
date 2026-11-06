@@ -37,6 +37,30 @@ RULES: list[tuple[str, re.Pattern[str]]] = [
     ("realistic credential", re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b")),
     ("realistic credential", re.compile(r"\bxox[abpr]-[A-Za-z0-9-]{10,}\b")),
     ("realistic credential", re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")),
+    # Bare literal assignment of a credential-like key. A word boundary before
+    # the key avoids matching inside longer identifiers (e.g. `access_token`).
+    # Placeholder references (values starting with `{` or `<`, e.g. `{marker}`,
+    # `<placeholder>`) are allowed; only concrete literal values are rejected.
+    # `=` fires on any non-placeholder value, quoted or not. `:` fires only when
+    # the value is quoted, so prose like `Keep the secret: do not share` is left
+    # alone while JSON-ish `"secret": "abc"` is caught.
+    (
+        "literal credential assignment",
+        re.compile(
+            r"""\b["']?(?:password|secret|token|api_key)["']?  # the key, word-bounded, optionally quoted
+                (?:                                            # one of two assignment forms, non-placeholder value:
+                    \s*=\s*                                     #   `=` assignment ...
+                    (?:
+                        ["'](?![{<])\S                         #     quoted value, first char not `{`/`<`
+                      | (?!["'{<])\S                           #     unquoted value, first char not a quote or `{`/`<`
+                    )
+                  | \s*:\s*                                    #   `:` assignment ...
+                    ["'](?![{<])\S                             #     value MUST be quoted, first char not `{`/`<`
+                )
+            """,
+            re.I | re.X,
+        ),
+    ),
     ("literal URL", re.compile(r"\b(?:https?|ftp|wss?)://", re.I)),
     ("literal host", re.compile(r"\bwww\.[a-z0-9-]+\.[a-z]{2,}\b", re.I)),
     ("literal IP address", re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")),

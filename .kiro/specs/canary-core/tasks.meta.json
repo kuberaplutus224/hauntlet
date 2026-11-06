@@ -1,5 +1,10 @@
 {
-  "pbtResults": {},
+  "pbtResults": {
+    "18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`": {
+      "status": "passed",
+      "lastRunTimestamp": 1793995882530
+    }
+  },
   "executionHistory": {
     "13.1 Update `Run` model and `Event` model in `core/models.py`": [
       {
@@ -302,6 +307,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790359
+      },
+      {
+        "executionId": "5f73f93f-4991-404f-a47c-d70e93c65ae6",
+        "chatSessionId": "sess_211d2ee5-58d7-4951-86da-6399af0eb829",
+        "timestamp": 1793994810585
+      },
+      {
+        "executionId": "5f73f93f-4991-404f-a47c-d70e93c65ae6",
+        "chatSessionId": "sess_211d2ee5-58d7-4951-86da-6399af0eb829",
+        "timestamp": 1793995009092
       }
     ],
     "17.2 Write tests in `tests/test_payload_guard.py`": [
@@ -309,6 +324,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790383
+      },
+      {
+        "executionId": "5f73f93f-4991-404f-a47c-d70e93c65ae6",
+        "chatSessionId": "sess_211d2ee5-58d7-4951-86da-6399af0eb829",
+        "timestamp": 1793995011651
+      },
+      {
+        "executionId": "5f73f93f-4991-404f-a47c-d70e93c65ae6",
+        "chatSessionId": "sess_211d2ee5-58d7-4951-86da-6399af0eb829",
+        "timestamp": 1793995043006
       }
     ],
     "18.1 Write P7 — Expiry boundary in `tests/test_scorer_properties.py`": [
@@ -316,6 +341,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790409
+      },
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995545039
+      },
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995723907
       }
     ],
     "18.2 Write P8 — Manifest validation in `tests/test_scorer_properties.py`": [
@@ -323,6 +358,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790434
+      },
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995546497
+      },
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995792385
       }
     ],
     "18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`": [
@@ -330,6 +375,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790459
+      },
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995547385
+      },
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995892337
       }
     ],
     "14. RunScore.provisional and late_events": [
@@ -351,6 +406,20 @@
         "executionId": "8208fabb-0e76-4172-a80c-905bfe4bb384",
         "chatSessionId": "sess_0f8c58af-df3c-4cf2-bf46-a5ad3ef424ef",
         "timestamp": 1793992321550
+      }
+    ],
+    "17. Payload guard literal-assignment rule": [
+      {
+        "executionId": "5f73f93f-4991-404f-a47c-d70e93c65ae6",
+        "chatSessionId": "sess_211d2ee5-58d7-4951-86da-6399af0eb829",
+        "timestamp": 1793995043052
+      }
+    ],
+    "18. Property-based tests P7, P8, P9": [
+      {
+        "executionId": "89be4a85-b6cb-4d92-ab25-b00fec7b67c2",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1793995892369
       }
     ]
   }

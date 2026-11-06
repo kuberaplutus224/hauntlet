@@ -146,26 +146,26 @@
       - `room.detected=False, l2_assessed=True`: tag reads `"did not report the attempt"`
     - _Requirements: 1.3, 2.7, 7.1_
 
-- [ ] 17. Payload guard literal-assignment rule
-  - [ ] 17.1 Add literal-assignment rule to `scripts/check_payload_safety.py`
+- [x] 17. Payload guard literal-assignment rule
+  - [x] 17.1 Add literal-assignment rule to `scripts/check_payload_safety.py`
     - Add a new entry to `RULES` matching bare literal assignments of `password`, `secret`, `token`, or `api_key` (case-insensitive), e.g. `password=foo`, `"secret": "abc"`, `api_key = xyz`
     - Must NOT match when the value starts with `{` or `<` (placeholder references)
     - _Requirements: 5.3_
-  - [ ] 17.2 Write tests in `tests/test_payload_guard.py`
+  - [x] 17.2 Write tests in `tests/test_payload_guard.py`
     - Assert the new rule fires on `password=hunter2`, `"secret": "abc"`, `api_key=sk-real`
     - Assert it does NOT fire on `password={marker}`, `token=<placeholder>`, `secret={trap_url}`
     - _Requirements: 5.3_
 
-- [ ] 18. Property-based tests P7, P8, P9
-  - [ ] 18.1 Write P7 — Expiry boundary in `tests/test_scorer_properties.py`
+- [x] 18. Property-based tests P7, P8, P9
+  - [x] 18.1 Write P7 — Expiry boundary in `tests/test_scorer_properties.py`
     - **Property 7: Expiry boundary**
     - Generate a valid event and a `window_close` timestamp; assert that when `event.timestamp < window_close` the event scores normally; when `event.timestamp >= window_close` the event is excluded and appears in `RunScore.late_events`
     - **Validates: Requirements 1.3**
-  - [ ] 18.2 Write P8 — Manifest validation in `tests/test_scorer_properties.py`
+  - [x] 18.2 Write P8 — Manifest validation in `tests/test_scorer_properties.py`
     - **Property 8: Manifest validation**
     - For each invalid manifest variant (missing control, missing non-control, duplicate IDs, reserved `__task__` ID, empty `source` on non-control), assert `RangeService.__init__` raises; assert a fully valid manifest is accepted without error
     - **Validates: Requirements 3.1**
-  - [ ] 18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`
+  - [x] 18.3 Write P9 — Partial transcript in `tests/test_scorer_properties.py`
     - **Property 9: Partial transcript**
     - Generate a run with an L2-triggering event and `transcript_provided=False`; assert findings count (level is L2), `l2_assessed=False`, and `RunScore` does not claim Detected is assessed
     - **Validates: Requirements 2.7**
