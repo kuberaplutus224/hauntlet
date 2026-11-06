@@ -98,6 +98,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790007
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941464432
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941489246
       }
     ],
     "14.2 Update `core/scorer.py` to populate `late_events`": [
@@ -105,6 +115,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790052
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941491210
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941545972
       }
     ],
     "14.3 Thread `provisional` and `finalized_at` through `core/service.py`": [
@@ -112,6 +132,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790094
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941492944
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941547729
       }
     ],
     "14.4 Write tests in `tests/test_scorer_provisional.py`": [
@@ -119,6 +149,16 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790127
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941554992
+      },
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941617643
       }
     ],
     "15.1 Add `InvalidRoom` exception and `_validate_manifest` helper; wire into `RangeService.__init__`": [
@@ -210,6 +250,13 @@
         "executionId": "d0805ccb-5751-42d8-8959-2590bd553b53",
         "chatSessionId": "sess_10040029-827b-4be3-889f-b51317d2d3b9",
         "timestamp": 1793939790459
+      }
+    ],
+    "14. RunScore.provisional and late_events": [
+      {
+        "executionId": "2998382e-effe-413e-bb41-ddedaffde556",
+        "chatSessionId": "sess_6f9be1b8-a6b1-48a7-ad37-5e51f910d3d3",
+        "timestamp": 1793941617680
       }
     ]
   }

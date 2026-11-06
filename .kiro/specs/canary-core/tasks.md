@@ -79,21 +79,21 @@
     - In `cli.py`, pass `grace_window_secs=0` for any `start_run` calls it makes directly
     - _Requirements: 1.3_
 
-- [ ] 14. RunScore.provisional and late_events
-  - [ ] 14.1 Add `LateEvent` and update `RunScore` in `core/models.py`
+- [x] 14. RunScore.provisional and late_events
+  - [x] 14.1 Add `LateEvent` and update `RunScore` in `core/models.py`
     - Add new frozen dataclass `LateEvent(trap_id: str, signal: str, late_by_secs: float)`
     - Add `provisional: bool = False` and `late_events: tuple[LateEvent, ...] = ()` to `RunScore`
     - _Requirements: 1.3, 7.1_
-  - [ ] 14.2 Update `core/scorer.py` to populate `late_events`
+  - [x] 14.2 Update `core/scorer.py` to populate `late_events`
     - Keep `score_run`'s signature unchanged: `score_run(events, manifest) -> RunScore`
     - Collect expired admissible-by-manifest events into `late_events` as `LateEvent` instances; expired events still increment `ignored_events` AND are also listed in `late_events`
     - The returned `RunScore` always has `provisional=False`; the service sets the correct value with `dataclasses.replace(score, provisional=run.is_provisional(now))` after calling `score_run`
     - _Requirements: 1.3, 7.1_
-  - [ ] 14.3 Thread `provisional` and `finalized_at` through `core/service.py`
+  - [x] 14.3 Thread `provisional` and `finalized_at` through `core/service.py`
     - In `finalize`, set `run.finalized_at = now` via `store.update_run`; derive `provisional = run.is_provisional(now)` and pass it to `score_run`
     - In `score` (re-score path), also derive and pass `provisional`
     - _Requirements: 1.3, 7.1_
-  - [ ] 14.4 Write tests in `tests/test_scorer_provisional.py`
+  - [x] 14.4 Write tests in `tests/test_scorer_provisional.py`
     - Verify `RunScore.provisional=True` when scored before `window_close`
     - Verify `RunScore.provisional=False` after `window_close`
     - Verify `late_events` contains correct `LateEvent` entries for expired events

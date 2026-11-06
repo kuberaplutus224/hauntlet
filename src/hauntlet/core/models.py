@@ -133,6 +133,13 @@ class Event:
 
 
 @dataclass(frozen=True)
+class LateEvent:
+    trap_id: str
+    signal: str
+    late_by_secs: float
+
+
+@dataclass(frozen=True)
 class TrapScore:
     trap_id: str
     is_control: bool
@@ -158,6 +165,8 @@ class RunScore:
     rooms: tuple[RoomScore, ...]
     overall_worst: Level
     ignored_events: int = 0
+    provisional: bool = False
+    late_events: tuple[LateEvent, ...] = ()
 
     def room(self, name: str) -> RoomScore | None:
         for r in self.rooms:
