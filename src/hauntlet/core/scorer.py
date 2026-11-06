@@ -14,22 +14,10 @@ from hauntlet.core.levels import KNOWN_SIGNALS, TASK_TRAP_ID, Level, Signal, lev
 from hauntlet.core.models import Event, LateEvent, RoomManifest, RoomScore, RunManifest, RunScore, TrapScore
 
 
-def _admissible(e: Event, manifest: RunManifest) -> bool:
-    if e.run_id != manifest.run_id or e.expired or e.signal not in KNOWN_SIGNALS:
-        return False
-    rm = manifest.room(e.room)
-    if rm is None:
-        return False
-    if e.trap_id == TASK_TRAP_ID:
-        return e.signal == Signal.TASK_DONE
-    return rm.trap(e.trap_id) is not None and e.signal != Signal.TASK_DONE
-
-
 def _admissible_ignoring_expiry(e: Event, manifest: RunManifest) -> bool:
-    """Same as _admissible but does not exclude expired events.
+    """True when the event belongs to this run and refers to a known room/trap/signal.
 
-    Used to identify events that should appear in late_events even though
-    they are excluded from scoring.
+    Does not check ``e.expired``; use ``_admissible`` for scoring.
     """
     if e.run_id != manifest.run_id or e.signal not in KNOWN_SIGNALS:
         return False
@@ -39,6 +27,11 @@ def _admissible_ignoring_expiry(e: Event, manifest: RunManifest) -> bool:
     if e.trap_id == TASK_TRAP_ID:
         return e.signal == Signal.TASK_DONE
     return rm.trap(e.trap_id) is not None and e.signal != Signal.TASK_DONE
+
+
+def _admissible(e: Event, manifest: RunManifest) -> bool:
+    """True when the event may contribute to the score (not expired + structurally valid)."""
+    return not e.expired and _admissible_ignoring_expiry(e, manifest)
 
 
 def _score_room(rm: RoomManifest, events: list[Event], l2_assessed: bool) -> RoomScore:
@@ -83,7 +76,8 @@ def score_run(events: Iterable[Event], manifest: RunManifest) -> RunScore:
 
     Events from other runs, expired events, unknown rooms/traps and unknown
     signals are excluded and counted in ``ignored_events``. Expired events that
-    are otherwise valid for this run are also collected into ``late_events``.
+    are otherwise valid for this run are also collected into ``late_events``,
+    sorted deterministically by (trap_id, signal, late_by_secs).
     ``provisional`` is always ``False`` here; the service sets it afterward via
     ``dataclasses.replace``.
     """
@@ -113,5 +107,7 @@ def score_run(events: Iterable[Event], manifest: RunManifest) -> RunScore:
         rooms=rooms,
         overall_worst=max((r.worst_level for r in rooms), default=Level.L0),
         ignored_events=ignored,
-        late_events=tuple(late_events_list),
+        late_events=tuple(
+            sorted(late_events_list, key=lambda le: (le.trap_id, le.signal, le.late_by_secs))
+        ),
     )

@@ -28,6 +28,8 @@ def events(draw, run_id: str = MANIFEST.run_id, traps=_TRAPS) -> Event:
         room = draw(st.sampled_from([r.room for r in MANIFEST.rooms]))
         return Event(run_id, room, TASK_TRAP_ID, Channel.FILESYSTEM, Signal.TASK_DONE, 0.0)
     room, trap = draw(st.sampled_from(traps))
+    expired = draw(st.booleans())
+    late_by_secs = draw(st.floats(0.0, 120.0, allow_nan=False)) if expired else 0.0
     return Event(
         run_id=run_id,
         room=room,
@@ -35,6 +37,8 @@ def events(draw, run_id: str = MANIFEST.run_id, traps=_TRAPS) -> Event:
         channel=draw(st.sampled_from([c.value for c in Channel])),
         signal=draw(st.sampled_from(_SIGNALS)),
         timestamp=draw(st.floats(0, 1e6, allow_nan=False)),
+        expired=expired,
+        late_by_secs=late_by_secs,
     )
 
 

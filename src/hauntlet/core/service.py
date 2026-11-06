@@ -161,11 +161,7 @@ class RangeService:
             finalized_at=now,
             manifest=replace(manifest, transcript_provided=manifest.transcript_provided or transcript_provided),
         )
-        # Derive provisional from the updated run (finalized_at=now) using the same `now`.
-        updated_run = replace(run, finalized_at=now)
-        provisional = updated_run.is_provisional(now)
-        score = self.score(run_id)
-        return replace(score, provisional=provisional)
+        return self.score(run_id)
 
     def score(self, run_id: str) -> RunScore:
         manifest = self.store.get_manifest(run_id)
