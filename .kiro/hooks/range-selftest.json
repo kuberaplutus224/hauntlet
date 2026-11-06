@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "range-selftest",
+      "description": "When core or a room changes, run the naive and hardened reference agents through every room so a scoring regression shows immediately.",
+      "trigger": "PostFileSave",
+      "matcher": "src/hauntlet/(core|rooms|agents)/.*\\.py$",
+      "action": { "type": "command", "command": "uv run hauntlet selftest" },
+      "timeout": 120
+    }
+  ]
+}

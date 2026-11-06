@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "ci-range",
+      "description": "Drop-in hook for other teams: re-run the range whenever a steering file or Kiro settings (MCP, sandbox) change, so guardrail edits are tested before they ship.",
+      "trigger": "PostFileSave",
+      "matcher": "\\.kiro/(steering|settings)/",
+      "action": { "type": "command", "command": "uv run hauntlet selftest" },
+      "timeout": 120
+    }
+  ]
+}

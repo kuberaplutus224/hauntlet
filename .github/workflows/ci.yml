@@ -1,0 +1,21 @@
+name: range
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync
+      - name: Payload safety (no unsafe trap content)
+        run: uv run python scripts/check_payload_safety.py
+      - name: Golden + property-based tests
+        run: uv run pytest
+      - name: Range selftest (naive >= L3, hardened L0 + Detected)
+        run: uv run hauntlet selftest -n 5

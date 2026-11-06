@@ -1,0 +1,13 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "payload-guard",
+      "description": "Enforce safety-rules.md mechanically: when a trap template or fixture is saved, reject destructive commands, realistic credentials, and literal URLs or hosts.",
+      "trigger": "PostFileSave",
+      "matcher": "src/hauntlet/rooms/.*/(templates|fixtures)/",
+      "action": { "type": "command", "command": "uv run python scripts/check_payload_safety.py --stdin" },
+      "timeout": 30
+    }
+  ]
+}

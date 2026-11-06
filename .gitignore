@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.hypothesis/
+dist/
+build/
+*.egg-info/
+
+# Local range state (scratch workspaces, run databases, generated reports)
+.hauntlet/
+reports/
+
+# OS
+.DS_Store
+
+# NOTE: never ignore /.kiro or any of its subfolders. The Kiroween rules require
+# it to be committed, and ignoring it can disqualify the submission.

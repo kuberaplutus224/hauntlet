@@ -1,0 +1,112 @@
+"""HTTP surface for the range. A thin wrapper over RangeService."""
+
+from __future__ import annotations
+
+import os
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse
+from pydantic import BaseModel, Field
+
+from hauntlet import __version__
+from hauntlet.core.models import to_dict
+from hauntlet.core.report import render_report
+from hauntlet.core.room import Observation
+from hauntlet.core.service import InvalidObservation, RangeService, UnknownRun
+from hauntlet.core.store import Store
+from hauntlet.rooms import default_rooms
+
+
+class StartRun(BaseModel):
+    rooms: list[str] = Field(default_factory=lambda: ["threshold"])
+    ttl_seconds: float | None = Field(default=None, gt=0, le=24 * 3600)
+
+
+class ObservationIn(BaseModel):
+    room: str
+    trap_id: str
+    channel: str
+    signal: str
+    detail: str = ""
+
+
+class Finalize(BaseModel):
+    observations: list[ObservationIn] = Field(default_factory=list)
+    transcript_provided: bool = False
+
+
+def create_app(service: RangeService | None = None) -> FastAPI:
+    if service is None:
+        service = RangeService(
+            Store(os.environ.get("HAUNTLET_DB", ".hauntlet/range.db")),
+            default_rooms(),
+            base_url=os.environ.get("HAUNTLET_BASE_URL", "http://127.0.0.1:8666"),
+        )
+    app = FastAPI(title="Hauntlet", version=__version__)
+    app.state.service = service
+
+    @app.middleware("http")
+    async def noindex(request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Robots-Tag"] = "noindex, nofollow"
+        return response
+
+    def _run_or_404(run_id: str):
+        try:
+            return service.get_run(run_id)
+        except UnknownRun:
+            raise HTTPException(404, "unknown run") from None
+
+    @app.get("/health")
+    def health() -> dict:
+        return {"status": "ok", "version": __version__, "rooms": sorted(service.rooms)}
+
+    @app.post("/runs", status_code=201)
+    def start_run(body: StartRun) -> dict:
+        try:
+            desc = service.start_run(body.rooms, ttl=body.ttl_seconds)
+        except KeyError as exc:
+            raise HTTPException(400, str(exc)) from None
+        return {
+            "run": to_dict(desc.run),
+            "manifest": to_dict(desc.manifest),
+            "canaries": [
+                {**to_dict(c), "url": f"{service.base_url}/c/{c.value}" if c.kind == "url" else None}
+                for c in desc.canaries
+            ],
+        }
+
+    @app.get("/runs/{run_id}")
+    def get_run(run_id: str) -> dict:
+        return to_dict(_run_or_404(run_id))
+
+    @app.get("/c/{token}", response_class=PlainTextResponse)
+    def canary(token: str, request: Request) -> str:
+        if service.record_hit(token, request.url.query) is None:
+            raise HTTPException(404, "not found")
+        return "ok"
+
+    @app.post("/runs/{run_id}/finalize")
+    def finalize(run_id: str, body: Finalize) -> dict:
+        _run_or_404(run_id)
+        try:
+            score = service.finalize(
+                run_id,
+                [Observation(**o.model_dump()) for o in body.observations],
+                transcript_provided=body.transcript_provided,
+            )
+        except InvalidObservation as exc:
+            raise HTTPException(400, str(exc)) from None
+        return to_dict(score)
+
+    @app.get("/runs/{run_id}/score")
+    def score(run_id: str) -> dict:
+        _run_or_404(run_id)
+        return to_dict(service.score(run_id))
+
+    @app.get("/runs/{run_id}/report", response_class=HTMLResponse)
+    def report(run_id: str) -> str:
+        _run_or_404(run_id)
+        return render_report(service.score(run_id), service.manifest(run_id))
+
+    return app
