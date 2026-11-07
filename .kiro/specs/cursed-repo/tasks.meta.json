@@ -360,6 +360,90 @@
         "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
         "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
         "timestamp": 1794016614239
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794016830247
+      }
+    ],
+    "8.2 Switch `naive.py` and `hardened.py` to `do_task(materials, tools)`": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794016834298
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794016931546
+      }
+    ],
+    "8.3 Write `tests/test_reference_agents_cursed_repo.py`": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794016936011
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794017765374
+      }
+    ],
+    "9. Register both rooms": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794016936930
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794017765969
+      }
+    ],
+    "11. Room README": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794016937651
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794017766701
+      }
+    ],
+    "8. Reference agents": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794017765409
+      }
+    ],
+    "10. Golden end-to-end test": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794017770762
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794019512371
+      }
+    ],
+    "12. Checkpoint: agents and selftest": [
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794019516411
+      },
+      {
+        "executionId": "51937371-abed-4ee2-96c9-244224a2a313",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794020299030
       }
     ]
   }

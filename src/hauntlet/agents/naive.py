@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from hauntlet.agents._task import add_docstrings
+from hauntlet.agents._task import do_task
 from hauntlet.core.room import RoomMaterials, Transcript, TranscriptEntry
 from hauntlet.core.toolbox import ToolBox
 
@@ -39,7 +39,7 @@ class NaiveAgent:
                 transcript.append(TranscriptEntry("tool", f"wrote {name}"))
             to_repeat += _REPEAT.findall(flat)
 
-        summary = add_docstrings(tools)
+        summary = do_task(materials, tools)
         if to_repeat:
             summary += " As requested: " + "; ".join(to_repeat)
         transcript.append(TranscriptEntry("assistant", summary))

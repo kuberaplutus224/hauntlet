@@ -145,33 +145,33 @@ dispatcher, room registration, the golden end-to-end test and the room README
 - [x] 7. Checkpoint: room package and checker
   - Run `uv run pytest` and `uv run python scripts/check_payload_safety.py`; both must pass. The rooms are not registered yet, so `hauntlet selftest` is unchanged. Stop and ask the user if anything fails.
 
-- [ ] 8. Reference agents
-  - [-] 8.1 Add `fix_clamp` and `do_task` to `src/hauntlet/agents/_task.py`
+- [x] 8. Reference agents
+  - [x] 8.1 Add `fix_clamp` and `do_task` to `src/hauntlet/agents/_task.py`
     - `fix_clamp(tools, path="rangekit/clamp.py")` replacing the one known bug, raising `RuntimeError` unless exactly one copy is found
     - `do_task(materials, tools)` dispatching on `materials.room` to `add_docstrings` or `fix_clamp`; unknown room raises `KeyError`
     - _Requirements: 7.4, 9.4_
-  - [ ] 8.2 Switch `naive.py` and `hardened.py` to `do_task(materials, tools)`
+  - [x] 8.2 Switch `naive.py` and `hardened.py` to `do_task(materials, tools)`
     - Replace the `add_docstrings(tools)` call only; no change to the obey loop or `_DIRECTED`
     - _Requirements: 7.1, 7.2, 7.4, 9.4_
-  - [ ] 8.3 Write `tests/test_reference_agents_cursed_repo.py`
+  - [x] 8.3 Write `tests/test_reference_agents_cursed_repo.py`
     - `fix_clamp` on a freshly rendered `clamp.py` produces source that passes `check_clamp`; on drifted source it raises `RuntimeError`
     - `do_task` raises `KeyError` for an unknown room and still runs `add_docstrings` for `threshold`
     - _Requirements: 7.4_
 
-- [ ] 9. Register both rooms
+- [x] 9. Register both rooms
   - Add `CursedRepoRoom(CURSED_REPO)` and `CursedRepoRoom(CURSED_REPO_TESTS)` to `default_rooms()` in `src/hauntlet/rooms/__init__.py`, after `ThresholdRoom()`
   - _Requirements: 3.4, 7.3, 9.4_
 
-- [ ] 10. Golden end-to-end test
+- [x] 10. Golden end-to-end test
   - `tests/test_cursed_repo_e2e.py`: run naive and hardened through each room with `run_once` and assert design.md "Expected scores" exactly: per-trap levels, `worst_level`, `detected`, `task_completed`, `false_positives`
   - Also assert that in the naive default-room run the `exposed` event for `readme-register` is on the `network` channel, and every `filesystem` event is `acted`
   - _Requirements: 4.2, 5.2, 5.3, 5.4, 7.1, 7.2_
 
-- [ ] 11. Room README
+- [x] 11. Room README
   - Write `src/hauntlet/rooms/cursed_repo/README.md` with the sections in design.md "Room README": what the room measures and both room names; citations per trap, still marked "to verify"; known limitations (off-task changes neither scored nor recorded, Detected needs the file named, files over 4 MiB not searched, symlinks ignored, task check subset can under-report); disclosure section
   - _Requirements: 5.6, 8.2, 8.3, 8.4_
 
-- [ ] 12. Checkpoint: agents and selftest
+- [x] 12. Checkpoint: agents and selftest
   - Run `uv run pytest`, `uv run hauntlet selftest -n 5` (three rooms must pass) and `uv run python scripts/check_payload_safety.py`. Stop and ask the user if anything fails.
 
 - [ ] 13. Citation verification (release gate)

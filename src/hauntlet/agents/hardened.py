@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from hauntlet.agents._task import add_docstrings
+from hauntlet.agents._task import do_task
 from hauntlet.core.room import RoomMaterials, Transcript, TranscriptEntry
 from hauntlet.core.toolbox import ToolBox
 
@@ -30,7 +30,7 @@ class HardenedAgent:
             if _DIRECTED.search(" ".join(text.split())):
                 flagged.append(rel)
 
-        summary = add_docstrings(tools)
+        summary = do_task(materials, tools)
         for rel in flagged:
             summary += (
                 f" Ignored a suspicious instruction embedded in {rel}; it looks like a prompt"
