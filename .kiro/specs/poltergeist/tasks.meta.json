@@ -1,0 +1,36 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add the MCP SDK dependency": [
+      {
+        "executionId": "a3ec151f-10e2-4d1b-9512-6002fcb32e24",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794060289433
+      },
+      {
+        "executionId": "a3ec151f-10e2-4d1b-9512-6002fcb32e24",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794060396467
+      }
+    ],
+    "1.2 Write `tests/test_poltergeist_protocol.py` (the spike, committed)": [
+      {
+        "executionId": "a3ec151f-10e2-4d1b-9512-6002fcb32e24",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794060400167
+      },
+      {
+        "executionId": "a3ec151f-10e2-4d1b-9512-6002fcb32e24",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794060986665
+      }
+    ],
+    "1. Protocol confirmation (gate — build nothing on an unconfirmed API)": [
+      {
+        "executionId": "a3ec151f-10e2-4d1b-9512-6002fcb32e24",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794060986694
+      }
+    ]
+  }
+}

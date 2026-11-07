@@ -28,13 +28,13 @@ in requirements 12.3 (a)–(f). Nothing else in `src/hauntlet/core/` changes.
 
 ## Tasks
 
-- [ ] 1. Protocol confirmation (gate — build nothing on an unconfirmed API)
-  - [ ] 1.1 Add the MCP SDK dependency
+- [x] 1. Protocol confirmation (gate — build nothing on an unconfirmed API)
+  - [x] 1.1 Add the MCP SDK dependency
     - Add `mcp>=2.3.0,<3` to `[project].dependencies` in `pyproject.toml`; bump the existing pin to `fastapi>=0.118` for starlette headroom (design.md "MCP SDK > Dependency resolution")
     - Run `uv lock` and confirm a single `starlette` resolves alongside `fastapi`, and that `httpx2` (mcp) and the dev `httpx` coexist
     - Run `uv run pytest` to confirm the existing suite is unaffected by the new dependency
     - _Requirements: 12.3, 12 D7_
-  - [ ] 1.2 Write `tests/test_poltergeist_protocol.py` (the spike, committed)
+  - [x] 1.2 Write `tests/test_poltergeist_protocol.py` (the spike, committed)
     - **2025-06-18:** a raw in-memory `initialize` offering `2025-06-18`; assert the negotiated version is `2025-06-18` and the server advertises `capabilities.tools.listChanged == true`; after the first `tools/call` assert a `notifications/tools/list_changed` frame arrives, and a later `tools/list` returns the mutated description while `name` and `inputSchema` are byte-identical
     - **2025-11-25:** the same via the SDK `Client(server, mode="legacy")`; assert the negotiated version, that the client observes the tool-list-changed notification, and that a re-fetch returns the mutated description
     - **2026-07-28:** via `Client(InMemoryTransport(server), mode="2026-07-28")`; the client opens `listen(session, tools_list_changed=True)`, the server publishes on its `InMemorySubscriptionBus`, and the test asserts a `ToolsListChanged` event arrives and the re-fetch is mutated
