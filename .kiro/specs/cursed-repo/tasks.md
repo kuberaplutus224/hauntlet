@@ -99,6 +99,13 @@ dispatcher, room registration, the golden end-to-end test and the room README
     - **Property CR9: Secrets on disk are never L4**
     - For any placement of secrets into files, every observation the checker emits has signal `acted`, never `exposed`
     - **Validates: Requirements 5.3, 5.4**
+  - [x] 4.9 Read file content lazily in the checker
+    - `snapshot(workspace)` hashes every regular file (chunked, `O_NOFOLLOW` + `fstat`, symlinks skipped) but keeps no file content in memory
+    - Add a per-path content reader with the same `O_NOFOLLOW`/`fstat` checks and the 4 MiB cap; it returns `None` if the file is oversized, unreadable, not a regular file, or no longer matches the snapshot's hash
+    - `baseline_from` and `attribute` read content only for the paths they need (`attribute`: created and modified paths only), through an injected reader so both stay pure; `CursedRepoRoom` reads `rangekit/clamp.py` lazily for the task check
+    - Update the CR1–CR9 property tests and the checker/room example tests to the new interface without weakening them; add a test with many unchanged files asserting that only changed paths are read and no content is retained
+    - Update design.md "Local checker > Snapshot" to describe the lazy reads
+    - _Requirements: 5.1, 5.5, 5.7_
 
 - [x] 5. Transcript scan
   - [x] 5.1 Write `src/hauntlet/rooms/cursed_repo/transcript.py`
@@ -139,7 +146,7 @@ dispatcher, room registration, the golden end-to-end test and the room README
   - Run `uv run pytest` and `uv run python scripts/check_payload_safety.py`; both must pass. The rooms are not registered yet, so `hauntlet selftest` is unchanged. Stop and ask the user if anything fails.
 
 - [ ] 8. Reference agents
-  - [ ] 8.1 Add `fix_clamp` and `do_task` to `src/hauntlet/agents/_task.py`
+  - [-] 8.1 Add `fix_clamp` and `do_task` to `src/hauntlet/agents/_task.py`
     - `fix_clamp(tools, path="rangekit/clamp.py")` replacing the one known bug, raising `RuntimeError` unless exactly one copy is found
     - `do_task(materials, tools)` dispatching on `materials.room` to `add_docstrings` or `fix_clamp`; unknown room raises `KeyError`
     - _Requirements: 7.4, 9.4_
@@ -189,6 +196,7 @@ dispatcher, room registration, the golden end-to-end test and the room README
 
 - Every test task is required; none is optional.
 - Tasks that write the same file run in separate waves: 3.3/3.4, 4.1/4.2, 4.4–4.8, 6.2/6.3, 6.4/6.5.
+- Task 4.9 was added after checkpoint 7 (lazy content reads in the checker); it runs before task 8.
 - Registration (task 9) comes after the agents (task 8). Registering earlier would make selftest call `add_docstrings` on a repository with no `calc.py`.
 - The README (task 11) is written with "to verify" citations; task 13 clears them.
 - Citation verification runs last because dropping or rewording a trap changes the golden results.
@@ -205,7 +213,7 @@ dispatcher, room registration, the golden end-to-end test and the room README
     { "id": 4, "tasks": ["4.6", "6.3", "6.5"] },
     { "id": 5, "tasks": ["4.7"] },
     { "id": 6, "tasks": ["4.8"] },
-    { "id": 7, "tasks": ["7"] },
+    { "id": 7, "tasks": ["7", "4.9"] },
     { "id": 8, "tasks": ["8.1"] },
     { "id": 9, "tasks": ["8.2"] },
     { "id": 10, "tasks": ["8.3", "9", "11"] },

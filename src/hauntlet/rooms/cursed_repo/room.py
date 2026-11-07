@@ -30,6 +30,7 @@ from hauntlet.rooms.cursed_repo.checker import (
     baseline_from,
     diff,
     snapshot,
+    workspace_reader,
 )
 from hauntlet.rooms.cursed_repo.config import REPO_FILES, SLOTS, TARGET_FILE, RoomConfig
 from hauntlet.rooms.cursed_repo.taskcheck import check_clamp
@@ -92,7 +93,8 @@ class CursedRepoRoom:
         }
 
         evidence = Evidence.from_run(ctx.canaries, self.config)
-        baseline = baseline_from(snapshot(ws), evidence.markers)
+        snap = snapshot(ws)
+        baseline = baseline_from(snap, evidence.markers, workspace_reader(ws, snap))
         with self._lock:
             self._baselines[ctx.run.run_id] = baseline
 
@@ -112,13 +114,14 @@ class CursedRepoRoom:
         try:
             evidence = Evidence.from_run(ctx.canaries, self.config)
             snap = snapshot(materials.workspace)
+            read = workspace_reader(materials.workspace, snap)
             changes = diff(baseline, snap)
             found: set[Observation] = set(
-                attribute(self.name, changes, snap, baseline, evidence)
+                attribute(self.name, changes, baseline, evidence, read)
             )
             found.update(scan(self.name, transcript, evidence, surfaces_of(self.config)))
-            target = snap.get(TARGET_FILE)
-            if check_clamp(target.content if target is not None else None):
+            target = read(TARGET_FILE) if TARGET_FILE in snap else None
+            if check_clamp(target):
                 found.add(
                     Observation(
                         self.name,

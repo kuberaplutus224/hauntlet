@@ -8,27 +8,31 @@ Properties in this file:
 - CR7 Off-task changes are invisible (Requirement 5.6)
 - CR9 Secrets on disk are never L4 (Requirements 5.3, 5.4)
 
-The checker's ``baseline_from``, ``diff`` and ``attribute`` are pure, so every
-property runs on in-memory snapshots built by the shared strategies below. No
-workspace is touched.
+The checker's ``baseline_from``, ``diff`` and ``attribute`` are pure given
+their reader, so every property runs on in-memory files built by the shared
+strategies below. No workspace is touched.
+
+Each generated workspace is a ``dict[str, Entry]``, where the test-only
+``Entry`` pairs a file's snapshot hash with what a reader returns for it
+(``None`` for an oversized or unreadable file). ``_hashes`` turns it into the
+checker's ``Snapshot`` and ``_reader`` into its ``Reader``.
 """
 
 from __future__ import annotations
 
 import hashlib
+from dataclasses import dataclass
 
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from hauntlet.core.levels import Channel, Level, Signal, level_of
+from hauntlet.rooms.cursed_repo import checker
 from hauntlet.rooms.cursed_repo.checker import (
     UNREADABLE_SHA256,
     Changes,
-    Entry,
     Evidence,
-    attribute,
-    baseline_from,
-    diff,
+    Reader,
 )
 from hauntlet.rooms.cursed_repo.config import CURSED_REPO, REPO_FILES
 
@@ -51,6 +55,60 @@ _EXTRA_PATHS = (
 
 def _obs_key(o):
     return (o.trap_id, o.channel, o.signal, o.detail)
+
+
+# ---------------------------------------------------------------------------
+# In-memory files and checker plumbing
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Entry:
+    """Test model of one file: its snapshot hash and the reader's result for it."""
+
+    sha256: str
+    content: bytes | None
+
+
+def _hashes(files: dict[str, Entry]) -> dict[str, str]:
+    """The checker's ``Snapshot`` for in-memory files."""
+    return {p: e.sha256 for p, e in files.items()}
+
+
+def _reader(files: dict[str, Entry], calls: list[str] | None = None) -> Reader:
+    """A dict-backed ``Reader``; records each requested path in ``calls``."""
+
+    def read(path: str) -> bytes | None:
+        if calls is not None:
+            calls.append(path)
+        entry = files.get(path)
+        return None if entry is None else entry.content
+
+    return read
+
+
+# The three wrappers below keep the property bodies in terms of in-memory
+# files: each converts ``files`` to the checker's hash snapshot and reader.
+
+
+def baseline_from(files: dict[str, Entry], markers):
+    return checker.baseline_from(_hashes(files), markers, _reader(files))
+
+
+def diff(baseline, files: dict[str, Entry]) -> Changes:
+    return checker.diff(baseline, _hashes(files))
+
+
+def attribute(room: str, changes: Changes, files: dict[str, Entry], baseline, ev: Evidence):
+    """``checker.attribute`` over in-memory files.
+
+    Also checks the lazy-read contract: the reader is called exactly once for
+    each created or modified path, and for nothing else.
+    """
+    calls: list[str] = []
+    obs = checker.attribute(room, changes, baseline, ev, _reader(files, calls))
+    assert sorted(calls) == sorted(set(changes.created) | set(changes.modified))
+    return obs
 
 
 # ---------------------------------------------------------------------------
