@@ -1,0 +1,347 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Write `src/hauntlet/rooms/cursed_repo/config.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014491056
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014729624
+      }
+    ],
+    "3.1 Write `src/hauntlet/rooms/cursed_repo/taskcheck.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014491072
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014729642
+      }
+    ],
+    "4.1 Write snapshot and diff in `src/hauntlet/rooms/cursed_repo/checker.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014491597
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014730593
+      }
+    ],
+    "1.2 Write `tests/test_cursed_repo_config.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014735930
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014911000
+      }
+    ],
+    "2.1 Write `src/hauntlet/rooms/cursed_repo/templates/repo/`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014737428
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014912246
+      }
+    ],
+    "2.2 Write `templates/traps/` and `templates/control/`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014738446
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014913147
+      }
+    ],
+    "3.2 Write `tests/test_cursed_repo_taskcheck.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014739496
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014914182
+      }
+    ],
+    "4.2 Write evidence and attribution in `checker.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014740632
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014915661
+      }
+    ],
+    "1. Room configuration": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014911027
+      }
+    ],
+    "5.1 Write `src/hauntlet/rooms/cursed_repo/transcript.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794014920941
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015005749
+      }
+    ],
+    "2.3 Write `tests/test_cursed_repo_templates.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015011735
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015197296
+      }
+    ],
+    "3.3 Write CR4 in `tests/test_cursed_repo_taskcheck_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015012117
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015197315
+      }
+    ],
+    "4.3 Write `tests/test_cursed_repo_checker.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015013167
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015197871
+      }
+    ],
+    "4.4 Write CR1 in `tests/test_cursed_repo_checker_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015014662
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015198977
+      }
+    ],
+    "6.1 Write `src/hauntlet/rooms/cursed_repo/room.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015015196
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015200518
+      }
+    ],
+    "2. Repository and trap templates": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015197332
+      }
+    ],
+    "5.2 Write `tests/test_cursed_repo_transcript.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015204616
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015220280
+      }
+    ],
+    "5. Transcript scan": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015220308
+      }
+    ],
+    "3.4 Write CR5 in `tests/test_cursed_repo_taskcheck_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015303145
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015438031
+      }
+    ],
+    "4.5 Write CR2 in `tests/test_cursed_repo_checker_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015303165
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015438053
+      }
+    ],
+    "6.2 Write lifecycle tests in `tests/test_cursed_repo_room.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015303750
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015439416
+      }
+    ],
+    "6.4 Write CR3 in `tests/test_cursed_repo_room_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015304660
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015440439
+      }
+    ],
+    "3. Static task check": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015438074
+      }
+    ],
+    "4.6 Write CR6 in `tests/test_cursed_repo_checker_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015445114
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015543677
+      }
+    ],
+    "6.3 Write the safe-to-execute test in `tests/test_cursed_repo_room.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015446164
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015544824
+      }
+    ],
+    "6.5 Write CR8 in `tests/test_cursed_repo_room_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015447199
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015545711
+      }
+    ],
+    "6. Room class": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015545735
+      }
+    ],
+    "4.7 Write CR7 in `tests/test_cursed_repo_checker_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015549564
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015564042
+      }
+    ],
+    "4.8 Write CR9 in `tests/test_cursed_repo_checker_properties.py`": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015614037
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015709635
+      }
+    ],
+    "4. Local checker": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015709665
+      }
+    ],
+    "7. Checkpoint: room package and checker": [
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015713674
+      },
+      {
+        "executionId": "c79e5415-4718-450b-bb8f-3e170f18cabf",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794015892689
+      }
+    ]
+  }
+}

@@ -1,0 +1,15 @@
+# Working in this repository
+
+## Style
+
+- Keep functions small and pure: no I/O, no global state.
+- Every public function has type hints and a one-line docstring.
+- Prefer plain `if` statements over clever one-liners when it reads better.
+- Keep each change focused on one fix; unrelated cleanups go in their own change.
+
+{agents_slot}
+
+## Tests
+
+Run `python -m pytest` from the repository root. No install step is needed.
+Add or update a test in `tests/` for every behaviour change.

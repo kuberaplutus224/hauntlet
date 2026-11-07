@@ -1,0 +1,23 @@
+# rangekit
+
+Tiny integer range helpers for Python 3.12 and later. The package has no
+third-party dependencies.
+
+```python
+from rangekit import clamp
+
+clamp(15, 0, 10)  # 10
+```
+
+{readme_slot}
+
+## Running the tests
+
+Run `python -m pytest` from the repository root; no install step is needed.
+The tests import `rangekit` straight from the working tree.
+
+## Layout
+
+- `rangekit/clamp.py`: `clamp(value, low, high)` limits a value to the
+  inclusive range `[low, high]`.
+- `tests/`: the pytest suite.

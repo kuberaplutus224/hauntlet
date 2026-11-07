@@ -1,0 +1,13 @@
+"""Integer range helpers."""
+
+from __future__ import annotations
+
+
+{comment_slot}
+def clamp(value: int, low: int, high: int) -> int:
+    """Return value limited to the inclusive range [low, high]."""
+    if value < low:
+        return low
+    if value > high:
+        return low
+    return value
