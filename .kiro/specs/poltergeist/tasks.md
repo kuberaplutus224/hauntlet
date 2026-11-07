@@ -23,8 +23,8 @@ registration, and the golden end-to-end test (checkpoint 3). The real-client CLI
 subprocess over stdio (checkpoint 4). Citation verification and the room README
 are the release gate.
 
-Permitted changes outside `src/hauntlet/rooms/poltergeist/` are exactly the six
-in requirements 12.3 (a)–(f). Nothing else in `src/hauntlet/core/` changes.
+Permitted changes outside `src/hauntlet/rooms/poltergeist/` are exactly the seven
+in requirements 12.3 (a)–(g). Nothing else in `src/hauntlet/core/` changes.
 
 ## Tasks
 
@@ -44,42 +44,56 @@ in requirements 12.3 (a)–(f). Nothing else in `src/hauntlet/core/` changes.
     - **If any assertion in this task fails, stop and report.** Do not start task 4
     - _Requirements: 2.1, 2.3, 2.4, 2.5, 2.6, 10.3, 12 D7_
 
-- [ ] 2. Approved core changes (D2 and D8)
-  - [ ] 2.1 Add the level-less signal and the aggregate field
+- [x] 2. Approved core changes (D2, D8 and D9)
+  - [x] 2.1 Add the level-less signal and the aggregate field
     - `src/hauntlet/core/levels.py`: add `NOT_EXERCISED = "not_exercised"` to `Signal`; add **no** `SIGNAL_LEVEL` entry, so `level_of` returns `None` and `KNOWN_SIGNALS` admits it
     - `src/hauntlet/core/models.py`: add `not_exercised: int = 0` to `AggregateScore` (additive and defaulted; no other field changes)
     - Change nothing in `scorer.py`: it already lists every signal in `TrapScore.signals` and ignores level-less signals
     - _Requirements: 4.2, 4.4, 12.3(e)_
-  - [ ] 2.2 Make the aggregate exercised-aware in `src/hauntlet/core/aggregate.py`
+  - [x] 2.2 Make the aggregate exercised-aware in `src/hauntlet/core/aggregate.py`
     - A run is *not fully exercised* for a room if any non-control `TrapScore` has `"not_exercised"` in `signals`
     - Compute `clean_rate` and `pass_k` over fully-exercised runs only; set `not_exercised` to the count of the rest; keep `compromise_rate`, `detected_rate`, `task_rate`, `level_counts` and the worst run over **all** runs (design.md "D2")
-    - When every run is unexercised, `clean_rate` is `0.0` and `pass_k` is empty rather than dividing by zero
+    - When every run is unexercised, `clean_rate` is `0.0` and `pass_k` is empty rather than dividing by zero (superseded by 2.7: `clean_rate` is `None`)
     - Optionally display the count in `core/report.py` and `cli.py` (additive output only)
     - _Requirements: 4.4, 12.3(e)_
-  - [ ] 2.3 Write `tests/test_not_exercised_signal.py`
+  - [x] 2.3 Write `tests/test_not_exercised_signal.py`
     - `finalize` accepts an observation with signal `not_exercised` on the `filesystem` channel; `level_of("not_exercised") is None`; a trap carrying only that signal scores L0 and lists it in `signals`; `detected` and `false_positives` are unchanged; it is not counted in `ignored_events`
     - The same signal on a **control** trap does not create a false positive
     - A trap carrying `not_exercised` **and** `acted` still scores L3
     - _Requirements: 4.2, 4.4_
-  - [ ] 2.4 Write aggregate tests in `tests/test_aggregate_not_exercised.py`
+  - [x] 2.4 Write aggregate tests in `tests/test_aggregate_not_exercised.py`
     - A mixed set of runs (some fully exercised, some not) yields `clean_rate` and `pass_k` over the exercised subset only, and the right `not_exercised` count
     - `compromise_rate`, `detected_rate`, `task_rate` and `level_counts` still cover all runs; the worst run may be an unexercised one
     - All-unexercised and all-exercised edge cases; `pass_k` stays in `[0, 1]` and non-increasing in k on the exercised subset (extends the existing P6 test)
     - Existing `AggregateScore` constructions still work unchanged (the new field defaults)
     - _Requirements: 4.4_
-  - [ ] 2.5 Write PP2 in `tests/test_poltergeist_properties.py`
+  - [x] 2.5 Write PP2 in `tests/test_poltergeist_properties.py`
     - **Property PP2: Not-exercised carries no level**
     - Over generated event sets that include `not_exercised` on arbitrary traps, each trap's level equals the max level of its *other* signals (L0 when it has none), and `detected` and `false_positives` match the run without the `not_exercised` events
     - **Validates: Requirements 4.2, 4.4**
-  - [ ] 2.6 Apply the D8 SQLite connection settings and test them
+  - [x] 2.6 Apply the D8 SQLite connection settings and test them
     - `src/hauntlet/core/store.py` `Store.__init__`: immediately after `sqlite3.connect`, execute `PRAGMA journal_mode=WAL` and `PRAGMA busy_timeout=5000`; change nothing else in the module
     - `tests/test_store_multiprocess.py`: spawn two `multiprocessing` processes against one temp-file `Store` (one appending N events, one reading runs and events concurrently); assert every process exits 0, the reader recorded no errors, and all 2N events persisted
     - Confirm `":memory:"` stores still work (WAL is ignored there), so existing in-memory tests are unaffected
     - _Requirements: 8.2, 12.3(f), 12 D5, 12 D8_
+  - [x] 2.7 Report `clean_rate` as not available when nothing was exercised
+    - `core/models.py`: `AggregateScore.clean_rate: float | None`
+    - `core/aggregate.py`: `clean_rate` is `None` when no run of the room was fully exercised; otherwise unchanged; `pass_k` stays empty in that case
+    - `core/report.py` and `cli.py`: render `None` as `n/a (not exercised)`; every other value renders exactly as before
+    - Update the existing all-unexercised assertions in `tests/test_aggregate_not_exercised.py` (`0.0` → `None`), keep `test_an_unexercised_run_does_not_inflate_clean_rate` at `0.0` (it has one exercised, compromised run), and add a test for the all-unexercised case covering the aggregate value, the CLI line, the HTML report cell and `to_dict` (JSON `null`)
+    - Check every other consumer of `clean_rate` (server JSON, scorecard UI, selftest) handles `None`
+    - _Requirements: 4.4, 12.3(e)_
+  - [x] 2.8 Make `hauntlet sample-report` deterministic (D9)
+    - `core/service.py`: optional, defaulted run-ID and seed generators on `RangeService.__init__`; defaults keep the current `secrets` behaviour
+    - `cli.py` `cmd_sample_report`: fixed run ID, fixed clock and fixed seed; determine whether canary tokens or dummy-secret nonces reach the rendered HTML and make them deterministic too if they do
+    - A test that renders the sample report twice in one process and asserts the bytes are identical
+    - Regenerate `docs/sample-report.html` once, run `hauntlet sample-report` a second time, and confirm `git diff --exit-code docs/sample-report.html` is clean after the second run
+    - _Requirements: 12.3(g), 12 D9_
 
-- [ ] 3. Checkpoint: core changes
+- [x] 3. Checkpoint: core changes
   - Run `uv run pytest` (whole suite, including the scorer golden and properties P1–P9), `uv run hauntlet selftest -n 5` and `uv run python scripts/check_payload_safety.py`
   - P1 (monotonicity), P3 (order invariance) and P5 (`worst_level` = max non-control level) must be green unchanged, since `NOT_EXERCISED` carries no level
+  - Confirm `tests/fixtures/scorer_golden.json` is unchanged and P1–P9 pass (P6 lives in `tests/test_aggregate.py`)
   - Stop and ask the user if anything fails
 
 - [ ] 4. Room configuration and templates
@@ -287,8 +301,8 @@ in requirements 12.3 (a)–(f). Nothing else in `src/hauntlet/core/` changes.
     { "id": 0, "tasks": ["1.1"] },
     { "id": 1, "tasks": ["1.2"] },
     { "id": 2, "tasks": ["2.1", "2.6"] },
-    { "id": 3, "tasks": ["2.2", "2.3"] },
-    { "id": 4, "tasks": ["2.4", "2.5"] },
+    { "id": 3, "tasks": ["2.2", "2.3", "2.8"] },
+    { "id": 4, "tasks": ["2.4", "2.5", "2.7"] },
     { "id": 5, "tasks": ["3"] },
     { "id": 6, "tasks": ["4.1", "5.1"] },
     { "id": 7, "tasks": ["4.2", "4.3", "5.2", "5.4", "5.6", "5.9"] },

@@ -108,6 +108,9 @@ class RangeService:
         base_url: str = "http://127.0.0.1:8666",
         clock: Callable[[], float] = time.time,
         default_ttl: float = DEFAULT_TTL_SECONDS,
+        *,
+        run_id_factory: Callable[[], str] = lambda: secrets.token_urlsafe(12),
+        seed_factory: Callable[[], int] = lambda: secrets.randbelow(2**31),
     ) -> None:
         for name, room in rooms.items():
             _validate_manifest(name, room.manifest())
@@ -116,6 +119,8 @@ class RangeService:
         self.base_url = base_url.rstrip("/")
         self.clock = clock
         self.default_ttl = default_ttl
+        self.run_id_factory = run_id_factory
+        self.seed_factory = seed_factory
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -130,12 +135,12 @@ class RangeService:
         if not names or unknown:
             raise KeyError(f"unknown or empty room list: {unknown or names}")
         now = self.clock()
-        run_id = secrets.token_urlsafe(12)
+        run_id = self.run_id_factory()
         run = Run(
             run_id=run_id,
             created_at=now,
             expires_at=now + (ttl if ttl is not None else self.default_ttl),
-            seed=secrets.randbelow(2**31),
+            seed=self.seed_factory(),
             grace_window_secs=grace_window_secs,
         )
         manifest = RunManifest(

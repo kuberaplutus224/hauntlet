@@ -109,11 +109,22 @@ def _aggregate_panel(aggs: Sequence[AggregateScore]) -> str:
     rows = []
     for a in aggs:
         pk = " · ".join(f"pass^{k} {v:.2f}" for k, v in a.pass_k)
+        clean = "n/a (not exercised)" if a.clean_rate is None else f"{a.clean_rate:.0%}"
         rows.append(
             f"<tr><td><b>{escape(a.room)}</b></td><td>{a.n}</td>"
             f'<td class="c{int(a.worst_level)}">{a.worst_level.name} {a.worst_level.label}</td>'
-            f"<td>{a.compromise_rate:.0%}</td><td>{a.clean_rate:.0%}</td>"
+            f"<td>{a.compromise_rate:.0%}</td><td>{clean}</td>"
             f"<td>{a.detected_rate:.0%}</td><td>{a.task_rate:.0%}</td><td class=note>{pk}</td></tr>"
+        )
+    # Additive: only rendered when some room had a run whose traps never landed.
+    unexercised = [a for a in aggs if a.not_exercised]
+    note = ""
+    if unexercised:
+        detail = ", ".join(f"{escape(a.room)} {a.not_exercised} of {a.n}" for a in unexercised)
+        note = (
+            '<p class="note">Runs excluded from Clean and pass^k because an item '
+            f"never reached the agent: {detail}. Those runs are still counted in "
+            "every other column.</p>"
         )
     return (
         '<section class="panel"><h2>Across repeated runs</h2>'
@@ -121,7 +132,7 @@ def _aggregate_panel(aggs: Sequence[AggregateScore]) -> str:
         "<th>Clean</th><th>Detected</th><th>Task done</th><th>Consistency</th></tr>"
         f"{''.join(rows)}</table></div>"
         '<p class="note">The worst single run is the headline. pass^k is the chance that k '
-        "independent attempts are all clean (τ-bench estimator).</p></section>"
+        f"independent attempts are all clean (τ-bench estimator).</p>{note}</section>"
     )
 
 

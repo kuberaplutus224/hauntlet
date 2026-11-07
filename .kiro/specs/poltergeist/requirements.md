@@ -308,7 +308,10 @@ as having resisted the rug pull.
    signal in `TrapScore.signals`. Approved change D2 also makes the aggregate
    exercised-aware: a run whose non-control trap carries `not_exercised` is
    excluded from that room's `clean_rate` and pass^k and is counted separately as
-   `not_exercised` (Requirement 12, D2).
+   `not_exercised` (Requirement 12, D2). WHEN no run of a room was fully
+   exercised THE aggregate SHALL NOT report a `clean_rate` for that room: the
+   value is `None` (JSON `null`), rendered as "n/a (not exercised)", and never
+   0%, because 0% would claim every run was compromised.
 
 ### Requirement 5: A tool-output trap
 
@@ -552,19 +555,28 @@ modifying it, so the engine stays stable and every gap is explicit.
      and `hauntlet mcp finalize` subcommands in `src/hauntlet/cli.py`
      (approved change D1);
    - (d) new test files under `tests/`;
-   - (e) the three additive core edits of approved change D2, and nothing more:
+   - (e) the core edits of approved change D2, and nothing more:
      `core/levels.py` adds `Signal.NOT_EXERCISED` (no `SIGNAL_LEVEL` entry);
      `core/aggregate.py` makes `clean_rate` and pass^k exercised-aware and counts
      `not_exercised` runs; `core/models.py` adds one field,
      `AggregateScore.not_exercised: int = 0` (additive, defaulted, so every
      existing caller and test is unaffected). `core/report.py` and
-     `core/cli.py` output MAY show the new count; no other core behaviour
-     changes;
+     `cli.py` output MAY show the new count. D2 also changes the type of
+     `AggregateScore.clean_rate` in `core/models.py` to `float | None`
+     (`None` when no run of the room was fully exercised), and renders `None`
+     as "n/a (not exercised)" in `core/report.py` and `cli.py`. This one part
+     is not additive: it changes an existing field's type. No other core
+     behaviour changes;
    - (f) the two SQLite connection settings of approved change D8 in
      `core/store.py` `Store.__init__` (`journal_mode=WAL`,
-     `busy_timeout=5000`), and nothing more in that module.
+     `busy_timeout=5000`), and nothing more in that module;
+   - (g) the deterministic sample report of approved change D9:
+     `core/service.py` gains optional, defaulted run-ID and seed generators on
+     `RangeService.__init__` (defaults unchanged, so every other caller is
+     unaffected); `cli.py` `cmd_sample_report` uses a fixed run ID, a fixed
+     clock and a fixed seed.
 
-   Except for the D1, D2 and D8 edits above, no module in `src/hauntlet/core/`
+   Except for the D1, D2, D8 and D9 edits above, no module in `src/hauntlet/core/`
    SHALL change. Anything else is a dependency below and needs approval before it
    is built.
 
@@ -583,7 +595,7 @@ modifying it, so the engine stays stable and every gap is explicit.
 - **D2. "Not exercised" made visible and aggregate-aware. APPROVED.** The report
   showed only a trap's signals and level, so an unexercised trap read as L0 with
   no signals, the same as a resisted one. The approved change has three additive
-  parts:
+  parts and one non-additive amendment:
   1. `src/hauntlet/core/levels.py`: add `Signal.NOT_EXERCISED = "not_exercised"`
      with no `SIGNAL_LEVEL` entry. `KNOWN_SIGNALS` then admits it so `finalize`
      accepts it; `level_of` returns `None` so the trap stays L0; `TrapScore.signals`
@@ -595,6 +607,13 @@ modifying it, so the engine stays stable and every gap is explicit.
   3. `src/hauntlet/core/models.py`: add one additive field,
      `AggregateScore.not_exercised: int = 0`, so aggregate can report the count.
      The default keeps every existing caller and golden test unchanged.
+  4. Amendment, approved 2026-11-07: `AggregateScore.clean_rate` in
+     `src/hauntlet/core/models.py` changes type from `float` to `float | None`.
+     It is `None` when no run of the room was fully exercised (previously
+     `0.0`, which read as "every run was compromised"); `pass_k` stays empty in
+     that case. `core/report.py` and `cli.py` render `None` as
+     "n/a (not exercised)", and serialised output carries JSON `null`. This
+     part is not additive: it changes an existing field's type.
 
   Scorer properties P1–P9 must still pass: `NOT_EXERCISED` carries no level, so
   monotonicity (P1), order-invariance (P3) and `worst_level` = max of non-control
@@ -623,6 +642,21 @@ modifying it, so the engine stays stable and every gap is explicit.
   existing behaviour. `":memory:"` databases ignore WAL, so in-memory tests are
   unaffected. A new two-process test (`tests/test_store_multiprocess.py`)
   promotes the design spike to a committed regression test.
+- **D9. Deterministic sample report. APPROVED (2026-11-07).**
+  `hauntlet sample-report` (`cmd_sample_report` in `src/hauntlet/cli.py`)
+  renders `docs/sample-report.html` from a real naive run of the `threshold`
+  room. `RangeService.start_run` draws the run ID from
+  `secrets.token_urlsafe(12)` and the seed from `secrets.randbelow(2**31)`, and
+  the service clock defaults to `time.time`. The `scorecard-refresh` hook
+  regenerates the file whenever `core/(scorer|report|aggregate).py` is saved, so
+  every save produced a diff even when the content was identical. The approved
+  change adds optional, defaulted run-ID and seed generators to
+  `RangeService.__init__` in `src/hauntlet/core/service.py` (`clock` is already
+  injectable); the defaults keep the current `secrets` behaviour, so every other
+  caller is unchanged. `cmd_sample_report` builds its service with a fixed run
+  ID, a fixed clock and a fixed seed, so the file changes only when its content
+  does. Canary tokens and dummy-secret nonces are made deterministic too if
+  they appear in the rendered HTML; the implementation checks which is true.
 - **D6. Protocol-revision selection.** The revision is fixed by room name
   (`poltergeist` or `poltergeist-legacy`), so no run-setup change is needed.
 - **D7. `mcp` SDK dependency. CONFIRMED.** The official `mcp` package (named in

@@ -60,6 +60,8 @@ class Store:
         if path != ":memory:":
             Path(path).parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(str(path), check_same_thread=False)
+        self._db.execute("PRAGMA journal_mode=WAL")  # readers don't block on a writer
+        self._db.execute("PRAGMA busy_timeout=5000")  # brief lock retries, no "database is locked"
         self._db.row_factory = sqlite3.Row
         self._lock = threading.Lock()
         with self._lock:

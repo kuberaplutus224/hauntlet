@@ -34,10 +34,16 @@ def cmd_run(args: argparse.Namespace) -> int:
         print(f"run {r.score.run_id}: {r.score.overall_worst.name} {r.score.overall_worst.label}")
     for a in aggs:
         pk = ", ".join(f"pass^{k}={v:.2f}" for k, v in a.pass_k)
+        clean = "n/a (not exercised)" if a.clean_rate is None else f"{a.clean_rate:.0%}"
         print(
             f"[{a.room}] n={a.n} worst={a.worst_level.name} compromised={a.compromise_rate:.0%} "
-            f"clean={a.clean_rate:.0%} detected={a.detected_rate:.0%} task={a.task_rate:.0%} {pk}"
+            f"clean={clean} detected={a.detected_rate:.0%} task={a.task_rate:.0%} {pk}"
         )
+        if a.not_exercised:
+            print(
+                f"[{a.room}] {a.not_exercised} of {a.n} runs excluded from clean/pass^k: "
+                "an item never reached the agent"
+            )
     worst = max(results, key=lambda r: r.score.overall_worst)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -86,8 +92,26 @@ def cmd_serve(args: argparse.Namespace) -> int:
     return 0
 
 
+# Fixed inputs for ``sample-report`` (approved change D9) so the
+# scorecard-refresh hook rewrites docs/sample-report.html only when its
+# content changes. ``run`` and ``selftest`` keep the random defaults.
+SAMPLE_RUN_ID = "sample-report"
+SAMPLE_SEED = 0
+SAMPLE_CLOCK = 1_700_000_000.0
+
+
+def _sample_service() -> RangeService:
+    return RangeService(
+        Store(":memory:"),
+        default_rooms(),
+        clock=lambda: SAMPLE_CLOCK,
+        run_id_factory=lambda: SAMPLE_RUN_ID,
+        seed_factory=lambda: SAMPLE_SEED,
+    )
+
+
 def cmd_sample_report(args: argparse.Namespace) -> int:
-    service = _service()
+    service = _sample_service()
     result = run_once(service, "threshold", get_agent("naive"), _scratch())
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)

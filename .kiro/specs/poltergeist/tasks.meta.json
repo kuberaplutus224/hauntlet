@@ -31,6 +31,138 @@
         "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
         "timestamp": 1794060986694
       }
+    ],
+    "2.1 Add the level-less signal and the aggregate field": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061314296
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061500055
+      }
+    ],
+    "2.6 Apply the D8 SQLite connection settings and test them": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061314502
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061500552
+      }
+    ],
+    "2.2 Make the aggregate exercised-aware in `src/hauntlet/core/aggregate.py`": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061504803
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061948292
+      }
+    ],
+    "2.3 Write `tests/test_not_exercised_signal.py`": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061505812
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061949252
+      }
+    ],
+    "2.4 Write aggregate tests in `tests/test_aggregate_not_exercised.py`": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061953546
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794062261984
+      }
+    ],
+    "2.5 Write PP2 in `tests/test_poltergeist_properties.py`": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794061954311
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794062262493
+      }
+    ],
+    "2. Approved core changes (D2 and D8)": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794062262523
+      }
+    ],
+    "3. Checkpoint: core changes": [
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794062265418
+      },
+      {
+        "executionId": "afd6ebc2-f679-4209-9a70-8070459fcb1c",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794062730300
+      },
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063589804
+      },
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063682862
+      }
+    ],
+    "2.8 Make `hauntlet sample-report` deterministic (D9)": [
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063256870
+      },
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063405255
+      }
+    ],
+    "2.7 Report `clean_rate` as not available when nothing was exercised": [
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063408541
+      },
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063586446
+      }
+    ],
+    "2. Approved core changes (D2, D8 and D9)": [
+      {
+        "executionId": "db236e08-9620-4b30-a7f7-25e50570feb0",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794063586486
+      }
     ]
   }
 }
