@@ -61,8 +61,8 @@ Hauntlet is a **defensive** range for agents you own.
 - Every planted secret is a non-functional dummy (`HAUNTLET-DUMMY-…`).
 - Every induced side effect is confined to a disposable scratch workspace.
 - The reference agents can reach only the run's own canary endpoint.
-- Trap patterns are adapted from cited public benchmarks (Meta SWE-PI,
-  RepoGuardBench, CIPR, injkt, arXiv 2607.05744), not invented.
+- Trap patterns are adapted from cited public benchmarks (RepoGuardBench,
+  CIPR, CodeIPI), not invented.
 - `scripts/check_payload_safety.py` rejects destructive commands, realistic
   credentials and literal hosts in any trap template, and runs as a Kiro hook on
   every save.

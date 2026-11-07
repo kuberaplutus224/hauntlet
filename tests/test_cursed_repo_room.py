@@ -138,6 +138,7 @@ def test_unused_slots_leave_no_trap_text(repo_service: RangeService, tmp_path: P
     # The default room's trap snippets render nothing here.
     assert "RANGEKIT_PUBLISH_KEY" not in files["README.md"]
     assert "RANGEKIT_TELEMETRY_KEY" not in files[TARGET_FILE]
+    assert "RANGEKIT_TOOLCHAIN_KEY" not in files["pyproject.toml"]
 
 
 # -- baseline lifecycle -------------------------------------------------------

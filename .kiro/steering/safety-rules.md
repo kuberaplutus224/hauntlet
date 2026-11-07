@@ -21,9 +21,9 @@ Kiro must refuse or flag any work that violates them.
    active run ID, and every such page is marked `noindex`. No trap is reachable
    by a drive-by crawler or an unrelated agent.
 4. **No new offensive capability.** Trap content is adapted from published,
-   citable benchmarks (RepoGuardBench, CIPR, Meta SWE-PI, injkt, arXiv
-   2607.05744). The project does not invent novel attack techniques; it measures
-   known ones and generates defences.
+   citable benchmarks (RepoGuardBench, CIPR, CodeIPI (UK AISI inspect_evals
+   `ipi_coding_agent`), injkt, arXiv 2607.05744). The project does not invent
+   novel attack techniques; it measures known ones and generates defences.
 5. **Defence is the deliverable.** Every room exists to produce a score and a
    fix. A room without a corresponding Exorcist guardrail is incomplete.
 

@@ -174,23 +174,30 @@ dispatcher, room registration, the golden end-to-end test and the room README
 - [x] 12. Checkpoint: agents and selftest
   - Run `uv run pytest`, `uv run hauntlet selftest -n 5` (three rooms must pass) and `uv run python scripts/check_payload_safety.py`. Stop and ask the user if anything fails.
 
-- [ ] 13. Citation verification (release gate)
-  - [ ] 13.1 Verify each trap's source and record it in the README
+- [x] 13. Citation verification (release gate)
+  - [x] 13.1 Verify each trap's source and record it in the README
     - For every non-control trap, confirm from the primary publication the benchmark name, the paper or repository reference, and the pattern adapted (surface and requested action). Candidates are the benchmarks in `.kiro/steering/safety-rules.md` rule 4
     - Do not fill gaps from memory or secondary summaries. If a source cannot be confirmed, stop and ask the user
     - Write each confirmed citation into the README's citations section
     - _Requirements: 8.1, 8.2, 8.3_
-  - [ ] 13.2 Reassign or drop traps no benchmark covers
+  - [x] 13.2 Reassign or drop traps no benchmark covers
     - Reassign (rewording the snippet to the published pattern if needed) or drop each uncovered trap
     - After any change: the default room still uses at least four surface kinds; `cursed-repo-tests` still has a test-file trap; naive still reaches L3 or above and hardened still flags every trap in both rooms
     - Update design.md's trap and expected-scores tables and the golden end-to-end test; rerun the template tests and the payload guard
     - If nothing needs reassigning, record that in the README and make no other change
     - _Requirements: 2.1, 3.1, 7.1, 7.2, 8.1_
-  - [ ] 13.3 Remove "to verify" and add the gate test
+  - [x] 13.3 Remove "to verify" and add the gate test
     - Remove "(to verify)" from every `TrapDef.source` and from the README
     - Write `tests/test_cursed_repo_citations.py`: no `TrapSpec.source` in either manifest contains "to verify"; the README contains no "to verify"; every non-control trap ID appears in the README's citations section with a benchmark name and a reference
     - Run `uv run pytest` and `uv run hauntlet selftest -n 5`; both must pass. The room is not done until they do
     - _Requirements: 8.2, 8.3_
+
+- [x] 14. Citation accuracy and retired-source cleanup
+  - Room README: replace the claim that every source was verified against its primary publication, and each per-entry "Verified" line, with exactly what was checked in review on 2026-11-06: RepoGuardBench via its GitHub repository README (the OpenReview paper was not read); CodeIPI via its Inspect Evals page; CIPR via the arXiv abstract and HTML full text (authors, the CIPR name, the test-file surface and the planted-secret exfiltration goal confirmed). Note that CIPR's arXiv comments list it as accepted to EMNLP 2026
+  - Remove the retired Meta benchmark name everywhere: re-anchor the threshold trap to CodeIPI (README/documentation surface, data exfiltration) in `src/hauntlet/rooms/threshold/__init__.py` and `NOTES.md.tmpl`; set the root `README.md` benchmark list to RepoGuardBench, CIPR and CodeIPI; remove it from `.kiro/steering/safety-rules.md` rule 4 and wrap that line to the file's width; replace the retired source name in `tests/fixtures/scorer_golden.json`
+  - Add a repo-wide test so retired source names cannot come back; regenerate `docs/sample-report.html`
+  - Run `uv run pytest`, `uv run hauntlet selftest -n 5` and `uv run python scripts/check_payload_safety.py`
+  - _Requirements: 8.1, 8.3_
 
 ## Notes
 
@@ -221,7 +228,8 @@ dispatcher, room registration, the golden end-to-end test and the room README
     { "id": 12, "tasks": ["12"] },
     { "id": 13, "tasks": ["13.1"] },
     { "id": 14, "tasks": ["13.2"] },
-    { "id": 15, "tasks": ["13.3"] }
+    { "id": 15, "tasks": ["13.3"] },
+    { "id": 16, "tasks": ["14"] }
   ]
 }
 ```

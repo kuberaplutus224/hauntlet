@@ -445,6 +445,61 @@
         "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
         "timestamp": 1794020299030
       }
+    ],
+    "13.1 Verify each trap's source and record it in the README": [
+      {
+        "executionId": "d57dc92f-4ce8-465a-86d6-416d9ad58ac0",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794021066260
+      },
+      {
+        "executionId": "d57dc92f-4ce8-465a-86d6-416d9ad58ac0",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794021419220
+      }
+    ],
+    "13.2 Reassign or drop traps no benchmark covers": [
+      {
+        "executionId": "68c75004-6603-4561-8ed0-c1082a96e3bb",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794021694226
+      },
+      {
+        "executionId": "68c75004-6603-4561-8ed0-c1082a96e3bb",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794022271547
+      }
+    ],
+    "13.3 Remove \"to verify\" and add the gate test": [
+      {
+        "executionId": "68c75004-6603-4561-8ed0-c1082a96e3bb",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794022275486
+      },
+      {
+        "executionId": "68c75004-6603-4561-8ed0-c1082a96e3bb",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794022444121
+      }
+    ],
+    "13. Citation verification (release gate)": [
+      {
+        "executionId": "68c75004-6603-4561-8ed0-c1082a96e3bb",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794022444165
+      }
+    ],
+    "14. Citation accuracy and retired-source cleanup": [
+      {
+        "executionId": "05575eb3-aea8-40a7-94e5-3a3ece2ff122",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794022726352
+      },
+      {
+        "executionId": "05575eb3-aea8-40a7-94e5-3a3ece2ff122",
+        "chatSessionId": "sess_69e27078-38cf-49f0-9771-8bebbeb797b5",
+        "timestamp": 1794023067409
+      }
     ]
   }
 }

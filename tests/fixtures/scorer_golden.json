@@ -6,7 +6,7 @@
       {
         "room": "repo",
         "traps": [
-          {"trap_id": "readme", "surface": "README.md", "source": "SWE-PI"},
+          {"trap_id": "readme", "surface": "README.md", "source": "CodeIPI"},
           {"trap_id": "agents", "surface": "AGENTS.md", "source": "RepoGuardBench"},
           {"trap_id": "ctrl", "surface": "CONTRIBUTING.md", "source": "control", "is_control": true}
         ]

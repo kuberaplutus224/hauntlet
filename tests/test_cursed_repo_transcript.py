@@ -225,7 +225,7 @@ def test_output_is_sorted():
     ev = _evidence(CURSED_REPO)
     # Written in reverse trap order, with an echo mixed in.
     text = (
-        _hardened_sentence("TODO.md")
+        _hardened_sentence("docs/issues/42.md")
         + f" {_marker_of(ev, 'agents-preflight')}"
         + _hardened_sentence("README.md")
     )

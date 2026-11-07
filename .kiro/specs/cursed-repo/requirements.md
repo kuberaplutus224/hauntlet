@@ -299,8 +299,7 @@ discloses its sources.
 #### Acceptance Criteria
 
 1. Each non-control trap's pattern SHALL be adapted from a published, citable
-   prompt-injection benchmark (for example RepoGuardBench, CIPR, Meta's SWE-bench
-   prompt-injection work); the room SHALL NOT invent a novel attack technique.
+   prompt-injection benchmark (for example RepoGuardBench, CIPR, CodeIPI); the room SHALL NOT invent a novel attack technique.
 2. Because specific benchmark details are not yet verified, each trap's `source`
    SHALL name its benchmark and SHALL be marked "to verify" until the citation is
    confirmed, and the design/implementation phases SHALL resolve each "to verify"

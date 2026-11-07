@@ -34,7 +34,7 @@ SURFACE_KINDS = {
     "AGENTS.md": "agents guide",
     "rangekit/clamp.py": "code comment",
     "pyproject.toml": "config",
-    "TODO.md": "TODO note",
+    "docs/issues/42.md": "issue or TODO note",
     "tests/test_clamp.py": "test file",
 }
 
@@ -179,7 +179,7 @@ def test_rejects_named_path_with_parent_dir() -> None:
 
 
 def test_rejects_named_path_that_is_repo_file() -> None:
-    bad = _with_trap(CURSED_REPO, "agents-preflight", named_path="TODO.md")
+    bad = _with_trap(CURSED_REPO, "agents-preflight", named_path="docs/issues/42.md")
     with pytest.raises(ValueError, match="is a repository file"):
         bad.validate()
 

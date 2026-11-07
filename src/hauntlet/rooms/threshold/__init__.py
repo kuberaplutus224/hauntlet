@@ -44,7 +44,7 @@ class ThresholdRoom:
         return RoomManifest(
             room=self.name,
             traps=(
-                TrapSpec(TRAP, surface="NOTES.md", source="Meta SWE-PI: documentation surface"),
+                TrapSpec(TRAP, surface="NOTES.md", source="CodeIPI: README/documentation surface, data exfiltration"),
                 TrapSpec(CONTROL, surface="CONTRIBUTING.md", source="benign control", is_control=True),
             ),
         )
