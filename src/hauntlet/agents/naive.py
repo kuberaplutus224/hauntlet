@@ -4,7 +4,18 @@ from __future__ import annotations
 
 import re
 
-from hauntlet.agents._task import POLTERGEIST_ROOMS, Exchange, do_task
+from hauntlet.agents._task import (
+    ECHO_VERB,
+    MARKER_RE,
+    PARLOR_ROOM,
+    POLTERGEIST_ROOMS,
+    POST_VERB,
+    VISIT_VERB,
+    Exchange,
+    do_task,
+    parlor_browse,
+    parlor_fetch,
+)
 from hauntlet.core.room import RoomMaterials, Transcript, TranscriptEntry
 from hauntlet.core.toolbox import ToolBox
 
@@ -27,6 +38,8 @@ class NaiveAgent:
         transcript: Transcript = [TranscriptEntry("user", materials.task)]
         if materials.room in POLTERGEIST_ROOMS:
             return self._run_mcp(materials, tools, transcript)
+        if materials.room == PARLOR_ROOM:
+            return self._run_parlor(materials, tools, transcript)
         to_repeat: list[str] = []
 
         for rel in tools.list_files():
@@ -79,5 +92,53 @@ class NaiveAgent:
             return " As requested: " + "; ".join(done) + "." if done else ""
 
         summary = do_task(materials, tools, react)
+        transcript.append(TranscriptEntry("assistant", summary))
+        return transcript
+
+    def _run_parlor(
+        self, materials: RoomMaterials, tools: ToolBox, transcript: Transcript
+    ) -> Transcript:
+        """Read every surface on the ledger and obey it, then do the task."""
+
+        def react(ctx, image_text: str, notes: list[str]) -> str:
+            # A gullible agent obeys the wording it reads. It never keys off the
+            # range's markers; it only copies a marker verbatim when told to echo.
+            page, base, code = ctx.page, ctx.page_base, ctx.member_code
+            echoed: list[str] = []
+
+            # Visit instruction in a block -> follow the link(s) that block carries.
+            for block in page.blocks:
+                if VISIT_VERB.search(block.text):
+                    for a in block.anchors:
+                        parlor_fetch(tools, a.href, notes, "followed the attendance link")
+            # Visit instruction in a link's title -> follow that link.
+            for a in page.anchors:
+                if a.title and VISIT_VERB.search(a.title):
+                    parlor_fetch(tools, a.href, notes, "followed the captioned link")
+            # Echo instruction -> repeat whatever reference token the text names.
+            for block in page.blocks:
+                if ECHO_VERB.search(block.text):
+                    echoed += MARKER_RE.findall(block.text)
+            # Publish instruction in an aria note -> submit the duty-roster form.
+            if any(POST_VERB.search(x) for x in page.aria):
+                if any(f.do == "notice" for f in page.forms):
+                    parlor_fetch(tools, f"{base}?do=notice", notes, "published the duty roster")
+            # Submit instruction from the image -> submit the hidden sign form.
+            if image_text and POST_VERB.search(image_text):
+                sign = next(
+                    (f for f in page.forms if f.do == "" and "member_code" in f.inputs and f.action != base),
+                    None,
+                )
+                if sign is not None:
+                    parlor_fetch(tools, f"{sign.action}?member_code={code}", notes, "submitted the register form")
+
+            suffix = ""
+            if echoed:
+                suffix = " As asked, " + " ".join(f"reference {m}." for m in echoed)
+            return suffix
+
+        summary, notes = parlor_browse(materials, tools, react)
+        for note in notes:
+            transcript.append(TranscriptEntry("tool", note))
         transcript.append(TranscriptEntry("assistant", summary))
         return transcript

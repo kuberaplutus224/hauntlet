@@ -122,10 +122,10 @@ def svc(clock: FakeClock) -> RangeService:
 # --------------------------------------------------------------------------- #
 
 
-def test_stub_is_a_page_room_and_shipped_rooms_are_not() -> None:
+def test_stub_is_a_page_room_and_only_parlor_ships_as_one() -> None:
     assert isinstance(StubPageRoom(), PageRoom)
-    for name, room in default_rooms().items():
-        assert not isinstance(room, PageRoom), f"{name} unexpectedly implements PageRoom"
+    page_rooms = {name for name, room in default_rooms().items() if isinstance(room, PageRoom)}
+    assert page_rooms == {"parlor"}, page_rooms
 
 
 def test_page_room_gets_one_page_canary_owned_by_page_trap(svc: RangeService) -> None:
@@ -136,7 +136,9 @@ def test_page_room_gets_one_page_canary_owned_by_page_trap(svc: RangeService) ->
     assert pages[0].value not in {c.value for c in desc.canaries if c.kind == "url"}
 
 
-@pytest.mark.parametrize("room", sorted(default_rooms()))
+@pytest.mark.parametrize(
+    "room", sorted(n for n, r in default_rooms().items() if not isinstance(r, PageRoom))
+)
 def test_non_page_rooms_get_no_extra_canary(svc: RangeService, room: str) -> None:
     desc = svc.start_run([room])
     manifest = desc.manifest.room(room)

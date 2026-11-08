@@ -117,6 +117,7 @@ def test_default_rooms_registers_both_poltergeist_rooms() -> None:
         "cursed-repo-tests",
         POLTERGEIST.name,
         POLTERGEIST_LEGACY.name,
+        "parlor",  # registered by the parlor spec, task 8.4
     }
     assert isinstance(rooms[POLTERGEIST.name], PoltergeistRoom)
     assert isinstance(rooms[POLTERGEIST_LEGACY.name], PoltergeistRoom)

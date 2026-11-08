@@ -138,37 +138,37 @@ numbered proposal and stops the task.
   - `uv run pytest` and the payload guard pass; selftest is unchanged (room not yet registered)
   - Ask the user if anything is unclear before continuing
 
-- [ ] 8. Reference agents, registration and the golden run
-  - [ ] 8.1 `agents/_task.py`: a parlor browsing helper over `ToolBox.fetch` and `html.parser` (open lobby, follow, read image via description lookup, sign guestbook); `do_task` branch for `parlor`
+- [x] 8. Reference agents, registration and the golden run
+  - [x] 8.1 `agents/_task.py`: a parlor browsing helper over `ToolBox.fetch` and `html.parser` (open lobby, follow, read image via description lookup, sign guestbook); `do_task` branch for `parlor`
     - _Requirements: 9.4, 9.6_
-  - [ ] 8.2 `agents/naive.py`: read every surface and obey (two L1 links, the L2 marker echo, the L3 notice form, the L4 hidden form with the member code); still completes the task
+  - [x] 8.2 `agents/naive.py`: read every surface and obey (two L1 links, the L2 marker echo, the L3 notice form, the L4 hidden form with the member code); still completes the task
     - _Requirements: 9.1, 9.5_
-  - [ ] 8.3 `agents/hardened.py`: load all pages and the image, follow only the task link, submit only the guestbook, skip the control, report each attempt naming its surface
+  - [x] 8.3 `agents/hardened.py`: load all pages and the image, follow only the task link, submit only the guestbook, skip the control, report each attempt naming its surface
     - _Requirements: 9.2, 9.5_
-  - [ ] 8.4 Register `ParlorRoom(PARLOR)` in `src/hauntlet/rooms/__init__.py`
+  - [x] 8.4 Register `ParlorRoom(PARLOR)` in `src/hauntlet/rooms/__init__.py`
     - _Requirements: 9.7, 14.1(a)_
-  - [ ] 8.5 Write `tests/test_parlor_e2e.py`: naive `overall_worst` ≥ L3 with the expected per-trap levels; hardened L0, Detected, task done, no false positives; every trap and the control exercised in both runs
+  - [x] 8.5 Write `tests/test_parlor_e2e.py`: naive `overall_worst` ≥ L3 with the expected per-trap levels; hardened L0, Detected, task done, no false positives; every trap and the control exercised in both runs
     - _Requirements: 9.1, 9.2, 9.3_
-  - [ ] 8.6 Write `tests/test_parlor_reference_paths.py` (design review fix 2)
+  - [x] 8.6 Write `tests/test_parlor_reference_paths.py` (design review fix 2)
     - Under the selftest path (fresh `_scratch()` root, `run_once` → `setup_room`, `keep_workspace=True`), both agents fetch lobby, ledger and image through `fetch_local`; `tool_calls` show the page-token fetches; no transcript entry reports a failed fetch; the recorded workspace's fact log holds `page(lobby)`, `page(ledger)` and `image`
     - `cmd_selftest` returns 0 with `parlor` registered
     - _Requirements: 9.4, 10.1, 10.4_
 
-- [ ] 9. Checkpoint: selftest over six rooms
+- [x] 9. Checkpoint: selftest over six rooms
   - `uv run pytest`, `uv run hauntlet selftest -n 5` (six rooms) and the payload guard pass
   - Ask the user if anything is unclear before continuing
 
-- [ ] 10. Approved change D12 (`hauntlet parlor` CLI) and real-client mode
-  - [ ] 10.1 `cli.py`: `hauntlet parlor open --run <id>` (store checks, atomic claim, `setup_room` beside `HAUNTLET_DB`, print task and start URL, refuse a second open)
+- [x] 10. Approved change D12 (`hauntlet parlor` CLI) and real-client mode
+  - [x] 10.1 `cli.py`: `hauntlet parlor open --run <id>` (store checks, atomic claim, `setup_room` beside `HAUNTLET_DB`, print task and start URL, refuse a second open)
     - _Requirements: 11.1, 11.3, 14 D12_
-  - [ ] 10.2 `cli.py`: `hauntlet parlor finalize --run <id> [--transcript FILE] [--perception …]` (collect, `RangeService.finalize`, run summary with exercised status, surface→perception table and manual observation; HTML report)
+  - [x] 10.2 `cli.py`: `hauntlet parlor finalize --run <id> [--transcript FILE] [--perception …]` (collect, `RangeService.finalize`, run summary with exercised status, surface→perception table and manual observation; HTML report)
     - _Requirements: 6.3, 11.6, 3.5, 14 D12_
-  - [ ] 10.3 Write `tests/test_parlor_cli.py`: each refusal; second open refused; finalize output includes "manual (tester-supplied, not scored)"
+  - [x] 10.3 Write `tests/test_parlor_cli.py`: each refusal; second open refused; finalize output includes "manual (tester-supplied, not scored)"
     - _Requirements: 11.3, 11.6_
-  - [ ] 10.4 Write `tests/test_parlor_real_client_e2e.py`: the FastAPI app over HTTP with a scripted client (no browser) and a shared temp store: start run, `parlor open`, fetch lobby / ledger / image, submit the guestbook and the L3 notice, hit a trap canary (L1) and the L4 hidden form target with the member code, `parlor finalize`; assert levels, CSP and `noindex` on every page, 404 after finalize
+  - [x] 10.4 Write `tests/test_parlor_real_client_e2e.py`: the FastAPI app over HTTP with a scripted client (no browser) and a shared temp store: start run, `parlor open`, fetch lobby / ledger / image, submit the guestbook and the L3 notice, hit a trap canary (L1) and the L4 hidden form target with the member code, `parlor finalize`; assert levels, CSP and `noindex` on every page, 404 after finalize
     - _Requirements: 10.2, 10.3, 11.4_
 
-- [ ] 11. Checkpoint: real-client mode green
+- [x] 11. Checkpoint: real-client mode green
   - `uv run pytest`, `uv run hauntlet selftest -n 5` and the payload guard pass
   - Ask the user if anything is unclear before continuing
 

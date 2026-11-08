@@ -31,6 +31,10 @@ from hauntlet.rooms.poltergeist import factlog
 from hauntlet.rooms.poltergeist.config import RUG_DESC
 from hauntlet.rooms.poltergeist.room import deregister, server_for
 from hauntlet.rooms.poltergeist.server import REFUSED_PREFIX, PoltergeistServer, http_relay_fetcher
+from hauntlet.rooms.parlor import ParlorRoom
+from hauntlet.rooms.parlor import exercised as parlor_exercised
+from hauntlet.rooms.parlor import factlog as parlor_factlog
+from hauntlet.rooms.parlor.config import PARLOR
 
 
 def _service() -> RangeService:
@@ -686,6 +690,219 @@ def cmd_mcp_finalize(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# hauntlet parlor open / finalize (approved change D12)
+#
+# Real-client mode for a browser agent. `open` sets the room up into a workspace
+# beside the shared HAUNTLET_DB (which `hauntlet serve` finds through its
+# page_scratch_root) and prints the task and start URL. `finalize` runs the
+# room's collect on that workspace, finalizes through RangeService.finalize, and
+# writes the run summary and report. The tester's page-perception note is a
+# manual observation, printed in the summary only, never an event.
+# --------------------------------------------------------------------------- #
+
+PARLOR_ROOM_NAME = "parlor"
+#: ``--perception`` values (Requirement 11.6); the default is ``not_recorded``.
+PERCEPTION_CHOICES = ("raw_html", "dom_text", "vision", "not_recorded")
+PERCEPTION_TEXT = {
+    "raw_html": "the client passed raw HTML to its model (sees hidden text and attributes)",
+    "dom_text": "the client passed rendered DOM text to its model (sees most hidden text)",
+    "vision": "the client passed screenshots to its model (sees image text)",
+    "not_recorded": "not recorded (how the client reads pages is unknown)",
+}
+#: Which perceptions each surface reaches (Requirement 3.5), for the summary.
+PERCEPTION_BY_SURFACE = {
+    "visible text": "raw_html, dom_text, vision",
+    "css-hidden text": "raw_html, most dom_text",
+    "aria attribute": "raw_html, most dom_text",
+    "alt/title attribute": "raw_html, most dom_text",
+    "image text": "vision",
+    "": "n/a",
+}
+
+
+def check_parlor_run(service: RangeService, run_id: str) -> ParlorRoom:
+    """Requirement 11.3: the run exists, is active and includes ``parlor``."""
+    if not _RUN_ID.fullmatch(run_id):
+        raise McpRefused(f"invalid run ID {run_id!r}")
+    room = service.rooms.get(PARLOR_ROOM_NAME)
+    if not isinstance(room, ParlorRoom):
+        raise McpRefused(f"room {PARLOR_ROOM_NAME!r} is not registered")
+    try:
+        run = service.get_run(run_id)
+    except UnknownRun:
+        raise McpRefused(f"unknown run {run_id!r}") from None
+    if run.finalized_at is not None:
+        raise McpRefused(f"run {run_id!r} is already finalized")
+    if not run.is_active(service.clock()):
+        raise McpRefused(f"run {run_id!r} has expired")
+    if service.manifest(run_id).room(PARLOR_ROOM_NAME) is None:
+        raise McpRefused(f"run {run_id!r} does not include room {PARLOR_ROOM_NAME!r}")
+    return room
+
+
+def open_parlor_run(service: RangeService, run_id: str, scratch_root: Path) -> RoomMaterials:
+    """Verify the run and set the room up once. Refuses a second open."""
+    check_parlor_run(service, run_id)
+    workspace = mcp_workspace(scratch_root, PARLOR_ROOM_NAME, run_id)
+    taken = McpRefused(
+        f"run {run_id!r} already has a parlor workspace at {workspace}; each run is opened "
+        "once (start a new run to retry)"
+    )
+    with _claim(scratch_root, PARLOR_ROOM_NAME, run_id) as claimed:
+        if not claimed or workspace.exists():
+            raise taken
+        _, materials = service.setup_room(run_id, PARLOR_ROOM_NAME, scratch_root)
+    return materials
+
+
+def cmd_parlor_open(args: argparse.Namespace) -> int:
+    db = _db_path()
+    try:
+        service = _shared_service(db)
+        materials = open_parlor_run(service, args.run, mcp_scratch_root(db))
+    except McpRefused as exc:
+        _mcp_err(f"open refused: {exc}")
+        return 1
+    print(
+        f"hauntlet parlor: opened run {args.run}\n"
+        f"workspace: {materials.workspace}\n\n"
+        "Point your browser agent at the start page and give it this task:\n\n"
+        f"    {materials.task}\n\n"
+        f"When the agent is done, finalize with: hauntlet parlor finalize --run={args.run}"
+    )
+    return 0
+
+
+@dataclass(frozen=True)
+class ParlorFinalized:
+    run_id: str
+    score: RunScore
+    manifest: RunManifest
+    workspace: Path
+    workspace_found: bool
+    status: dict[str, parlor_exercised.Exercised]
+    transcript: Transcript | None
+    perception: str
+
+
+def finalize_parlor_run(
+    service: RangeService,
+    run_id: str,
+    scratch_root: Path,
+    transcript: Transcript | None = None,
+    perception: str = "not_recorded",
+) -> ParlorFinalized:
+    if perception not in PERCEPTION_CHOICES:
+        raise McpRefused(f"--perception must be one of {', '.join(PERCEPTION_CHOICES)}")
+    if not _RUN_ID.fullmatch(run_id):
+        raise McpRefused(f"invalid run ID {run_id!r}")
+    room = service.rooms.get(PARLOR_ROOM_NAME)
+    if not isinstance(room, ParlorRoom):
+        raise McpRefused(f"room {PARLOR_ROOM_NAME!r} is not registered")
+    try:
+        run = service.get_run(run_id)
+    except UnknownRun:
+        raise McpRefused(f"unknown run {run_id!r}") from None
+    if run.finalized_at is not None:
+        raise McpRefused(f"run {run_id!r} is already finalized")
+    if service.manifest(run_id).room(PARLOR_ROOM_NAME) is None:
+        raise McpRefused(f"run {run_id!r} does not include room {PARLOR_ROOM_NAME!r}")
+
+    workspace = mcp_workspace(scratch_root, PARLOR_ROOM_NAME, run_id)
+    if workspace.exists() and (workspace.is_symlink() or not workspace.is_dir()):
+        raise McpRefused(f"{workspace} is not a workspace directory")
+    ctx = service.context(run_id, PARLOR_ROOM_NAME, scratch_root)
+    materials = RoomMaterials(room=PARLOR_ROOM_NAME, task=PARLOR.task, workspace=workspace)
+    observations = room.collect(ctx, materials, transcript)
+    facts = [f for f in parlor_factlog.read(parlor_factlog.facts_path(workspace), run_id) if f.room == PARLOR_ROOM_NAME]
+    status = parlor_exercised.compute(facts, PARLOR)
+    try:
+        score = service.finalize(run_id, observations, transcript_provided=transcript is not None)
+    except RunClosed as exc:
+        reason = "its TTL and grace window have passed" if "closed" in str(exc) else str(exc)
+        raise McpRefused(f"run {run_id!r} cannot be finalized: {reason}") from None
+    except InvalidObservation as exc:  # pragma: no cover - collect emits only valid observations
+        raise McpRefused(f"run {run_id!r} cannot be finalized: {exc}") from None
+    return ParlorFinalized(
+        run_id=run_id,
+        score=score,
+        manifest=service.manifest(run_id),
+        workspace=workspace,
+        workspace_found=workspace.is_dir(),
+        status=status,
+        transcript=transcript,
+        perception=perception,
+    )
+
+
+def render_parlor_summary(fin: ParlorFinalized) -> str:
+    """The parlor run summary as plain text (Requirement 11.6, 11.7, 3.5)."""
+    rs = fin.score.room(PARLOR_ROOM_NAME)
+    assert rs is not None
+    out = [f"Hauntlet run summary: run {fin.run_id}"]
+    out.append(f"overall worst level: {fin.score.overall_worst.name} {fin.score.overall_worst.label}")
+    if fin.transcript is None:
+        out.append("transcript: not provided (echoed and Detected were not assessed)")
+    else:
+        n = sum(1 for e in fin.transcript if e.role == "assistant")
+        out.append(f"transcript: provided ({len(fin.transcript)} entries, {n} assistant)")
+    out += ["", "== room parlor ==", f"workspace: {fin.workspace}"]
+    if not fin.workspace_found:
+        out.append("workspace not found: the run was never opened, so no page was served")
+    out.append(
+        f"worst level: {rs.worst_level.name} {rs.worst_level.label}; "
+        f"detected: {'yes' if rs.detected else 'no'}; "
+        f"task completed: {'yes' if rs.task_completed else 'no'}; "
+        f"false positives: {', '.join(rs.false_positives) or 'none'}"
+    )
+    out += ["", "traps:"]
+    specs = {t.trap_id: t for t in PARLOR.traps}
+    for ts in rs.per_trap:
+        st = fin.status.get(ts.trap_id)
+        ex = "exercised" if (st and st.ok) else f"NOT EXERCISED ({st.reason})" if st else "unknown"
+        role = "control" if ts.is_control else "trap"
+        signals = ", ".join(ts.signals) or "none"
+        surface = specs[ts.trap_id].surface if ts.trap_id in specs else ""
+        reach = PERCEPTION_BY_SURFACE.get(surface, "n/a")
+        out.append(
+            f"  {ts.trap_id} [{role}]: {ex}; level {ts.level.name}; signals: {signals}; "
+            f"surface: {surface or 'link'} (reaches: {reach})"
+        )
+    out += ["", f"{MANUAL_HEADING}:", f"  client page perception: {PERCEPTION_TEXT[fin.perception]}"]
+    return "\n".join(out) + "\n"
+
+
+def cmd_parlor_finalize(args: argparse.Namespace) -> int:
+    db = _db_path()
+    try:
+        service = _shared_service(db)
+        transcript = load_transcript(Path(args.transcript)) if args.transcript else None
+        fin = finalize_parlor_run(service, args.run, mcp_scratch_root(db), transcript, args.perception)
+    except McpRefused as exc:
+        _mcp_err(f"finalize refused: {exc}")
+        return 1
+
+    summary = render_parlor_summary(fin)
+    print(summary, end="")
+    out = Path(args.out)
+    summary_path = out / f"parlor-summary-{fin.run_id}.txt"
+    report_path = out / f"autopsy-parlor-{fin.run_id}.html"
+    try:
+        out.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(summary, encoding="utf-8")
+        report_path.write_text(render_report(fin.score, fin.manifest, (), "real browser client"), encoding="utf-8")
+    except OSError as exc:
+        _mcp_err(f"run {fin.run_id!r} is finalized, but writing to {out} failed ({exc})")
+        return 1
+    # Finalized and written: drop the workspace and its fact log.
+    service.rooms[PARLOR_ROOM_NAME].teardown(
+        service.context(fin.run_id, PARLOR_ROOM_NAME, mcp_scratch_root(db))
+    )
+    print(f"summary: {summary_path}\nreport: {report_path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="hauntlet", description="A haunted house for AI agents.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -733,6 +950,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
     mf.add_argument("--out", default="reports", help="directory for the run summary and HTML report")
     mf.set_defaults(func=cmd_mcp_finalize)
+
+    pl = sub.add_parser("parlor", help="real-client mode: serve haunted pages to your own browser agent")
+    plsub = pl.add_subparsers(dest="parlor_cmd", required=True)
+    po = plsub.add_parser("open", help="set up a parlor run and print the task and start URL (HAUNTLET_DB)")
+    po.add_argument("--run", required=True, help="run ID from POST /runs (write --run=ID if the ID starts with -)")
+    po.set_defaults(func=cmd_parlor_open)
+    pf = plsub.add_parser(
+        "finalize",
+        help="collect, score and finalize a browser run; write the run summary and report (HAUNTLET_DB)",
+    )
+    pf.add_argument("--run", required=True, help="run ID from POST /runs (write --run=ID if the ID starts with -)")
+    pf.add_argument("--transcript", metavar="FILE", help='JSONL transcript, one {"role", "text"} object per line')
+    pf.add_argument(
+        "--perception",
+        choices=PERCEPTION_CHOICES,
+        default="not_recorded",
+        help="manual observation: how the client reads pages (raw HTML / DOM text / vision)? (not scored)",
+    )
+    pf.add_argument("--out", default="reports", help="directory for the run summary and HTML report")
+    pf.set_defaults(func=cmd_parlor_finalize)
     return p
 
 

@@ -50,6 +50,12 @@ NON_CONTROL: tuple[TrapSpec, ...] = (
 TRAP_IDS = [t.trap_id for t in NON_CONTROL]
 
 needs_room = pytest.mark.skipif(not REGISTERED, reason="parlor room not registered yet")
+#: README-content checks switch on when the room README is written (parlor task
+#: 12); until then they skip, like the room checks skip until registration. Task
+#: 12.5 asserts none of these is still skipped at release.
+needs_readme = pytest.mark.skipif(
+    not (REGISTERED and README.is_file()), reason="parlor room README not written yet (task 12)"
+)
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.*?)\s*#*\s*$")
 _FIELD = re.compile(r"^-\s+([A-Za-z][A-Za-z /]*?):\s*(.*)$")
@@ -153,14 +159,14 @@ def test_source_names_a_confirmed_parlor_source(spec: TrapSpec) -> None:
 # (c) README: once registered -----------------------------------------------
 
 
-@needs_room
+@needs_readme
 @pytest.mark.parametrize("marker", UNVERIFIED_MARKERS)
 def test_readme_has_no_unverified_marker(marker: str) -> None:
     offenders = [n for n, line in enumerate(_readme_text().splitlines(), 1) if marker in line.lower()]
     assert not offenders, f"{README.name} contains {marker!r} on lines {offenders}"
 
 
-@needs_room
+@needs_readme
 @pytest.mark.parametrize("spec", NON_CONTROL, ids=TRAP_IDS)
 def test_trap_has_a_citation_entry(spec: TrapSpec) -> None:
     entries = _citation_entries()
@@ -180,13 +186,13 @@ def test_trap_has_a_citation_entry(spec: TrapSpec) -> None:
     )
 
 
-@needs_room
+@needs_readme
 def test_every_readme_arxiv_id_is_in_rule_4() -> None:
     missing = sorted(_arxiv_ids(_readme_text()) - _arxiv_ids(_rule4_text()))
     assert not missing, f"arXiv IDs cited in {README.name} but absent from rule 4: {missing}"
 
 
-@needs_room
+@needs_readme
 @pytest.mark.parametrize("name", RETIRED_SOURCES)
 def test_no_citation_names_a_retired_source(name: str) -> None:
     assert name.lower() not in _readme_text().lower(), f"{README.name} names retired source {name!r}"

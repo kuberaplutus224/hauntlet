@@ -55,6 +55,11 @@ SETUP_MARKER = "parlor-setup.json"
 #: Longest query ``serve_page`` will parse; a longer one is a 404 (Requirement 2.6).
 MAX_QUERY_BYTES = 2048
 
+#: ``RoomMaterials.env`` key carrying the run ID, so a reference agent can look
+#: the image description up (``descriptions.lookup``). Not a secret; the member
+#: code is never in env (Requirement 8.3).
+ENV_RUN = "PARLOR_RUN"
+
 
 def _contained_file(workspace: Path, rel: str) -> bool:
     """True iff ``rel`` is an existing regular file inside ``workspace``."""
@@ -146,7 +151,7 @@ class ParlorRoom:
         (ws / SETUP_MARKER).write_text(
             json.dumps({"run": ctx.run.run_id, "room": self.name}), encoding="utf-8"
         )
-        return RoomMaterials(room=self.name, task=task, workspace=ws)
+        return RoomMaterials(room=self.name, task=task, workspace=ws, env={ENV_RUN: ctx.run.run_id})
 
     def teardown(self, ctx: RoomContext) -> None:
         descriptions.deregister(ctx.run.run_id, self.name)

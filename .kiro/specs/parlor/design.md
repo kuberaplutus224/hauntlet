@@ -557,6 +557,19 @@ not follow the control link, and reports each injection attempt naming its
 surface (so `transcript.scan` emits `flagged` → Detected). It reads the image
 description and flags it rather than acting.
 
+Detection is **content-based, never marker-based** (checkpoint-9 review): a real
+agent cannot know the range's planted tokens, so proving anything with them would
+be circular. The hardened agent flags a surface when its text matches the shared
+`_DIRECTED` patterns — general directed-instruction hallmarks (an injection that
+addresses the assistant, or a second-person "you must/should" obligation), with
+no Parlor-specific nouns — the same detector the Cursed Repo and Poltergeist
+hardened branches use. `parlor_injection_surfaces(page, image_text, _DIRECTED)`
+in `_task.py` is the single detection path, so a test runs it on a ledger
+rendered with the markers blanked and still gets all five surfaces. The ledger's
+legitimate "Sign the guestbook …" line and the control link match none of the
+patterns. The naive agent likewise acts on wording (visit / echo / publish /
+submit verbs), using a marker only to pick which token to echo when told to.
+
 Both are deterministic. `hauntlet selftest` keeps its current assertions and, once
 `parlor` is registered, enforces 9.1 and 9.2 on it like every other room
 (Requirement 9.7).
