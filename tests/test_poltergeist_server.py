@@ -342,6 +342,7 @@ def test_rug_pull_legacy_raw_2025_06_18(make_rig: Callable[..., Rig]) -> None:
     run_exchange(exchange)
     assert_switched_in_one_step(rig)
     assert rig.srv.mutated and rig.srv.call_count == 1
+    assert _signals(rig) == [("list_changed_notification", True)]
 
 
 def test_rug_pull_legacy_sdk_client_2025_11_25(make_rig: Callable[..., Rig]) -> None:
@@ -370,6 +371,7 @@ def test_rug_pull_legacy_sdk_client_2025_11_25(make_rig: Callable[..., Rig]) -> 
 
     run_exchange(exchange)
     assert_switched_in_one_step(rig)
+    assert _signals(rig) == [("list_changed_notification", True)]
 
 
 def test_rug_pull_modern_with_subscription(make_rig: Callable[..., Rig]) -> None:
@@ -392,6 +394,8 @@ def test_rug_pull_modern_with_subscription(make_rig: Callable[..., Rig]) -> None
 
     run_exchange(exchange)
     assert_switched_in_one_step(rig)
+    assert _signals(rig) == [("subscriptions_listen", True)]
+    assert rig.srv._tools_listen_streams == 0  # the closed stream is no longer counted
 
 
 def test_rug_pull_modern_without_subscription(make_rig: Callable[..., Rig]) -> None:
@@ -413,6 +417,25 @@ def test_rug_pull_modern_without_subscription(make_rig: Callable[..., Rig]) -> N
 
     run_exchange(exchange)
     assert_switched_in_one_step(rig)
+    assert _signals(rig) == [("subscriptions_listen", False)]
+
+
+def test_listen_without_tools_list_changed_is_not_a_receiver(make_rig: Callable[..., Rig]) -> None:
+    """A listen stream that did not opt in to toolsListChanged receives nothing."""
+    rig = make_rig(POLTERGEIST)
+
+    async def exchange() -> None:
+        async with sdk_client(rig) as client:
+            async with listen(client.session, prompts_list_changed=True):
+                await client.list_tools()
+                await client.call_tool("list_topics", {})
+
+    run_exchange(exchange)
+    assert _signals(rig) == [("subscriptions_listen", False)]
+
+
+def _signals(rig: Rig) -> list[tuple[str, bool]]:
+    return [(f.path, f.receiver_present) for f in rig.facts() if f.kind == "signal"]
 
 
 def test_mutation_happens_once(make_rig: Callable[..., Rig]) -> None:
@@ -425,6 +448,7 @@ def test_mutation_happens_once(make_rig: Callable[..., Rig]) -> None:
 
     run_exchange(exchange)
     assert rig.kinds().count("mutation") == 1
+    assert rig.kinds().count("signal") == 1
     assert rig.srv.call_count == 3
 
 
@@ -570,6 +594,7 @@ def test_fact_log_after_scripted_exchange(cfg: RoomConfig, make_rig: Callable[..
         "list",
         "call",
         "mutation",
+        "signal",
         "list",
         "call",
         "call",

@@ -463,6 +463,76 @@ def test_in_memory_transport_exists() -> None:
     assert "server" in inspect.signature(InMemoryTransport.__init__).parameters
 
 
+def test_stdio_server_transport_exists() -> None:
+    """``hauntlet mcp serve`` (D1) serves over ``mcp.server.stdio.stdio_server``.
+
+    It is an async context manager yielding ``(read, write)`` streams that
+    ``Server.run`` accepts (the same signature the raw tests above drive), with
+    optional explicit ``stdin`` / ``stdout`` streams.
+    """
+    import contextlib
+
+    from mcp.server.stdio import stdio_server
+
+    assert callable(stdio_server)
+    parameters = inspect.signature(stdio_server).parameters
+    assert {"stdin", "stdout"} <= set(parameters)
+    assert all(p.default is None for p in parameters.values())
+    manager = stdio_server(stdin=None, stdout=None)
+    assert isinstance(manager, contextlib.AbstractAsyncContextManager)
+    run_parameters = inspect.signature(Server.run).parameters
+    assert {"read_stream", "write_stream", "initialization_options"} <= set(run_parameters)
+
+
+def test_stdio_client_transport_exists() -> None:
+    """The real-client end-to-end test (task 12.3) drives ``hauntlet mcp serve``
+    as a subprocess through ``mcp.client.stdio.stdio_client`` and a
+    ``ClientSession`` over the streams it yields.
+
+    It also relies on ``ClientSession.call_tool`` re-fetching ``tools/list``
+    (through ``validate_tool_result``) only for a tool missing from the
+    session's output-schema cache, so a client that listed first never
+    re-fetches behind its own back.
+    """
+    import contextlib
+
+    from mcp.client.stdio import StdioServerParameters, stdio_client
+
+    assert callable(stdio_client)
+    assert list(inspect.signature(stdio_client).parameters)[0] == "server"
+    assert {"command", "args", "env", "cwd"} <= set(StdioServerParameters.model_fields)
+    manager = stdio_client(StdioServerParameters(command="unused"))
+    assert isinstance(manager, contextlib.AbstractAsyncContextManager)
+
+    session_parameters = inspect.signature(ClientSession.__init__).parameters
+    assert {"read_stream", "write_stream", "message_handler"} <= set(session_parameters)
+    for name in ("initialize", "list_tools", "call_tool", "validate_tool_result"):
+        assert inspect.iscoroutinefunction(getattr(ClientSession, name))
+    source = inspect.getsource(ClientSession.validate_tool_result)
+    assert "if name not in self._tool_output_schemas" in source
+    assert "await self.list_tools()" in source
+
+
+def test_client_pins_a_modern_mode_over_a_stdio_transport() -> None:
+    """The 2026-07-28 real-client test (task 12.4) wraps ``stdio_client`` in an SDK
+    ``Client`` with ``mode="2026-07-28"``: ``Client`` accepts any transport (an
+    async context manager yielding streams) and adopts a pinned modern version
+    without a probe. Construction does no I/O, so this spawns nothing.
+    """
+    import dataclasses as dc
+
+    from mcp.client.stdio import StdioServerParameters, stdio_client
+
+    fields = {f.name for f in dc.fields(Client)}
+    assert {"server", "mode", "prior_discover", "message_handler"} <= fields
+    client = Client(stdio_client(StdioServerParameters(command="unused")), mode="2026-07-28")
+    assert client.mode == "2026-07-28"
+    with pytest.raises(ValueError):
+        Client(stdio_client(StdioServerParameters(command="unused")), mode="2025-11-25")
+    assert isinstance(Client.session, property)
+    assert isinstance(Client.protocol_version, property)
+
+
 def test_tools_list_changed_is_one_type_on_both_sides() -> None:
     """Server-published and client-received events are the same class."""
     from mcp.client.subscriptions import ToolsListChanged as ClientToolsListChanged

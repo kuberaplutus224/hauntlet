@@ -22,6 +22,7 @@ from hauntlet.rooms.poltergeist.factlog import (
     NegotiatedFact,
     RelayFact,
     ScratchFact,
+    SignalFact,
 )
 
 RUN = "run-abc123"
@@ -42,6 +43,7 @@ def one_of_each(run: str = RUN) -> list[factlog.Fact]:
         CallFact(t=3.5, tool="get_note", args={"id": "n1", "opts": {"b": [1, 2], "a": None}},
                  live=_live(), **env),
         MutationFact(t=4.0, tools=["get_note", "check_health"], **env),
+        SignalFact(t=4.5, path="subscriptions_listen", receiver_present=True, **env),
         ListFact(t=5.0, after_mutation=True,
                  desc_versions={"check_health": "post", "get_note": "post"}, **env),
         AnswerFact(t=6.0, text="Note n1 says: hello ✓", **env),
@@ -96,7 +98,7 @@ def test_call_args_and_maps_normalize():
     assert call.arguments()["id"] == "n1"
     assert call.live == (("check_health", "pre"), ("get_note", "pre"))
     assert call.live_version("get_note") == "pre"
-    lst = one_of_each()[4]
+    lst = one_of_each()[5]
     assert lst.desc_versions == (("check_health", "post"), ("get_note", "post"))
     assert lst.version("get_note") == "post"
     assert lst.version("missing") is None
@@ -206,6 +208,12 @@ BAD_RECORDS = {
                                "revision": "2025-06-18", "subscribed": "yes"},
     "scratch path empty": {"t": 1.0, "run": RUN, "room": ROOM, "kind": "scratch",
                            "trap_id": "x", "path": ""},
+    "signal unknown path": {"t": 1.0, "run": RUN, "room": ROOM, "kind": "signal",
+                            "path": "carrier_pigeon", "receiver_present": True},
+    "signal receiver_present is 1": {"t": 1.0, "run": RUN, "room": ROOM, "kind": "signal",
+                                     "path": "subscriptions_listen", "receiver_present": 1},
+    "signal missing receiver_present": {"t": 1.0, "run": RUN, "room": ROOM, "kind": "signal",
+                                        "path": "list_changed_notification"},
 }
 
 
@@ -319,3 +327,45 @@ def test_append_fsyncs_the_file_it_wrote(tmp_path, monkeypatch):
     factlog.append(path, one_of_each()[0])
     assert synced == [os.stat(path).st_ino]
     assert path.read_bytes() == factlog.to_line(one_of_each()[0]).encode() + b"\n"
+
+
+# --------------------------------------------------------------------------- #
+# the signal record is additive (task 12.6)
+# --------------------------------------------------------------------------- #
+
+
+@pytest.mark.parametrize("post_list", [True, False], ids=["relisted", "never-relisted"])
+def test_log_without_a_signal_fact_reads_and_computes_as_before(tmp_path, post_list):
+    """A pre-12.6 log (no ``signal`` record) reads unchanged, and adding a
+    ``signal`` fact (well-formed or malformed) changes no exercised status."""
+    from hauntlet.rooms.poltergeist.config import POLTERGEIST
+    from hauntlet.rooms.poltergeist.exercised import compute
+
+    run, room = "run-old", POLTERGEIST.name
+    env = {"run": run, "room": room}
+    old = [
+        NegotiatedFact(t=1.0, revision="2026-07-28", subscribed=True, **env),
+        ListFact(t=2.0, after_mutation=False,
+                 desc_versions={"get_note": "pre", "check_health": "pre"}, **env),
+        CallFact(t=3.0, tool="list_topics", args={}, live=_live(), **env),
+        MutationFact(t=4.0, tools=["get_note", "check_health"], **env),
+    ]
+    if post_list:
+        old.append(ListFact(t=5.0, after_mutation=True,
+                            desc_versions={"get_note": "post", "check_health": "post"}, **env))
+    path = factlog.facts_path(tmp_path)
+    for fact in old:
+        factlog.append(path, fact)
+    facts = factlog.read(path, run)
+    assert facts == old
+    assert not any(isinstance(f, SignalFact) for f in facts)
+    before = compute(facts, POLTERGEIST)
+
+    with open(path, "ab") as f:
+        f.write(_line({"t": 4.5, "run": run, "room": room, "kind": "signal",
+                       "path": "smoke_signal", "receiver_present": True}))
+    assert factlog.read(path, run) == old  # malformed signal skipped
+
+    for present in (True, False):
+        signal = SignalFact(t=4.5, path="subscriptions_listen", receiver_present=present, **env)
+        assert compute([*facts, signal], POLTERGEIST) == before

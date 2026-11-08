@@ -546,6 +546,143 @@
         "chatSessionId": "sess_a8fdd27a-2f13-4078-bb3d-e5cf0392cd6a",
         "timestamp": 1794110955635
       }
+    ],
+    "12.1 Write `hauntlet mcp serve` in `src/hauntlet/cli.py`": [
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794111128959
+      },
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794111831496
+      }
+    ],
+    "12.2 Write `hauntlet mcp finalize` in `src/hauntlet/cli.py`": [
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794111834473
+      },
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794112487309
+      }
+    ],
+    "12.3 Write `tests/test_poltergeist_real_client_e2e.py`": [
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794112490310
+      },
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113061029
+      }
+    ],
+    "12. Real-client CLI (approved change D1)": [
+      {
+        "executionId": "5071b03d-68aa-457e-bc0b-f5b52e703839",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113061078
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114106067
+      },
+      {
+        "executionId": "73bb1aca-acce-45b3-a2ae-ce94145bb76c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114916030
+      }
+    ],
+    "12.4 Add the 2026-07-28 real-client test to `tests/test_poltergeist_real_client_e2e.py`": [
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113230649
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113240691
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113809278
+      }
+    ],
+    "12.5 Concurrent `hauntlet mcp serve` for the same run and room": [
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113230676
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113809848
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114106034
+      }
+    ],
+    "13. Checkpoint: real-client path": [
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113230707
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114108970
+      },
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114218155
+      }
+    ],
+    "14.1 Verify each trap's source and record it in the README": [
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113230747
+      }
+    ],
+    "14.2 Write `src/hauntlet/rooms/poltergeist/README.md`": [
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113230774
+      }
+    ],
+    "14.3 Remove \"to verify\" and add the gate test": [
+      {
+        "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794113230801
+      }
+    ],
+    "12.6 Record a `signal` fact when the change signal is published": [
+      {
+        "executionId": "73bb1aca-acce-45b3-a2ae-ce94145bb76c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114374622
+      },
+      {
+        "executionId": "73bb1aca-acce-45b3-a2ae-ce94145bb76c",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794114915991
+      }
     ]
   }
 }

@@ -16,10 +16,15 @@ negotiated ``revision`` (str), ``subscribed`` (bool)
 list       ``after_mutation`` (bool), ``desc_versions`` {tool: pre|post}
 call       ``tool`` (str), ``args`` (object), ``live`` {get_note, check_health}
 mutation   ``tools`` (list of str)
+signal     ``path`` (one of ``SIGNAL_PATHS``), ``receiver_present`` (bool)
 answer     ``text`` (str)
 relay      ``trap_id`` (str), ``had_secret`` (bool)
 scratch    ``trap_id`` (str), ``path`` (str)
 ========== ==========================================================
+
+The ``signal`` record is evidence only: it says how the change signal was sent
+and whether anything was there to receive it. ``exercised.compute`` and
+``collect`` never read it, and logs written before it existed read unchanged.
 
 Facts are frozen, hashable dataclasses so they compare with ``==`` and can be
 put in sets. Mapping fields are stored in canonical immutable form:
@@ -60,8 +65,14 @@ LIVE_TOOLS: tuple[str, ...] = ("check_health", "get_note")  # sorted
 
 #: All record kinds.
 KINDS: frozenset[str] = frozenset(
-    {"negotiated", "list", "call", "mutation", "answer", "relay", "scratch"}
+    {"negotiated", "list", "call", "mutation", "signal", "answer", "relay", "scratch"}
 )
+
+#: ``signal.path`` values: the 2026-07-28 ``subscriptions/listen`` bus, or the
+#: handshake-era ``notifications/tools/list_changed`` on the session.
+SIGNAL_LISTEN = "subscriptions_listen"
+SIGNAL_NOTIFICATION = "list_changed_notification"
+SIGNAL_PATHS: frozenset[str] = frozenset({SIGNAL_LISTEN, SIGNAL_NOTIFICATION})
 
 _ENVELOPE = ("t", "run", "room", "kind")
 
@@ -230,6 +241,27 @@ class MutationFact(_Envelope):
 
 
 @dataclass(frozen=True)
+class SignalFact(_Envelope):
+    """The change signal was published, and whether a receiver was there.
+
+    Evidence only; not an input to ``exercised.compute`` or ``collect``.
+    """
+
+    path: str
+    receiver_present: bool
+    kind = "signal"
+
+    def __post_init__(self) -> None:
+        self._check_envelope()
+        if self.path not in SIGNAL_PATHS:
+            raise ValueError(f"path must be one of {sorted(SIGNAL_PATHS)}")
+        _req_bool("receiver_present", self.receiver_present)
+
+    def _fields(self) -> dict[str, Any]:
+        return {"path": self.path, "receiver_present": self.receiver_present}
+
+
+@dataclass(frozen=True)
 class AnswerFact(_Envelope):
     text: str
     kind = "answer"
@@ -273,13 +305,15 @@ class ScratchFact(_Envelope):
 
 
 Fact = Union[
-    NegotiatedFact, ListFact, CallFact, MutationFact, AnswerFact, RelayFact, ScratchFact
+    NegotiatedFact, ListFact, CallFact, MutationFact, SignalFact, AnswerFact, RelayFact,
+    ScratchFact,
 ]
 
 _BY_KIND: dict[str, type] = {
     cls.kind: cls
     for cls in (
-        NegotiatedFact, ListFact, CallFact, MutationFact, AnswerFact, RelayFact, ScratchFact
+        NegotiatedFact, ListFact, CallFact, MutationFact, SignalFact, AnswerFact, RelayFact,
+        ScratchFact,
     )
 }
 
@@ -390,7 +424,8 @@ def read(path: str | os.PathLike[str], run_id: str) -> list[Fact]:
 
 __all__ = [
     "FACTS_FILENAME", "MAX_LINE_BYTES", "VERSIONS", "LIVE_TOOLS", "KINDS",
-    "Fact", "NegotiatedFact", "ListFact", "CallFact", "MutationFact", "AnswerFact",
+    "SIGNAL_LISTEN", "SIGNAL_NOTIFICATION", "SIGNAL_PATHS",
+    "Fact", "NegotiatedFact", "ListFact", "CallFact", "MutationFact", "SignalFact", "AnswerFact",
     "RelayFact", "ScratchFact",
     "append", "read", "facts_path", "to_record", "to_line", "from_record",
 ]

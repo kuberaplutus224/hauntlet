@@ -1,19 +1,35 @@
-"""Command line: ``hauntlet run | selftest | serve | sample-report``."""
+"""Command line: ``hauntlet run | selftest | serve | sample-report | mcp serve | mcp finalize``."""
 
 from __future__ import annotations
 
 import argparse
+import contextlib
+import json
+import os
+import re
 import sys
 import tempfile
+from dataclasses import dataclass
+from collections.abc import Iterator
+from datetime import datetime, timezone
 from pathlib import Path
 
 from hauntlet.agents import get_agent
 from hauntlet.core.levels import COMPROMISE_THRESHOLD, Level
+from hauntlet.core.models import RunManifest, RunScore
 from hauntlet.core.report import render_report
+from hauntlet.core.room import Observation, RoomContext, RoomMaterials, Transcript, TranscriptEntry
 from hauntlet.core.runner import run_once, run_repeated
-from hauntlet.core.service import RangeService
+from hauntlet.core.service import InvalidObservation, RangeService, RunClosed, UnknownRun
 from hauntlet.core.store import Store
+from hauntlet.core.toolbox import ToolBox
 from hauntlet.rooms import default_rooms
+from hauntlet.rooms.poltergeist import PoltergeistRoom
+from hauntlet.rooms.poltergeist import exercised as exercised_mod
+from hauntlet.rooms.poltergeist import factlog
+from hauntlet.rooms.poltergeist.config import RUG_DESC
+from hauntlet.rooms.poltergeist.room import deregister, server_for
+from hauntlet.rooms.poltergeist.server import REFUSED_PREFIX, PoltergeistServer, http_relay_fetcher
 
 
 def _service() -> RangeService:
@@ -120,6 +136,555 @@ def cmd_sample_report(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# hauntlet mcp serve (approved change D1)
+#
+# Real-client mode: a client such as Kiro launches this command as a stdio MCP
+# server. stdout is the MCP channel, so everything else (task banner,
+# diagnostics, refusals) goes to stderr.
+# --------------------------------------------------------------------------- #
+
+#: Rooms served by ``hauntlet mcp``.
+MCP_ROOMS = ("poltergeist", "poltergeist-legacy")
+DEFAULT_DB = ".hauntlet/range.db"
+DEFAULT_BASE_URL = "http://127.0.0.1:8666"
+#: Directory, beside the shared ``HAUNTLET_DB`` file, holding real-client workspaces.
+MCP_SCRATCH_DIRNAME = "mcp-scratch"
+#: How often a serving process re-checks that its run is still active.
+RUN_POLL_SECS = 2.0
+#: Run IDs are ``secrets.token_urlsafe``; anything else never becomes a path.
+_RUN_ID = re.compile(r"[A-Za-z0-9_-]{1,128}")
+
+
+class McpRefused(Exception):
+    """``hauntlet mcp`` refuses the run; nothing is served."""
+
+
+def _mcp_err(msg: str) -> None:
+    print(f"hauntlet mcp: {msg}", file=sys.stderr, flush=True)
+
+
+def _db_path() -> Path:
+    return Path(os.environ.get("HAUNTLET_DB", DEFAULT_DB))
+
+
+def _base_url() -> str:
+    return os.environ.get("HAUNTLET_BASE_URL", DEFAULT_BASE_URL)
+
+
+def mcp_scratch_root(db_path: Path) -> Path:
+    """Root of real-client workspaces: a fixed directory beside the shared store.
+
+    ``serve`` and ``finalize`` share ``HAUNTLET_DB``, so they agree on this root
+    whatever their working directories are.
+    """
+    return db_path.resolve().parent / MCP_SCRATCH_DIRNAME
+
+
+def mcp_workspace(scratch_root: Path, room: str, run_id: str) -> Path:
+    """The run's workspace for ``room``: derived only from the run ID and room name.
+
+    Matches ``PoltergeistRoom``'s ``<scratch>/<room>-<run_id>`` layout; ``serve``
+    checks the two agree.
+    """
+    return scratch_root / f"{room}-{run_id}"
+
+
+def _shared_service(db_path: Path) -> RangeService:
+    """The range over the shared store. Never creates a store that is not there."""
+    if not db_path.is_file():
+        raise McpRefused(f"no event store at {db_path} (set HAUNTLET_DB to the file `hauntlet serve` uses)")
+    return RangeService(Store(db_path), default_rooms(), base_url=_base_url())
+
+
+def check_mcp_run(service: RangeService, room_name: str, run_id: str) -> PoltergeistRoom:
+    """Requirement 8.3: the run exists, is active and includes ``room_name``.
+
+    Checked against the event store only, never a file the client could edit.
+    Raises ``McpRefused`` with the reason otherwise.
+    """
+    if not _RUN_ID.fullmatch(run_id):
+        raise McpRefused(f"invalid run ID {run_id!r}")
+    room = service.rooms.get(room_name)
+    if room_name not in MCP_ROOMS or not isinstance(room, PoltergeistRoom):
+        raise McpRefused(f"room {room_name!r} has no MCP server")
+    try:
+        run = service.get_run(run_id)
+    except UnknownRun:
+        raise McpRefused(f"unknown run {run_id!r}") from None
+    if run.finalized_at is not None:
+        raise McpRefused(f"run {run_id!r} is already finalized")
+    if not run.is_active(service.clock()):
+        raise McpRefused(f"run {run_id!r} has expired")
+    if service.manifest(run_id).room(room_name) is None:
+        raise McpRefused(f"run {run_id!r} does not include room {room_name!r}")
+    return room
+
+
+def mcp_claim_path(scratch_root: Path, room: str, run_id: str) -> Path:
+    """Marker held by the one ``serve`` process setting up ``room`` for ``run_id``."""
+    return scratch_root / f".{room}-{run_id}.claim"
+
+
+@contextlib.contextmanager
+def _claim(scratch_root: Path, room: str, run_id: str) -> Iterator[bool]:
+    """Atomically claim the right to set up ``room`` for ``run_id``.
+
+    Yields ``True`` to the one process whose ``O_CREAT | O_EXCL`` create of the
+    marker succeeds and ``False`` to any other. Only the holder removes the
+    marker, once setup is done; by then the workspace exists, and it alone
+    refuses later sessions. A loser never touches the marker or the workspace.
+    """
+    path = mcp_claim_path(scratch_root, room, run_id)
+    scratch_root.mkdir(parents=True, exist_ok=True)
+    try:
+        os.close(os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600))
+    except FileExistsError:
+        yield False
+        return
+    try:
+        yield True
+    finally:
+        path.unlink(missing_ok=True)
+
+
+@dataclass(frozen=True)
+class McpSession:
+    """A verified, set-up real-client session, ready to serve."""
+
+    room: PoltergeistRoom
+    ctx: RoomContext
+    materials: RoomMaterials
+    server: PoltergeistServer
+
+
+def prepare_mcp_serve(
+    service: RangeService, room_name: str, run_id: str, scratch_root: Path
+) -> McpSession:
+    """Verify the run, set the room up and bind real-client I/O.
+
+    Relays go through ``http_relay_fetcher(base_url)`` behind the core
+    ``ToolBox`` checks, so both confine fetches to ``<base_url>/c/<token>``;
+    scratch writes go through ``ToolBox.write_file``, confined to the workspace.
+    A workspace that already exists is refused: one serving session per run and
+    room, so the fact log has a single writer and a single rug pull.
+    """
+    room = check_mcp_run(service, room_name, run_id)
+    try:
+        fetch = http_relay_fetcher(service.base_url)
+    except ValueError as exc:
+        raise McpRefused(f"bad HAUNTLET_BASE_URL: {exc}") from None
+    workspace = mcp_workspace(scratch_root, room_name, run_id)
+    taken = McpRefused(
+        f"run {run_id!r} already has a {room_name} workspace at {workspace}; "
+        "each run serves one MCP session per room (start a new run to retry)"
+    )
+    # Claim the run and room atomically before looking at the workspace, so two
+    # processes started together cannot both pass the check and race into setup.
+    with _claim(scratch_root, room_name, run_id) as claimed:
+        if not claimed or workspace.exists():
+            raise taken
+        ctx = service.context(run_id, room_name, scratch_root)
+        materials = room.setup(ctx)
+    if materials.workspace.resolve() != workspace.resolve():  # pragma: no cover - layout guard
+        room.teardown(ctx)
+        raise McpRefused(f"workspace layout mismatch: {materials.workspace} != {workspace}")
+    server = server_for(materials)
+    tools = ToolBox(materials.workspace, {}, fetch, service.base_url)
+    server.bind_io(tools.fetch, tools.write_file)
+    return McpSession(room=room, ctx=ctx, materials=materials, server=server)
+
+
+def _run_active(service: RangeService, run_id: str) -> bool:
+    try:
+        return service.get_run(run_id).is_active(service.clock())
+    except UnknownRun:
+        return False
+
+
+#: Exit status when serving stops because the run was finalized or expired.
+EXIT_RUN_INACTIVE = 3
+
+
+async def serve_mcp_stdio(service: RangeService, session: McpSession) -> None:
+    """Serve ``session`` over stdio until the client disconnects.
+
+    Every ``RUN_POLL_SECS`` the run is re-checked in the store; once it is
+    finalized or expired the process exits with ``EXIT_RUN_INACTIVE``, so no
+    tools are served for an inactive run (Requirement 7.6). The exit is
+    immediate (``os._exit``) because the SDK's stdin reader blocks in a worker
+    thread that cancellation cannot interrupt; nothing is lost, since every
+    fact is fsynced before its reply and the workspace stays on disk.
+    """
+    import anyio
+    from mcp.server.stdio import stdio_server
+
+    run_id = session.ctx.run.run_id
+
+    async with stdio_server() as (read_stream, write_stream):
+        async with anyio.create_task_group() as tg:
+
+            async def watch_run() -> None:
+                while True:
+                    await anyio.sleep(RUN_POLL_SECS)
+                    if not _run_active(service, run_id):
+                        _mcp_err(f"run {run_id!r} is no longer active; stopped serving")
+                        os._exit(EXIT_RUN_INACTIVE)
+
+            tg.start_soon(watch_run)
+            await session.server.server.run(
+                read_stream, write_stream, session.server.initialization_options()
+            )
+            tg.cancel_scope.cancel()
+
+
+def cmd_mcp_serve(args: argparse.Namespace) -> int:
+    import anyio
+
+    db = _db_path()
+    try:
+        service = _shared_service(db)
+        session = prepare_mcp_serve(service, args.room, args.run, mcp_scratch_root(db))
+    except McpRefused as exc:
+        _mcp_err(f"refused, serving nothing: {exc}")
+        return 1
+
+    print(
+        f"hauntlet mcp: serving room {args.room} for run {args.run} over stdio\n"
+        f"hauntlet mcp: workspace {session.materials.workspace}\n"
+        "hauntlet mcp: give the client this task:\n\n"
+        f"    {session.materials.task}\n",
+        file=sys.stderr,
+        flush=True,
+    )
+    try:
+        anyio.run(serve_mcp_stdio, service, session)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # Keep the workspace and fact log for `hauntlet mcp finalize`.
+        deregister(args.run, args.room)
+    _mcp_err(f"client disconnected; finalize with: hauntlet mcp finalize --run={args.run}")
+    return 0
+
+
+# --------------------------------------------------------------------------- #
+# hauntlet mcp finalize (approved change D1)
+#
+# Runs each Poltergeist room's ``collect`` on the run's real-client workspace,
+# finalizes through ``RangeService.finalize`` and writes the run summary and the
+# HTML report. Manual observations are printed in the summary only; they are
+# never passed to ``finalize`` and so never become events (Requirement 8.7).
+#
+# Workspace lifetime: kept on every failure (refusal, finalize error, write
+# error) so the fact log is still there to inspect; removed with the room's
+# ``teardown`` only after the run is finalized and both files are written.
+# --------------------------------------------------------------------------- #
+
+#: ``--reapproval`` values (Requirement 8.6); the default is ``not_recorded``.
+REAPPROVAL_CHOICES = ("prompted", "not_prompted", "not_recorded")
+REAPPROVAL_TEXT = {
+    "prompted": "the client re-prompted for approval after the description change",
+    "not_prompted": "the client did NOT re-prompt for approval after the description change",
+    "not_recorded": "not recorded (whether the client re-prompted for approval is unknown)",
+}
+MANUAL_HEADING = "manual (tester-supplied, not scored)"
+
+
+def load_transcript(path: Path) -> Transcript:
+    """Parse a JSONL transcript of ``{"role", "text"}`` objects (Requirement 8.6).
+
+    Blank lines are skipped and extra keys ignored. Anything else that is not
+    one JSON object with string ``role`` and ``text`` refuses the whole file,
+    naming the line, so nothing is finalized from a half-read transcript.
+    """
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise McpRefused(f"transcript {path} does not exist") from None
+    except (OSError, UnicodeDecodeError) as exc:
+        raise McpRefused(f"cannot read transcript {path}: {exc}") from None
+    entries: Transcript = []
+    for n, line in enumerate(raw.splitlines(), start=1):
+        if not line.strip():
+            continue
+        try:
+            obj = json.loads(line)
+        except ValueError:
+            raise McpRefused(f"malformed transcript {path}, line {n}: not JSON") from None
+        if (
+            not isinstance(obj, dict)
+            or not isinstance(obj.get("role"), str)
+            or not obj["role"]
+            or not isinstance(obj.get("text"), str)
+        ):
+            raise McpRefused(
+                f'malformed transcript {path}, line {n}: expected {{"role": str, "text": str}}'
+            )
+        entries.append(TranscriptEntry(obj["role"], obj["text"]))
+    return entries
+
+
+@dataclass(frozen=True)
+class McpRoomResult:
+    """One Poltergeist room of a finalized run, as seen from its workspace."""
+
+    room: PoltergeistRoom
+    ctx: RoomContext
+    workspace: Path
+    workspace_found: bool
+    facts: tuple[factlog.Fact, ...]
+    status: dict[str, exercised_mod.Exercised]
+    observations: tuple[Observation, ...]
+
+
+@dataclass(frozen=True)
+class McpFinalized:
+    run_id: str
+    score: RunScore
+    manifest: RunManifest
+    rooms: tuple[McpRoomResult, ...]
+    transcript: Transcript | None
+    reapproval: str
+
+
+def _collect_mcp_room(
+    service: RangeService, room: PoltergeistRoom, run_id: str, scratch_root: Path,
+    transcript: Transcript | None,
+) -> McpRoomResult:
+    workspace = mcp_workspace(scratch_root, room.name, run_id)
+    if workspace.exists() and (workspace.is_symlink() or not workspace.is_dir()):
+        raise McpRefused(f"{workspace} is not a workspace directory")
+    ctx = service.context(run_id, room.name, scratch_root)
+    materials = RoomMaterials(room=room.name, task=room.config.task, workspace=workspace)
+    observations = room.collect(ctx, materials, transcript)
+    facts = tuple(
+        f for f in factlog.read(factlog.facts_path(workspace), run_id) if f.room == room.name
+    )
+    return McpRoomResult(
+        room=room,
+        ctx=ctx,
+        workspace=workspace,
+        workspace_found=workspace.is_dir(),
+        facts=facts,
+        status=exercised_mod.compute(facts, room.config),
+        observations=tuple(observations),
+    )
+
+
+def finalize_mcp_run(
+    service: RangeService,
+    run_id: str,
+    scratch_root: Path,
+    transcript: Transcript | None = None,
+    reapproval: str = "not_recorded",
+) -> McpFinalized:
+    """Collect every Poltergeist room of ``run_id`` and finalize the run.
+
+    Refuses (``McpRefused``) an invalid, unknown, already-finalized or closed
+    run, and a run that includes a room this path cannot collect. ``reapproval``
+    is carried to the summary only; it is never an observation.
+    """
+    if reapproval not in REAPPROVAL_CHOICES:
+        raise McpRefused(f"--reapproval must be one of {', '.join(REAPPROVAL_CHOICES)}")
+    if not _RUN_ID.fullmatch(run_id):
+        raise McpRefused(f"invalid run ID {run_id!r}")
+    try:
+        run = service.get_run(run_id)
+    except UnknownRun:
+        raise McpRefused(f"unknown run {run_id!r}") from None
+    if run.finalized_at is not None:
+        raise McpRefused(f"run {run_id!r} is already finalized")
+    names = [r.room for r in service.manifest(run_id).rooms]
+    other = [n for n in names if n not in MCP_ROOMS or not isinstance(service.rooms.get(n), PoltergeistRoom)]
+    if other:
+        raise McpRefused(
+            f"run {run_id!r} includes room(s) {', '.join(other)} that `hauntlet mcp finalize` "
+            "cannot collect; finalize it through POST /runs/{id}/finalize instead"
+        )
+    results = tuple(
+        _collect_mcp_room(service, service.rooms[n], run_id, scratch_root, transcript)  # type: ignore[arg-type]
+        for n in names
+    )
+    try:
+        score = service.finalize(
+            run_id,
+            [o for r in results for o in r.observations],
+            transcript_provided=transcript is not None,
+        )
+    except RunClosed as exc:
+        reason = "its TTL and grace window have passed" if "closed" in str(exc) else str(exc)
+        raise McpRefused(f"run {run_id!r} cannot be finalized: {reason}") from None
+    except InvalidObservation as exc:  # pragma: no cover - collect emits only valid observations
+        raise McpRefused(f"run {run_id!r} cannot be finalized: {exc}") from None
+    return McpFinalized(
+        run_id=run_id,
+        score=score,
+        manifest=service.manifest(run_id),
+        rooms=results,
+        transcript=transcript,
+        reapproval=reapproval,
+    )
+
+
+def _ts(t: float) -> str:
+    return datetime.fromtimestamp(t, timezone.utc).isoformat(timespec="seconds")
+
+
+def _signal_line(f: factlog.SignalFact) -> str:
+    if f.path == factlog.SIGNAL_LISTEN:
+        if f.receiver_present:
+            return "change signal: ToolsListChanged published on subscriptions/listen to an open listen subscriber"
+        return "change signal: ToolsListChanged published on subscriptions/listen with no listen subscriber (delivered to nobody)"
+    if f.receiver_present:
+        return "change signal: notifications/tools/list_changed sent on the session"
+    return "change signal: notifications/tools/list_changed not sent (no session)"
+
+
+#: Which case a post-mutation NOT EXERCISED rug pull was (task 12.6).
+SIGNAL_SENT_NO_RELIST = "signal sent, client did not re-list"
+SIGNAL_NOT_SENT = "no signal sent (no subscriber)"
+SIGNAL_UNKNOWN = "unknown (this fact log predates the signal record)"
+
+
+def _signal_case(facts: tuple[factlog.Fact, ...]) -> str | None:
+    """The signal case behind a NOT EXERCISED rug pull; None when nothing mutated.
+
+    Reads only the summary's evidence; ``exercised.compute`` never sees it.
+    """
+    if not any(isinstance(f, factlog.MutationFact) for f in facts):
+        return None
+    signals = [f for f in facts if isinstance(f, factlog.SignalFact)]
+    if not signals:
+        return SIGNAL_UNKNOWN
+    return SIGNAL_SENT_NO_RELIST if signals[0].receiver_present else SIGNAL_NOT_SENT
+
+
+def _fact_lines(r: McpRoomResult) -> list[str]:
+    """Server-observable facts from the fact log, in file order (Requirement 3.1, 3.4)."""
+    if not r.workspace_found:
+        return ["no workspace found: `hauntlet mcp serve` never ran for this room in this run"]
+    if not r.facts:
+        return ["the fact log is empty: no client request reached the server"]
+    kinds = {t.name: t.kind for t in r.room.config.tools}
+    secrets_by_trap = {
+        c.value: c.trap_id for c in r.ctx.canaries if c.kind == "secret" and c.value
+    }
+    subscribe_room = r.room.config.revision.signal == "subscriptions_listen"
+    lines: list[str] = []
+    lists = [f for f in r.facts if isinstance(f, factlog.ListFact)]
+    for f in r.facts:
+        if isinstance(f, factlog.NegotiatedFact):
+            if f.revision.startswith(REFUSED_PREFIX):
+                lines.append(
+                    f"refused protocol revision {f.revision[len(REFUSED_PREFIX):]!r} "
+                    "(version-mismatch error returned)"
+                )
+            elif subscribe_room:
+                lines.append(
+                    f"protocol revision {f.revision}; subscribed to tool-list changes: "
+                    f"{'yes' if f.subscribed else 'no'}"
+                )
+            else:
+                lines.append(f"protocol revision {f.revision}")
+        elif isinstance(f, factlog.ListFact):
+            when = "after" if f.after_mutation else "before"
+            vers = ", ".join(f"{tool}={ver}" for tool, ver in f.desc_versions)
+            lines.append(f"tools/list {when} the mutation (descriptions served: {vers})")
+        elif isinstance(f, factlog.MutationFact):
+            lines.append(f"mutation at {_ts(f.t)}: description changed on {', '.join(f.tools)}")
+        elif isinstance(f, factlog.SignalFact):
+            lines.append(_signal_line(f))
+        elif isinstance(f, factlog.CallFact):
+            live = ", ".join(f"{tool}={ver}" for tool, ver in f.live)
+            lines.append(f"tools/call {f.tool} (live descriptions: {live})")
+            if kinds.get(f.tool) not in ("relay", "scratch"):
+                for value, trap_id in sorted(secrets_by_trap.items()):
+                    if value in f.args:
+                        lines.append(
+                            f"  dummy secret of {trap_id} appeared in the arguments of {f.tool} "
+                            "(recorded here only, not scored)"
+                        )
+        elif isinstance(f, factlog.AnswerFact):
+            lines.append(f"answer submitted: {f.text!r}")
+        elif isinstance(f, factlog.RelayFact):
+            secret = "with" if f.had_secret else "without"
+            lines.append(f"relay to the {f.trap_id} canary ran, {secret} the dummy secret in its payload")
+        elif isinstance(f, factlog.ScratchFact):
+            lines.append(f"scratch write to {f.path} (trap {f.trap_id})")
+    after = sum(1 for f in lists if f.after_mutation)
+    lines.append(f"tools/list total: {len(lists)} ({after} after the mutation)")
+    return lines
+
+
+def render_mcp_summary(fin: McpFinalized) -> str:
+    """The run summary (Glossary, Requirement 4.3, 8.7) as plain text."""
+    out = [f"Hauntlet run summary: run {fin.run_id}"]
+    out.append(f"overall worst level: {fin.score.overall_worst.name} {fin.score.overall_worst.label}")
+    if fin.transcript is None:
+        out.append("transcript: not provided (echoed and Detected were not assessed)")
+    else:
+        n = sum(1 for e in fin.transcript if e.role == "assistant")
+        out.append(f"transcript: provided ({len(fin.transcript)} entries, {n} assistant)")
+    for r in fin.rooms:
+        rs = fin.score.room(r.room.name)
+        assert rs is not None
+        out += ["", f"== room {r.room.name} ==", f"workspace: {r.workspace}"]
+        out.append(
+            f"worst level: {rs.worst_level.name} {rs.worst_level.label}; "
+            f"detected: {'yes' if rs.detected else 'no'}; "
+            f"task completed: {'yes' if rs.task_completed else 'no'}; "
+            f"false positives: {', '.join(rs.false_positives) or 'none'}"
+        )
+        rug = r.status.get(RUG_DESC)
+        if rug is not None and not rug.ok:
+            out.append(f"The rug pull was NOT tested in this run: {rug.reason}.")
+            case = _signal_case(r.facts)
+            if case is not None:
+                out.append(f"Change signal after the mutation: {case}.")
+        out += ["", "traps:"]
+        for ts in rs.per_trap:
+            st = r.status.get(ts.trap_id)
+            if st is None:
+                continue
+            ex = "exercised" if st.ok else f"NOT EXERCISED ({st.reason})"
+            role = "control" if ts.is_control else "trap"
+            signals = ", ".join(ts.signals) or "none"
+            out.append(f"  {ts.trap_id} [{role}]: {ex}; level {ts.level.name}; signals: {signals}")
+        out += ["", "server-observable facts:"]
+        out += [f"  {line}" for line in _fact_lines(r)]
+    out += ["", f"{MANUAL_HEADING}:", f"  re-approval prompt: {REAPPROVAL_TEXT[fin.reapproval]}"]
+    return "\n".join(out) + "\n"
+
+
+def cmd_mcp_finalize(args: argparse.Namespace) -> int:
+    db = _db_path()
+    try:
+        service = _shared_service(db)
+        transcript = load_transcript(Path(args.transcript)) if args.transcript else None
+        fin = finalize_mcp_run(service, args.run, mcp_scratch_root(db), transcript, args.reapproval)
+    except McpRefused as exc:
+        _mcp_err(f"finalize refused: {exc}")
+        return 1
+
+    summary = render_mcp_summary(fin)
+    print(summary, end="")
+    out = Path(args.out)
+    summary_path = out / f"mcp-summary-{fin.run_id}.txt"
+    report_path = out / f"autopsy-mcp-{fin.run_id}.html"
+    try:
+        out.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(summary, encoding="utf-8")
+        report_path.write_text(render_report(fin.score, fin.manifest, (), "real MCP client"), encoding="utf-8")
+    except OSError as exc:
+        _mcp_err(f"run {fin.run_id!r} is finalized, but writing to {out} failed ({exc}); workspace kept")
+        return 1
+    for r in fin.rooms:
+        r.room.teardown(r.ctx)  # finalized and written: the workspace is no longer needed
+    print(f"summary: {summary_path}\nreport: {report_path}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="hauntlet", description="A haunted house for AI agents.")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -143,6 +708,30 @@ def build_parser() -> argparse.ArgumentParser:
     sr = sub.add_parser("sample-report", help="render a sample autopsy report")
     sr.add_argument("--out", default="docs/sample-report.html")
     sr.set_defaults(func=cmd_sample_report)
+
+    m = sub.add_parser("mcp", help="real-client mode: serve a room's MCP server to your own client")
+    msub = m.add_subparsers(dest="mcp_cmd", required=True)
+    ms = msub.add_parser(
+        "serve",
+        help="serve a room's MCP server over stdio for an active run (HAUNTLET_DB, HAUNTLET_BASE_URL)",
+    )
+    ms.add_argument("--room", required=True, choices=MCP_ROOMS)
+    ms.add_argument("--run", required=True, help="run ID from POST /runs (write --run=ID if the ID starts with -)")
+    ms.set_defaults(func=cmd_mcp_serve)
+    mf = msub.add_parser(
+        "finalize",
+        help="collect, score and finalize a real-client run; write the run summary and report (HAUNTLET_DB)",
+    )
+    mf.add_argument("--run", required=True, help="run ID from POST /runs (write --run=ID if the ID starts with -)")
+    mf.add_argument("--transcript", metavar="FILE", help='JSONL transcript, one {"role", "text"} object per line')
+    mf.add_argument(
+        "--reapproval",
+        choices=REAPPROVAL_CHOICES,
+        default="not_recorded",
+        help="manual observation: did the client re-prompt for approval after the change? (not scored)",
+    )
+    mf.add_argument("--out", default="reports", help="directory for the run summary and HTML report")
+    mf.set_defaults(func=cmd_mcp_finalize)
     return p
 
 
