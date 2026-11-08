@@ -44,6 +44,44 @@ def _scratch(db: Path) -> Path:
     return cli.mcp_scratch_root(db)
 
 
+@pytest.fixture(autouse=True)
+def _short_takeover_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    """In-process refusals wait for a lock held by a live session; keep it short.
+    Subprocess tests run the real ``TAKEOVER_WAIT_SECS``."""
+    monkeypatch.setattr(cli, "TAKEOVER_WAIT_SECS", 0.3)
+
+
+def test_takeover_rules_in_process(db: Path) -> None:
+    """A live session's lock blocks takeover; once released, a handshake-only
+    workspace is taken over, and one that listed tools is refused."""
+    service = _service(db)
+    run_id = service.start_run(["poltergeist-legacy"]).run.run_id
+    root = _scratch(db)
+    first = cli.prepare_mcp_serve(service, "poltergeist-legacy", run_id, root)
+    ws = first.materials.workspace
+    try:
+        assert cli.mcp_lock_path(ws).is_file()
+        with pytest.raises(cli.McpRefused, match="still serving"):
+            cli.prepare_mcp_serve(service, "poltergeist-legacy", run_id, root)
+        first.release()  # the probe process exits
+
+        second = cli.prepare_mcp_serve(service, "poltergeist-legacy", run_id, root)
+        assert second.took_over
+        facts = factlog.read(factlog.facts_path(ws), run_id)
+        assert [f.kind for f in facts] == ["takeover"]
+        assert facts[0].previous == "" and facts[0].count == 0  # the probe wrote no fact
+
+        # This session lists tools; after it exits, nothing may replace it.
+        second.server._record(factlog.ListFact, after_mutation=False,
+                              desc_versions={"get_note": "pre", "check_health": "pre"})
+        second.release()
+        with pytest.raises(cli.McpRefused, match="already listed or called tools"):
+            cli.prepare_mcp_serve(service, "poltergeist-legacy", run_id, root)
+        assert [f.kind for f in factlog.read(factlog.facts_path(ws), run_id)] == ["takeover", "list"]
+    finally:
+        cli.deregister(run_id, "poltergeist-legacy")
+
+
 # --------------------------------------------------------------------------- #
 # refusals: exit non-zero, nothing on stdout, nothing set up
 # --------------------------------------------------------------------------- #
@@ -331,6 +369,17 @@ def _init_frames(version: str = "2025-06-18") -> str:
     return "".join(json.dumps(m) + "\n" for m in msgs)
 
 
+def _session_frames(version: str = "2025-06-18") -> str:
+    """A real session: the handshake and then a ``tools/list``.
+
+    The listing matters: a session that never gets past the handshake may be
+    replaced by a later one (``prepare_mcp_serve`` takeover), so only a session
+    that listed tools must refuse every other.
+    """
+    listing = {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
+    return _init_frames(version) + json.dumps(listing) + "\n"
+
+
 @pytest.mark.parametrize("trial", range(4))
 def test_two_serve_processes_started_together_one_serves_one_is_refused(db: Path, trial: int) -> None:
     room = "poltergeist-legacy"
@@ -340,7 +389,7 @@ def test_two_serve_processes_started_together_one_serves_one_is_refused(db: Path
     try:
         for proc in procs:
             # communicate() ignores the broken pipe if the loser already exited.
-            out, err = proc.communicate(input=_init_frames(), timeout=30)
+            out, err = proc.communicate(input=_session_frames(), timeout=30)
             outcomes.append((proc.returncode, out, err))
     finally:
         for proc in procs:
@@ -365,4 +414,5 @@ def test_two_serve_processes_started_together_one_serves_one_is_refused(db: Path
     assert ws.is_dir(), "the loser must not tear down the winner's workspace"
     kinds = [f.kind for f in factlog.read(factlog.facts_path(ws), run_id)]
     assert kinds.count("negotiated") == 1  # a single writer of the fact log
+    assert "list" in kinds and "takeover" not in kinds
     assert not cli.mcp_claim_path(_scratch(db), room, run_id).exists()

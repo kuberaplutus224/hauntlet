@@ -63,7 +63,8 @@ from __future__ import annotations
 import re
 import time
 import unicodedata
-from collections.abc import Callable, Mapping
+from collections.abc import AsyncIterator, Callable, Mapping
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 from urllib.parse import SplitResult, quote, urlencode, urlsplit
@@ -504,15 +505,30 @@ class PoltergeistServer:
                 self._record(factlog.NegotiatedFact, revision=version, subscribed=False)
         return await call_next(ctx)
 
-    def _refuse(self, requested: str, code: int, supported: tuple[str, ...]) -> None:
-        """Record a refused version attempt and raise the mismatch error."""
+    def _refusal(self, requested: str, code: int, supported: tuple[str, ...]) -> types.ErrorData:
+        """Record a refused version attempt and return the mismatch error."""
         self._record(factlog.NegotiatedFact, revision=REFUSED_PREFIX + requested, subscribed=False)
-        raise MCPError(
+        return types.ErrorData(
             code=code,
             message=UNSUPPORTED_VERSION_MESSAGE,
             data=types.UnsupportedProtocolVersionErrorData(
                 supported=list(supported), requested=requested
             ).model_dump(mode="json"),
+        )
+
+    def _refuse(self, requested: str, code: int, supported: tuple[str, ...]) -> None:
+        """Record a refused version attempt and raise the mismatch error."""
+        err = self._refusal(requested, code, supported)
+        raise MCPError(code=err.code, message=err.message, data=err.data)
+
+    def refuse_probe(self, requested: str) -> types.ErrorData:
+        """The reply to a modern-envelope probe that reaches a legacy room before
+        ``initialize`` (``answer_pre_handshake_probes``). Identical to the gate's
+        refusal of a modern request: ``-32022`` naming the handshake revisions,
+        recorded as a refused attempt."""
+        rev = self.config.revision
+        return self._refusal(
+            requested, types.UNSUPPORTED_PROTOCOL_VERSION, rev.modern_versions or rev.handshake_versions
         )
 
     async def _on_subscriptions_listen(
@@ -633,3 +649,85 @@ __all__ = [
     "relay_url",
     "truncate_utf8",
 ]
+
+
+# --------------------------------------------------------------------------- #
+# Pre-handshake probes on a legacy room (real-client fix)
+#
+# ``mcp`` 2.3.0's ``serve_dual_era_loop`` picks a connection's era from the first
+# request it reads. A client such as Kiro opens with a 2026-07-28 probe
+# (``server/discover`` with the ``_meta`` envelope) and, after our ``-32022``,
+# falls back to ``initialize``. Left to the SDK, the probe latches the connection
+# to the modern era and the fallback ``initialize`` is refused. For a room that
+# speaks only handshake revisions, this filter answers every enveloped request
+# that arrives before the first ``initialize`` itself, with the same ``-32022``
+# the version gate sends, and never passes it to the SDK. From the first
+# ``initialize`` on it relays every frame unchanged, so the gate and the SDK's
+# own legacy-era checks behave exactly as before.
+# --------------------------------------------------------------------------- #
+
+
+def _envelope_version(params: object) -> str | None:
+    """The ``_meta`` protocol-version claim of a 2026-07-28 request, if any."""
+    if not isinstance(params, Mapping):
+        return None
+    meta = params.get("_meta")
+    if not isinstance(meta, Mapping) or types.PROTOCOL_VERSION_META_KEY not in meta:
+        return None
+    value = meta[types.PROTOCOL_VERSION_META_KEY]
+    return value if isinstance(value, str) and value else "?"
+
+
+def is_legacy_only(server: PoltergeistServer) -> bool:
+    rev = server.config.revision
+    return bool(rev.handshake_versions) and not rev.modern_versions
+
+
+@asynccontextmanager
+async def answer_pre_handshake_probes(
+    server: PoltergeistServer,
+    read_stream: Any,
+    write_stream: Any,
+) -> AsyncIterator[Any]:
+    """Yield a read stream for ``Server.run`` that hides pre-``initialize`` probes.
+
+    Use only for a legacy-only room (``is_legacy_only``). The SDK owns and closes
+    the yielded stream and ``write_stream``; this pump stops quietly when either
+    closes, and ends the yielded stream when ``read_stream`` reaches EOF.
+    """
+    import anyio
+    from mcp.shared.message import SessionMessage
+
+    send, receive = anyio.create_memory_object_stream[Any](0)
+
+    async def pump() -> None:
+        handshaken = False
+        async with send:
+            try:
+                async for item in read_stream:
+                    if (
+                        not handshaken
+                        and isinstance(item, SessionMessage)
+                        and isinstance(item.message, types.JSONRPCRequest)
+                    ):
+                        msg = item.message
+                        if msg.method == "initialize":
+                            handshaken = True
+                        else:
+                            claimed = _envelope_version(msg.params)
+                            if claimed is not None:
+                                reply = types.JSONRPCError(
+                                    jsonrpc="2.0", id=msg.id, error=server.refuse_probe(claimed)
+                                )
+                                await write_stream.send(SessionMessage(reply))
+                                continue
+                    await send.send(item)
+            except (anyio.ClosedResourceError, anyio.BrokenResourceError, anyio.EndOfStream):
+                return
+
+    async with anyio.create_task_group() as tg:
+        tg.start_soon(pump)
+        try:
+            yield receive
+        finally:
+            tg.cancel_scope.cancel()

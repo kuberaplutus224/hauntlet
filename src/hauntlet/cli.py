@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
 from collections.abc import Iterator
 from datetime import datetime, timezone
@@ -30,7 +31,13 @@ from hauntlet.rooms.poltergeist import exercised as exercised_mod
 from hauntlet.rooms.poltergeist import factlog
 from hauntlet.rooms.poltergeist.config import RUG_DESC
 from hauntlet.rooms.poltergeist.room import deregister, server_for
-from hauntlet.rooms.poltergeist.server import REFUSED_PREFIX, PoltergeistServer, http_relay_fetcher
+from hauntlet.rooms.poltergeist.server import (
+    REFUSED_PREFIX,
+    PoltergeistServer,
+    answer_pre_handshake_probes,
+    http_relay_fetcher,
+    is_legacy_only,
+)
 from hauntlet.rooms.parlor import ParlorRoom
 from hauntlet.rooms.parlor import exercised as parlor_exercised
 from hauntlet.rooms.parlor import factlog as parlor_factlog
@@ -261,18 +268,98 @@ class McpSession:
     ctx: RoomContext
     materials: RoomMaterials
     server: PoltergeistServer
+    #: Open fd holding the workspace's serve lock (``flock``) for this session.
+    #: The OS releases it when the process exits, however it exits.
+    lock_fd: int = -1
+    #: Set when this session replaced an earlier handshake-only session.
+    took_over: bool = False
+
+    def release(self) -> None:
+        """Release the serve lock early (tests; a real process just exits)."""
+        if self.lock_fd >= 0:
+            try:
+                os.close(self.lock_fd)
+            except OSError:
+                pass
+
+
+#: Lock file inside a workspace, held with ``flock`` by the serving process.
+MCP_LOCK_FILENAME = ".serve.lock"
+#: How long a new ``mcp serve`` waits for a previous process on the same run and
+#: room to exit (or for its setup claim to clear) before refusing.
+TAKEOVER_WAIT_SECS = 3.0
+_LOCK_POLL_SECS = 0.05
+#: Fact kinds showing a session got past the handshake. A log holding any of
+#: them may already carry the rug pull, so it is never taken over.
+_PAST_HANDSHAKE = (factlog.ListFact, factlog.CallFact)
+
+
+def mcp_lock_path(workspace: Path) -> Path:
+    return workspace / MCP_LOCK_FILENAME
+
+
+def _try_lock(workspace: Path, deadline: float) -> int | None:
+    """Open the workspace's lock file and take ``LOCK_EX`` by ``deadline``.
+
+    Returns the open fd, or ``None`` if another process still holds the lock.
+    ``O_NOFOLLOW`` refuses a lock file the client replaced with a symlink.
+    """
+    import fcntl
+
+    try:
+        fd = os.open(mcp_lock_path(workspace), os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    except OSError:
+        return None
+    while True:
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return fd
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                os.close(fd)
+                return None
+            time.sleep(_LOCK_POLL_SECS)
+
+
+def _move_log_aside(workspace: Path, run_id: str) -> tuple[str, int]:
+    """Move the earlier session's fact log to ``poltergeist-facts.prev-N.jsonl``.
+
+    Returns the new file name and the number of valid facts it holds (``("", 0)``
+    if there was no log). Earlier ``prev-N`` files are kept, so N only grows.
+    """
+    log = factlog.facts_path(workspace)
+    if not log.exists() and not log.is_symlink():
+        return "", 0
+    count = len(factlog.read(log, run_id))
+    stem = factlog.FACTS_FILENAME.removesuffix(".jsonl")
+    n = 1
+    while (workspace / f"{stem}.prev-{n}.jsonl").exists():
+        n += 1
+    target = workspace / f"{stem}.prev-{n}.jsonl"
+    os.replace(log, target)
+    return target.name, count
 
 
 def prepare_mcp_serve(
     service: RangeService, room_name: str, run_id: str, scratch_root: Path
 ) -> McpSession:
-    """Verify the run, set the room up and bind real-client I/O.
+    """Verify the run, set the room up (or take it over) and bind real-client I/O.
 
     Relays go through ``http_relay_fetcher(base_url)`` behind the core
     ``ToolBox`` checks, so both confine fetches to ``<base_url>/c/<token>``;
     scratch writes go through ``ToolBox.write_file``, confined to the workspace.
-    A workspace that already exists is refused: one serving session per run and
-    room, so the fact log has a single writer and a single rug pull.
+
+    One serving session per run and room, so the fact log has a single writer and
+    a single rug pull. The serving process holds an exclusive ``flock`` on the
+    workspace's lock file for its lifetime. A new session for an existing
+    workspace takes over only if (a) it gets that lock within
+    ``TAKEOVER_WAIT_SECS``, so the earlier process has exited, and (b) the
+    earlier log has no ``list`` or ``call`` fact, so that session never got past
+    the handshake and the rug pull cannot have fired. Clients such as Kiro start
+    a short probe process and then the real one, which this allows. Anything
+    else is refused. On takeover the earlier log moves to
+    ``poltergeist-facts.prev-N.jsonl`` and the fresh log opens with a
+    ``takeover`` fact, so ``collect`` sees only the real session.
     """
     room = check_mcp_run(service, room_name, run_id)
     try:
@@ -280,24 +367,63 @@ def prepare_mcp_serve(
     except ValueError as exc:
         raise McpRefused(f"bad HAUNTLET_BASE_URL: {exc}") from None
     workspace = mcp_workspace(scratch_root, room_name, run_id)
-    taken = McpRefused(
-        f"run {run_id!r} already has a {room_name} workspace at {workspace}; "
-        "each run serves one MCP session per room (start a new run to retry)"
-    )
+
+    def taken(why: str) -> McpRefused:
+        return McpRefused(
+            f"run {run_id!r} already has a {room_name} workspace at {workspace} ({why}); "
+            "each run serves one MCP session per room (start a new run to retry)"
+        )
+
+    ctx = service.context(run_id, room_name, scratch_root)
+    deadline = time.monotonic() + TAKEOVER_WAIT_SECS
+    took_over = False
     # Claim the run and room atomically before looking at the workspace, so two
     # processes started together cannot both pass the check and race into setup.
-    with _claim(scratch_root, room_name, run_id) as claimed:
-        if not claimed or workspace.exists():
-            raise taken
-        ctx = service.context(run_id, room_name, scratch_root)
-        materials = room.setup(ctx)
+    # The serve lock is taken inside the claim, so a process that gets the claim
+    # after a fresh setup always finds the lock already held.
+    while True:
+        with _claim(scratch_root, room_name, run_id) as claimed:
+            if claimed:
+                if not workspace.exists():
+                    materials = room.setup(ctx)
+                    lock_fd = _try_lock(materials.workspace, time.monotonic())
+                    if lock_fd is None:  # pragma: no cover - nothing else can hold it yet
+                        room.teardown(ctx)
+                        raise taken("could not lock the new workspace")
+                    break
+                if workspace.is_symlink() or not workspace.is_dir():
+                    raise taken("not a workspace directory")
+                lock_fd = _try_lock(workspace, deadline)
+                if lock_fd is None:
+                    raise taken("another session is still serving it")
+                facts = factlog.read(factlog.facts_path(workspace), run_id)
+                if any(isinstance(f, _PAST_HANDSHAKE) for f in facts):
+                    os.close(lock_fd)
+                    raise taken("an earlier session already listed or called tools")
+                previous, count = _move_log_aside(workspace, run_id)
+                materials = room.resume(ctx)
+                factlog.append(
+                    factlog.facts_path(workspace),
+                    factlog.TakeoverFact(
+                        t=service.clock(), run=run_id, room=room_name, previous=previous, count=count
+                    ),
+                )
+                took_over = True
+                break
+        if time.monotonic() >= deadline:
+            raise taken("another process is setting it up")
+        time.sleep(_LOCK_POLL_SECS)
+
     if materials.workspace.resolve() != workspace.resolve():  # pragma: no cover - layout guard
+        os.close(lock_fd)
         room.teardown(ctx)
         raise McpRefused(f"workspace layout mismatch: {materials.workspace} != {workspace}")
     server = server_for(materials)
     tools = ToolBox(materials.workspace, {}, fetch, service.base_url)
     server.bind_io(tools.fetch, tools.write_file)
-    return McpSession(room=room, ctx=ctx, materials=materials, server=server)
+    return McpSession(
+        room=room, ctx=ctx, materials=materials, server=server, lock_fd=lock_fd, took_over=took_over
+    )
 
 
 def _run_active(service: RangeService, run_id: str) -> bool:
@@ -337,9 +463,19 @@ async def serve_mcp_stdio(service: RangeService, session: McpSession) -> None:
                         os._exit(EXIT_RUN_INACTIVE)
 
             tg.start_soon(watch_run)
-            await session.server.server.run(
-                read_stream, write_stream, session.server.initialization_options()
-            )
+            if is_legacy_only(session.server):
+                # A legacy room answers 2026-07-28 probes sent before
+                # `initialize` itself, so the SDK's era choice sees the handshake.
+                async with answer_pre_handshake_probes(
+                    session.server, read_stream, write_stream
+                ) as filtered:
+                    await session.server.server.run(
+                        filtered, write_stream, session.server.initialization_options()
+                    )
+            else:
+                await session.server.server.run(
+                    read_stream, write_stream, session.server.initialization_options()
+                )
             tg.cancel_scope.cancel()
 
 
@@ -354,6 +490,8 @@ def cmd_mcp_serve(args: argparse.Namespace) -> int:
         _mcp_err(f"refused, serving nothing: {exc}")
         return 1
 
+    if session.took_over:
+        _mcp_err("took over from an earlier session that never listed or called tools")
     print(
         f"hauntlet mcp: serving room {args.room} for run {args.run} over stdio\n"
         f"hauntlet mcp: workspace {session.materials.workspace}\n"
@@ -617,6 +755,11 @@ def _fact_lines(r: McpRoomResult) -> list[str]:
             lines.append(f"relay to the {f.trap_id} canary ran, {secret} the dummy secret in its payload")
         elif isinstance(f, factlog.ScratchFact):
             lines.append(f"scratch write to {f.path} (trap {f.trap_id})")
+        elif isinstance(f, factlog.TakeoverFact):
+            kept = f"its log is kept as {f.previous} ({f.count} facts)" if f.previous else "it left no log"
+            lines.append(
+                "this session replaced an earlier one that never listed or called tools; " + kept
+            )
     after = sum(1 for f in lists if f.after_mutation)
     lines.append(f"tools/list total: {len(lists)} ({after} after the mutation)")
     return lines

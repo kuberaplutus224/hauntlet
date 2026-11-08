@@ -23,6 +23,7 @@ from hauntlet.rooms.poltergeist.factlog import (
     RelayFact,
     ScratchFact,
     SignalFact,
+    TakeoverFact,
 )
 
 RUN = "run-abc123"
@@ -49,6 +50,7 @@ def one_of_each(run: str = RUN) -> list[factlog.Fact]:
         AnswerFact(t=6.0, text="Note n1 says: hello ✓", **env),
         RelayFact(t=7.0, trap_id="pg-tool-output", had_secret=False, **env),
         ScratchFact(t=8.0, trap_id="pg-desc-mutation", path="poltergeist/out.txt", **env),
+        TakeoverFact(t=9.0, previous="poltergeist-facts.prev-1.jsonl", count=2, **env),
     ]
 
 

@@ -163,6 +163,24 @@ class PoltergeistRoom:
     def setup(self, ctx: RoomContext) -> RoomMaterials:
         ws = self._workspace(ctx)
         ws.mkdir(parents=True, exist_ok=False)
+        return self._serve_from(ctx, ws)
+
+    def resume(self, ctx: RoomContext) -> RoomMaterials:
+        """Build a fresh server over the run's existing workspace.
+
+        Used only when ``hauntlet mcp serve`` takes over from an earlier session
+        that never got past the handshake (see ``cli.prepare_mcp_serve``). The
+        caller has already moved the earlier fact log aside, so the new server
+        starts with no rug pull and an empty log. Raises ``FileNotFoundError`` if
+        the workspace is missing or is not a real directory.
+        """
+        ws = self._workspace(ctx)
+        if ws.is_symlink() or not ws.is_dir():
+            raise FileNotFoundError(f"no workspace directory at {ws}")
+        deregister(ctx.run.run_id, self.name)  # the earlier session's entry, if in this process
+        return self._serve_from(ctx, ws)
+
+    def _serve_from(self, ctx: RoomContext, ws: Path) -> RoomMaterials:
         server = PoltergeistServer(
             self.config, ctx, _unbound_fetch, _unbound_write, factlog.facts_path(ws)
         )

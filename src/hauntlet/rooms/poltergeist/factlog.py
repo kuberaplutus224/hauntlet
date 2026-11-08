@@ -20,7 +20,14 @@ signal     ``path`` (one of ``SIGNAL_PATHS``), ``receiver_present`` (bool)
 answer     ``text`` (str)
 relay      ``trap_id`` (str), ``had_secret`` (bool)
 scratch    ``trap_id`` (str), ``path`` (str)
+takeover   ``previous`` (str), ``count`` (int)
 ========== ==========================================================
+
+A ``takeover`` record opens a fresh log when ``hauntlet mcp serve`` replaced
+an earlier session that never got past the handshake (no ``list`` or ``call``
+fact). ``previous`` names the file the earlier log was moved to (empty if there
+was none) and ``count`` its number of valid facts. ``exercised.compute`` and
+``collect`` ignore it; the run summary prints it.
 
 The ``signal`` record is evidence only: it says how the change signal was sent
 and whether anything was there to receive it. ``exercised.compute`` and
@@ -65,7 +72,7 @@ LIVE_TOOLS: tuple[str, ...] = ("check_health", "get_note")  # sorted
 
 #: All record kinds.
 KINDS: frozenset[str] = frozenset(
-    {"negotiated", "list", "call", "mutation", "signal", "answer", "relay", "scratch"}
+    {"negotiated", "list", "call", "mutation", "signal", "answer", "relay", "scratch", "takeover"}
 )
 
 #: ``signal.path`` values: the 2026-07-28 ``subscriptions/listen`` bus, or the
@@ -304,16 +311,32 @@ class ScratchFact(_Envelope):
         return {"trap_id": self.trap_id, "path": self.path}
 
 
+@dataclass(frozen=True)
+class TakeoverFact(_Envelope):
+    previous: str
+    count: int
+    kind = "takeover"
+
+    def __post_init__(self) -> None:
+        self._check_envelope()
+        _req_str("previous", self.previous, nonempty=False)
+        if isinstance(self.count, bool) or not isinstance(self.count, int) or self.count < 0:
+            raise ValueError("count must be a non-negative int")
+
+    def _fields(self) -> dict[str, Any]:
+        return {"previous": self.previous, "count": self.count}
+
+
 Fact = Union[
     NegotiatedFact, ListFact, CallFact, MutationFact, SignalFact, AnswerFact, RelayFact,
-    ScratchFact,
+    ScratchFact, TakeoverFact,
 ]
 
 _BY_KIND: dict[str, type] = {
     cls.kind: cls
     for cls in (
         NegotiatedFact, ListFact, CallFact, MutationFact, SignalFact, AnswerFact, RelayFact,
-        ScratchFact,
+        ScratchFact, TakeoverFact,
     )
 }
 
@@ -426,6 +449,6 @@ __all__ = [
     "FACTS_FILENAME", "MAX_LINE_BYTES", "VERSIONS", "LIVE_TOOLS", "KINDS",
     "SIGNAL_LISTEN", "SIGNAL_NOTIFICATION", "SIGNAL_PATHS",
     "Fact", "NegotiatedFact", "ListFact", "CallFact", "MutationFact", "SignalFact", "AnswerFact",
-    "RelayFact", "ScratchFact",
+    "RelayFact", "ScratchFact", "TakeoverFact",
     "append", "read", "facts_path", "to_record", "to_line", "from_record",
 ]

@@ -1,0 +1,1 @@
+{"jsonrpc":"2.0","id":"server-discover-probe-1","result":{"cacheScope":"private","capabilities":{"tools":{"listChanged":true}},"resultType":"complete","supportedVersions":["2026-07-28"],"ttlMs":0,"_meta":{"io.modelcontextprotocol/serverInfo":{"name":"hauntlet-poltergeist","version":"0.1.0"}}}}

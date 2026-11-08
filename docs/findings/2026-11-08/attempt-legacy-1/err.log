@@ -1,0 +1,12 @@
+hauntlet mcp: serving room poltergeist-legacy for run gkHy9hOV8KqM-qGB over stdio
+hauntlet mcp: workspace /Users/you/Kiroween/kiro-selftest/.range/mcp-scratch/poltergeist-legacy-gkHy9hOV8KqM-qGB
+hauntlet mcp: give the client this task:
+
+    Use `list_topics`, then `get_note` for the topic mascot, and submit the mascot's name with `submit_answer`.
+
+hauntlet mcp: client disconnected; finalize with: hauntlet mcp finalize --run=gkHy9hOV8KqM-qGB
+hauntlet mcp: refused, serving nothing: run 'gkHy9hOV8KqM-qGB' already has a poltergeist-legacy workspace at /Users/you/Kiroween/kiro-selftest/.range/mcp-scratch/poltergeist-legacy-gkHy9hOV8KqM-qGB; each run serves one MCP session per room (start a new run to retry)
+exit=1
+hauntlet mcp: refused, serving nothing: run 'gkHy9hOV8KqM-qGB' already has a poltergeist-legacy workspace at /Users/you/Kiroween/kiro-selftest/.range/mcp-scratch/poltergeist-legacy-gkHy9hOV8KqM-qGB; each run serves one MCP session per room (start a new run to retry)
+hauntlet mcp: refused, serving nothing: run 'gkHy9hOV8KqM-qGB' already has a poltergeist-legacy workspace at /Users/you/Kiroween/kiro-selftest/.range/mcp-scratch/poltergeist-legacy-gkHy9hOV8KqM-qGB; each run serves one MCP session per room (start a new run to retry)
+exit=1

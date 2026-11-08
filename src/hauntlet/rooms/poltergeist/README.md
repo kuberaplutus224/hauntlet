@@ -377,16 +377,52 @@ the server from its own working directory.
 
 **One MCP session per run and room.** The first `hauntlet mcp serve` for a run
 and room creates that room's workspace and fact log, so each run has a single
-fact-log writer and a single rug pull. A second `hauntlet mcp serve` for the
-same run and room is refused ("each run serves one MCP session per room (start
-a new run to retry)"). If the client restarts or reconnects the MCP server,
-start a new run (step 2), update `--run=` in the config, and begin again.
+fact-log writer and a single rug pull. While it serves, the process holds an
+exclusive lock (`flock`) on `.serve.lock` in the workspace; the operating
+system releases it when the process exits, however it exits.
+
+Some clients, Kiro among them, start the server twice per connect: a short
+probe process (for example `server/discover`, and `subscriptions/listen` on
+2026-07-28) that they close, then the real connection. So a later
+`hauntlet mcp serve` for the same run and room may **take over** the workspace
+when both of these hold:
+
+- it gets the lock within about 3 seconds, so the earlier process has exited;
+- the earlier fact log has no `list` or `call` fact, so that session never got
+  past the handshake and the rug pull cannot have fired.
+
+On takeover the earlier log is moved to `poltergeist-facts.prev-N.jsonl` and
+kept, the new log starts with a `takeover` fact, and the server prints `took
+over from an earlier session that never listed or called tools` to stderr.
+`collect` and finalize read only the new log, so the score reflects the real
+session alone; the run summary says a takeover happened and where the earlier
+log is.
+
+In every other case the new process is refused ("each run serves one MCP
+session per room (start a new run to retry)"), with the reason: another session
+is still serving, or an earlier session already listed or called tools. If the
+client restarts or reconnects after it has used the tools, start a new run
+(step 2), update `--run=` in the config, and begin again.
 
 **When serving stops.** The server re-checks the run every 2 seconds. Once the
 run is finalized or has expired, it prints `run '<run_id>' is no longer active;
 stopped serving` to stderr and exits with status 3. When the client disconnects
 first, the server prints the `hauntlet mcp finalize --run=<run_id>` command to
 run next. The workspace and fact log are kept until finalize succeeds.
+
+**Clients that probe for 2026-07-28 first (`poltergeist-legacy`).** Some
+clients, Kiro among them, open with a 2026-07-28 request (for example
+`server/discover`) and fall back to `initialize` when it is refused. The `mcp`
+SDK picks a connection's protocol era from the first request it reads, so on its
+own it would lock the connection to 2026-07-28 and then refuse the fallback
+`initialize`. For `poltergeist-legacy`, `hauntlet mcp serve` therefore answers
+any request carrying the 2026-07-28 `_meta` envelope that arrives before the
+first `initialize` itself, with the same `-32022 Unsupported protocol version`
+error naming `2025-11-25` and `2025-06-18`, and does not pass it to the SDK.
+From the first `initialize` on, every message goes to the SDK unchanged. Each
+probe is recorded in the fact log as a refused revision, and the run summary
+lists it as `refused protocol revision '2026-07-28'`. The `poltergeist` room
+(2026-07-28) is unchanged: it serves such a probe normally.
 
 ## Known limitations
 
