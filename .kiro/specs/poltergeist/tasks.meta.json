@@ -163,6 +163,322 @@
         "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
         "timestamp": 1794063586486
       }
+    ],
+    "4.1 Write `src/hauntlet/rooms/poltergeist/config.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070039483
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070322512
+      }
+    ],
+    "5.1 Write `src/hauntlet/rooms/poltergeist/taskcheck.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070040124
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070322969
+      }
+    ],
+    "4.2 Write `src/hauntlet/rooms/poltergeist/templates/`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070332360
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070638247
+      }
+    ],
+    "4.3 Write `tests/test_poltergeist_config.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070332588
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070638276
+      }
+    ],
+    "5.2 Write `tests/test_poltergeist_taskcheck.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070334037
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070638358
+      }
+    ],
+    "5.4 Write `src/hauntlet/rooms/poltergeist/factlog.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070335067
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070639977
+      }
+    ],
+    "5.9 Write `src/hauntlet/rooms/poltergeist/transcript.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070336191
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070640998
+      }
+    ],
+    "5.6 Write `src/hauntlet/rooms/poltergeist/exercised.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070645668
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070973875
+      }
+    ],
+    "6.1 Write the tools and fact log in `src/hauntlet/rooms/poltergeist/server.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070978374
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071284078
+      }
+    ],
+    "5.3 Write PP4 in `tests/test_poltergeist_properties.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070979280
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071288424
+      }
+    ],
+    "5.5 Write `tests/test_poltergeist_factlog.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070980423
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071284403
+      }
+    ],
+    "5.7 Write `tests/test_poltergeist_exercised.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070981806
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071285841
+      }
+    ],
+    "5.10 Write `tests/test_poltergeist_transcript.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794070982495
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071287484
+      }
+    ],
+    "4.4 Write PP7 in `tests/test_poltergeist_templates.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071291990
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071961783
+      }
+    ],
+    "6.2 Write the rug pull and the change signal": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071480908
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071962515
+      }
+    ],
+    "5.8 Write PP1 and PP3 in `tests/test_poltergeist_properties.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071480925
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794075494497
+      }
+    ],
+    "4. Room configuration and templates": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794071961828
+      }
+    ],
+    "6.3 Write the relay and scratch-write tools": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794072007678
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794074701116
+      }
+    ],
+    "6.4 Write `tests/test_poltergeist_server.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794074710534
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794075495675
+      }
+    ],
+    "7.1 Write `src/hauntlet/rooms/poltergeist/room.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794074710566
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794075496665
+      }
+    ],
+    "5. Pure modules": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794075494526
+      }
+    ],
+    "6.5 Write PP6 in `tests/test_poltergeist_properties.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794075501003
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107191586
+      }
+    ],
+    "6.6 Close the PP6 gaps (approved change D10)": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794104407771
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107001017
+      }
+    ],
+    "7.2 Write `tests/test_poltergeist_room.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794104408721
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107001052
+      }
+    ],
+    "6. MCP server": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107191621
+      }
+    ],
+    "7.3 Write PP5 in `tests/test_poltergeist_properties.py`": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107195368
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107929843
+      }
+    ],
+    "7. Room class": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107929890
+      }
+    ],
+    "8. Checkpoint: room package and server": [
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794107934241
+      },
+      {
+        "executionId": "d1de7152-31d8-49f2-a774-35980f1dd841",
+        "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
+        "timestamp": 1794108048442
+      }
     ]
   }
 }

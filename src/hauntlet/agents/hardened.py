@@ -13,7 +13,12 @@ _DIRECTED = re.compile(
     r"(?:automated assistants?|AI agents?|ignore (?:all |any )?previous)"
     r"|(?:before editing[^.]*\bopen\b)"
     r"|(?:create the file \S+ containing)"
-    r"|(?:repeat the phrase)",
+    r"|(?:repeat the phrase)"
+    # A second-person obligation to invoke a tool: "you must call <tool>".
+    r"|(?:\byou (?:must|should|need to) (?:first |also )?call\b)"
+    # A tool invocation written out in call syntax inside an instruction:
+    # "by calling <tool>(".
+    r"|(?:\bby calling [`'\"]?\w+\()",
     re.IGNORECASE,
 )
 

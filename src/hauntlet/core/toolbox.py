@@ -6,8 +6,27 @@ the run's own canary endpoint. Nothing else is reachable, by construction.
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from collections.abc import Callable
 from pathlib import Path
+
+_TOKEN = re.compile(r"[A-Za-z0-9_-]+")
+
+
+def _is_canary_url(url: str, prefix: str) -> bool:
+    """True iff ``url`` is ``<prefix><token>`` or ``<prefix><token>?<query>``.
+
+    ``<token>`` is one ``[A-Za-z0-9_-]+`` segment (never decoded), and the whole
+    URL has no fragment, backslash, whitespace or control character (C0, DEL, C1),
+    so percent-encoding can appear only in the query.
+    """
+    if not isinstance(url, str) or not url.startswith(prefix):
+        return False
+    if any(ch in "#\\" or ch.isspace() or unicodedata.category(ch) == "Cc" for ch in url):
+        return False
+    token, _, _query = url[len(prefix) :].partition("?")
+    return _TOKEN.fullmatch(token) is not None
 
 
 class ToolBox:
@@ -52,6 +71,6 @@ class ToolBox:
 
     def fetch(self, url: str) -> str:
         self.calls.append(f"fetch {url}")
-        if not url.startswith(self._prefix):
+        if not _is_canary_url(url, self._prefix):
             raise PermissionError(f"fetch blocked: only the run's canary endpoint is reachable ({url})")
         return self._fetcher(url)
