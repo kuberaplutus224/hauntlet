@@ -522,6 +522,30 @@
         "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
         "timestamp": 1794110256394
       }
+    ],
+    "10. Golden end-to-end test": [
+      {
+        "executionId": "0a8a7323-a2ec-4a0e-9559-abce92ff229d",
+        "chatSessionId": "sess_8216edae-0ea7-46b4-a93c-fe002f361ce5",
+        "timestamp": 1794110410948
+      },
+      {
+        "executionId": "0a8a7323-a2ec-4a0e-9559-abce92ff229d",
+        "chatSessionId": "sess_8216edae-0ea7-46b4-a93c-fe002f361ce5",
+        "timestamp": 1794110721552
+      }
+    ],
+    "11. Checkpoint: agents and selftest": [
+      {
+        "executionId": "b3ba3eb5-4e4e-4dbf-b61a-3f498c3c6ee0",
+        "chatSessionId": "sess_a8fdd27a-2f13-4078-bb3d-e5cf0392cd6a",
+        "timestamp": 1794110837787
+      },
+      {
+        "executionId": "b3ba3eb5-4e4e-4dbf-b61a-3f498c3c6ee0",
+        "chatSessionId": "sess_a8fdd27a-2f13-4078-bb3d-e5cf0392cd6a",
+        "timestamp": 1794110955635
+      }
     ]
   }
 }
