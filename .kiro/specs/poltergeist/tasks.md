@@ -286,24 +286,34 @@ in requirements 12.3 (a)–(h). Nothing else in `src/hauntlet/core/` changes.
   - Run `uv run pytest`, `uv run hauntlet selftest -n 5` and `uv run python scripts/check_payload_safety.py`
   - Stop and ask the user if anything fails
 
-- [ ] 14. Citation verification and README (release gate)
-  - [~] 14.1 Verify each trap's source and record it in the README
+- [x] 14. Citation verification and README (release gate)
+  - [x] 14.1 Verify each trap's source and record it in the README
     - For `rug-desc` confirm from the primary publications: the T3 rug-pull of arXiv 2607.05744, TC2/TV5 Post-Approval Mutation of arXiv 2604.05969, and the Trigger + Action + Justification principle of arXiv 2508.14925. For `tool-output` confirm TV3 Return Value Poisoning of arXiv 2604.05969
     - Open each source; do not fill gaps from memory or secondary summaries. Mark anything that cannot be opened UNCONFIRMED and stop and ask the user
     - Confirm every source used appears in rule 4 of `.kiro/steering/safety-rules.md`
     - _Requirements: 11.1, 11.2, 11.3, 11.4_
-  - [~] 14.2 Write `src/hauntlet/rooms/poltergeist/README.md`
+  - [x] 14.2 Write `src/hauntlet/rooms/poltergeist/README.md`
     - What the room measures, both room names and their revisions; the tool table; the trap table with signals each can produce
     - Citations per trap with what was opened to confirm each; the deliberate 2026-07-28 non-compliance (mutating on a tool call) and why; that `not_exercised` uses the `filesystem` channel only because the core requires a channel, and that the channel carries no meaning there
     - The step-by-step real-client procedure (start the range, start a run, add `hauntlet mcp serve` to the client's MCP config, run the task, export the transcript, finalize)
     - Known limitations: a client with filesystem access to the scratch workspace could edit the fact log (recommend the Exorcist sandbox); a UI re-approval prompt is not server-observable; Detected needs the tool named; only `assistant` entries are scanned
     - A disclosure section per requirement 13
     - _Requirements: 2.2, 3.4, 4.2, 8.5, 8.8, 11.3, 13.1, 13.2, 13.3_
-  - [~] 14.3 Remove "to verify" and add the gate test
+  - [x] 14.3 Remove "to verify" and add the gate test
     - Remove "(to verify)" from every `source` in `config.py` and from the README
     - `tests/test_poltergeist_citations.py`: no `TrapSpec.source` in either manifest contains "to verify" or "UNCONFIRMED"; the README contains neither; every non-control trap ID appears in the README citations with a benchmark name and a reference; every arXiv ID the README cites is in safety-rules rule 4
     - Run `uv run pytest` and `uv run hauntlet selftest -n 5`; the room is not done until both pass
     - _Requirements: 11.2, 11.3, 11.4_
+  - [x] 14.4 Add `**Validates: Requirements X.Y**` lines to Properties 1–7 in design.md
+    - One line under each property heading, naming the requirements each property actually checks (taken from requirements.md and the tasks that implement it); the design validator shows 0 warnings
+    - _Requirements: 10.3_
+  - [x] 14.5 Citation fixes
+    - Check the arXiv 2607.05744 HTML for the exact phrase "Post-approval mutation"; if it is absent, reword the README's 2607.05744 wording-difference line to name only "T3" for that paper (the label belongs to 2604.05969 TV5)
+    - In `.kiro/steering/safety-rules.md` rule 4, change the quoted "MCPShield" to "MCPSHIELD" to match the arxiv.org abstract page, and update the README's safety-rules check to match; keep the citation and retired-source guard tests passing
+    - _Requirements: 11.3, 11.4_
+  - [x] 14.6 Match requirements.md to rule 4
+    - In requirements.md (line 58), change the quoted "presents MCPShield" to "presents MCPSHIELD" to match the arxiv.org abstract page and safety-rules rule 4; text-only change, run the citation guard tests
+    - _Requirements: 11.4_
 
 ## Notes
 

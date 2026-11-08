@@ -55,7 +55,7 @@ claim UNCONFIRMED there.
   Condition + Malicious Action + Plausible Justification.
 - arXiv 2604.05969, *A Formal Security Framework for MCP-Based AI Agents: Threat
   Taxonomy, Verification Models, and Defense Mechanisms* (abstract and HTML full
-  text). The abstract says the paper "presents MCPShield, a comprehensive formal
+  text). The abstract says the paper "presents MCPSHIELD, a comprehensive formal
   security framework for MCP-based AI agents". It confirms these taxonomy
   entries: TC1 Tool Poisoning (TV1 Description Injection, TV3 Return Value
   Poisoning) and TC2 Rug Pull and Mutation Attacks (TV5 Post-Approval Mutation).

@@ -127,11 +127,12 @@ def test_manifest_order_is_non_control_then_control(cfg: RoomConfig) -> None:
 
 
 @CONFIGS
-def test_non_control_sources_are_marked_to_verify(cfg: RoomConfig) -> None:
-    """Placeholder marker until task 14.3 verifies the citations and drops it."""
+def test_non_control_sources_are_verified(cfg: RoomConfig) -> None:
+    """Task 14.3 verified the citations and dropped the "(to verify)" marker."""
     for trap in cfg.manifest().traps:
         if not trap.is_control:
-            assert trap.source.endswith("(to verify)"), trap.trap_id
+            assert trap.source.strip(), trap.trap_id
+            assert "to verify" not in trap.source.lower(), trap.trap_id
 
 
 # ---------------------------------------------------------------------------

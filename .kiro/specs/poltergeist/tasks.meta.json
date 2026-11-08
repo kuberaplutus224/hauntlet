@@ -656,6 +656,16 @@
         "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
         "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
         "timestamp": 1794113230747
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115108607
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115255101
       }
     ],
     "14.2 Write `src/hauntlet/rooms/poltergeist/README.md`": [
@@ -663,6 +673,16 @@
         "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
         "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
         "timestamp": 1794113230774
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115255682
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115637435
       }
     ],
     "14.3 Remove \"to verify\" and add the gate test": [
@@ -670,6 +690,16 @@
         "executionId": "e061df28-20d0-4993-ab37-f72b5b88ff7c",
         "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
         "timestamp": 1794113230801
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115637918
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115905075
       }
     ],
     "12.6 Record a `signal` fact when the change signal is published": [
@@ -682,6 +712,59 @@
         "executionId": "73bb1aca-acce-45b3-a2ae-ce94145bb76c",
         "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
         "timestamp": 1794114915991
+      }
+    ],
+    "14.4 Add `**Validates: Requirements X.Y**` lines to Properties 1–7 in design.md": [
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115905416
+      },
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115993680
+      }
+    ],
+    "14. Citation verification and README (release gate)": [
+      {
+        "executionId": "fba918b2-0204-4934-a75d-ecbf9b3c7918",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794115993708
+      },
+      {
+        "executionId": "74f2aae8-fa97-4725-9c3d-6572875a1549",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794116354407
+      },
+      {
+        "executionId": "e3fc7fe1-87de-41b3-8d2a-972b4e72d9da",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794116536720
+      }
+    ],
+    "14.5 Citation fixes": [
+      {
+        "executionId": "74f2aae8-fa97-4725-9c3d-6572875a1549",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794116194826
+      },
+      {
+        "executionId": "74f2aae8-fa97-4725-9c3d-6572875a1549",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794116354361
+      }
+    ],
+    "14.6 Match requirements.md to rule 4": [
+      {
+        "executionId": "e3fc7fe1-87de-41b3-8d2a-972b4e72d9da",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794116506321
+      },
+      {
+        "executionId": "e3fc7fe1-87de-41b3-8d2a-972b4e72d9da",
+        "chatSessionId": "sess_d0133bc3-2e50-4914-84d0-86fec0ae514d",
+        "timestamp": 1794116536693
       }
     ]
   }

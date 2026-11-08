@@ -24,7 +24,7 @@ Kiro must refuse or flag any work that violates them.
    citable benchmarks (RepoGuardBench, CIPR, CodeIPI (UK AISI inspect_evals
    `ipi_coding_agent`), injkt, arXiv 2607.05744, arXiv 2508.14925 (MCPTox),
    arXiv 2604.05969 ("A Formal Security Framework for MCP-Based AI Agents",
-   whose abstract says it "presents MCPShield, a comprehensive formal security
+   whose abstract says it "presents MCPSHIELD, a comprehensive formal security
    framework")). The project does not invent
    novel attack techniques; it measures known ones and generates defences.
 5. **Defence is the deliverable.** Every room exists to produce a score and a
