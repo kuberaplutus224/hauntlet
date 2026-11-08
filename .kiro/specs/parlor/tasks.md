@@ -23,36 +23,36 @@ numbered proposal and stops the task.
 
 ## Tasks
 
-- [ ] 1. Approved core change D11 (pages through `/c/{token}`)
-  - [ ] 1.1 Reserve `__page__`
+- [x] 1. Approved core change D11 (pages through `/c/{token}`)
+  - [x] 1.1 Reserve `__page__`
     - `src/hauntlet/core/levels.py`: add `PAGE_TRAP_ID = "__page__"` beside `TASK_TRAP_ID`; no new `Signal`, no `SIGNAL_LEVEL` entry
     - `src/hauntlet/core/service.py` `_validate_manifest`: reject a trap with ID `__page__`, same check shape and message style as `__task__`
     - _Requirements: 2.1, 14 D11_
-  - [ ] 1.2 Add `PageResponse` and `PageRoom` to `src/hauntlet/core/room.py`
+  - [x] 1.2 Add `PageResponse` and `PageRoom` to `src/hauntlet/core/room.py`
     - `PageResponse(body: bytes, content_type: str, headers: tuple[tuple[str, str], ...] = ())`, frozen
     - `PageRoom` as a `runtime_checkable` `Protocol` with `serve_page(ctx, query) -> PageResponse | None`; `Room` is unchanged
     - _Requirements: 14 D11_
-  - [ ] 1.3 Page canary, page workspace and `serve_page` in `src/hauntlet/core/service.py`
+  - [x] 1.3 Page canary, page workspace and `serve_page` in `src/hauntlet/core/service.py`
     - `__init__`: keyword-only `page_scratch_root: Path | None = None`; in-memory `_page_roots: dict[tuple[str, str], Path]`
     - `start_run`: for each room in the run that `isinstance(..., PageRoom)`, append one `Canary(kind="page", trap_id=PAGE_TRAP_ID, value=secrets.token_urlsafe(18))`; non-page rooms get nothing extra; `canary.py` unchanged
     - `setup_room(run_id, room_name, scratch_root) -> (RoomContext, RoomMaterials)`: `context` + `room.setup`; record the root for page rooms
     - `serve_page(token, query)`: `page` canary lookup → run exists and `is_active` → room is a `PageRoom` → root = recorded root else `page_scratch_root` else `None` → `room.serve_page(ctx, query)`; appends no event (design.md "D11 in detail")
-    - `fetch_local`: unchanged for `url` canaries; otherwise fall back to `serve_page`, returning UTF-8 text for `text/*` and `"[parlor:non-text resource]"` otherwise; `None` → `LookupError` as today
+    - `fetch_local`: unchanged for `url` canaries; otherwise fall back to `serve_page`, returning UTF-8 text for `text/*` and `"[non-text resource]"` otherwise; `None` → `LookupError` as today
     - _Requirements: 2.1, 2.3, 2.7, 14 D11_
-  - [ ] 1.4 Switch `run_once` to `setup_room`
+  - [x] 1.4 Switch `run_once` to `setup_room`
     - `src/hauntlet/core/runner.py`: replace `ctx = service.context(...)` + `materials = room.setup(ctx)` with `ctx, materials = service.setup_room(...)`; nothing else changes
     - _Requirements: 10.4, 14 D11_
-  - [ ] 1.5 Shared scratch-root helper
+  - [x] 1.5 Shared scratch-root helper
     - New `src/hauntlet/paths.py`: `scratch_root_beside(db_path) -> db_path.resolve().parent / "mcp-scratch"`
     - `cli.mcp_scratch_root` delegates to it (same return value as today)
     - _Requirements: 11.3, 14 D11_
-  - [ ] 1.6 Page branch in `src/hauntlet/server.py`
+  - [x] 1.6 Page branch in `src/hauntlet/server.py`
     - `GET /c/{token}`: `record_hit` first, exactly as today (`ok`); else `serve_page` → `Response(body, media_type, headers)`; else 404
     - `GET /robots.txt` → `User-agent: *\nDisallow: /\n`
     - `POST /runs`: give `page` canaries a `url` field (`{base}/c/{value}`)
     - `create_app` default service: `page_scratch_root=scratch_root_beside(Path(HAUNTLET_DB))`
     - _Requirements: 2.3, 2.4, 2.5, 11.3, 14 D11_
-  - [ ] 1.7 Write `tests/test_page_serving_core.py` with a stub `PageRoom` defined in the test
+  - [x] 1.7 Write `tests/test_page_serving_core.py` with a stub `PageRoom` defined in the test
     - URL canary hit still returns `ok` and records exactly `reached` (+ `exposed` with a dummy secret), as before D11
     - Unknown token, unknown run, expired run, finalized run, a run without the page room, and no resolvable root each give 404 / `None`
     - `X-Robots-Tag: noindex, nofollow` on page responses and on 404s; `/robots.txt` disallows all
@@ -61,16 +61,16 @@ numbered proposal and stops the task.
     - `POST /runs` lists the page URL
     - `cli.mcp_scratch_root(db) == paths.scratch_root_beside(db)`
     - _Requirements: 2.3, 2.4, 2.5, 2.7, 10.3, 14 D11_
-  - [ ] 1.8 Write the inert-page-fetch test (Requirement 2.7)
+  - [x] 1.8 Write the inert-page-fetch test (Requirement 2.7)
     - **Property PA1: Page fetch is inert**
     - Over generated sequences of page-token requests (any query) against the stub room, the store holds no event for the run, `score` shows every trap at L0 and `task_completed` false; a `task_done` observation from `finalize` is still the only way to complete the task
     - **Validates: Requirements 2.7, 1.3**
-  - [ ] 1.9 Write the workspace-resolution property
+  - [x] 1.9 Write the workspace-resolution property
     - **Property PA10: Page workspace resolves in both modes**
     - Recorded root wins; else `page_scratch_root`; else `None`. A workspace set up by one `RangeService` is served by a second built with the same `page_scratch_root` and the same store file
     - **Validates: Requirements 2.3, 10.4, 14 D11**
 
-- [ ] 2. Checkpoint: D11 green
+- [x] 2. Checkpoint: D11 green
   - `uv run pytest` passes, including scorer properties P1–P9 and every golden test unchanged
   - `uv run hauntlet selftest -n 5` passes over the five existing rooms with unchanged output
   - `uv run python scripts/check_payload_safety.py` exits 0
@@ -187,3 +187,59 @@ numbered proposal and stops the task.
 - [ ] 13. Final checkpoint
   - `uv run pytest`, `uv run hauntlet selftest -n 5` (six rooms) and `scripts/check_payload_safety.py` all pass
   - Append the usage-log line and ask the user to review before any commit
+
+## Notes
+
+- Every test task is required; none is optional.
+- **Task 2 is a hard gate.** D11 is the only core change. It is built and tested against a stub page room before any room code exists, so a core regression shows up at checkpoint 2 with nothing else in flight.
+- `Store.canary_by_value(value, kind)` already existed, so `core/store.py` does not change (checked before task 1.3).
+- D13 (task 3) lands before the templates (task 4), so a binary file under `templates/` can never pass the payload guard unchecked.
+- Tasks that write the same file run in separate waves: `core/service.py` (1.1, 1.3); `tests/test_page_serving_core.py` (1.7, 1.8, 1.9); `tests/test_parlor_properties.py` (5.8, 5.9, 5.10, 6.5, 6.6); `cli.py` (10.1, 10.2); the room README (12.1–12.4).
+- Registration (task 8.4) comes after both agents. Registering earlier would make `hauntlet selftest` drive a room the agents cannot play, failing the naive and hardened assertions.
+- The README is written last, after behaviour is final, so its trap, limitation and defence tables match the shipped room. Writing its Citations section switches on the second half of `tests/test_parlor_citations.py`; task 12.5 checks nothing in that file is still skipped.
+
+## Task Dependency Graph
+
+```json
+{
+  "waves": [
+    { "id": 0, "tasks": ["1.1", "1.2", "1.5"] },
+    { "id": 1, "tasks": ["1.3"] },
+    { "id": 2, "tasks": ["1.4", "1.6"] },
+    { "id": 3, "tasks": ["1.7"] },
+    { "id": 4, "tasks": ["1.8"] },
+    { "id": 5, "tasks": ["1.9"] },
+    { "id": 6, "tasks": ["2"] },
+    { "id": 7, "tasks": ["3.1"] },
+    { "id": 8, "tasks": ["3.2"] },
+    { "id": 9, "tasks": ["4.1"] },
+    { "id": 10, "tasks": ["4.2", "5.1", "5.3"] },
+    { "id": 11, "tasks": ["4.3", "5.2", "5.4", "5.5"] },
+    { "id": 12, "tasks": ["5.6"] },
+    { "id": 13, "tasks": ["5.7", "5.8"] },
+    { "id": 14, "tasks": ["5.9"] },
+    { "id": 15, "tasks": ["5.10"] },
+    { "id": 16, "tasks": ["6.1"] },
+    { "id": 17, "tasks": ["6.2"] },
+    { "id": 18, "tasks": ["6.3"] },
+    { "id": 19, "tasks": ["6.4", "6.5"] },
+    { "id": 20, "tasks": ["6.6"] },
+    { "id": 21, "tasks": ["7"] },
+    { "id": 22, "tasks": ["8.1"] },
+    { "id": 23, "tasks": ["8.2", "8.3"] },
+    { "id": 24, "tasks": ["8.4"] },
+    { "id": 25, "tasks": ["8.5", "8.6"] },
+    { "id": 26, "tasks": ["9"] },
+    { "id": 27, "tasks": ["10.1"] },
+    { "id": 28, "tasks": ["10.2"] },
+    { "id": 29, "tasks": ["10.3", "10.4"] },
+    { "id": 30, "tasks": ["11"] },
+    { "id": 31, "tasks": ["12.1"] },
+    { "id": 32, "tasks": ["12.2"] },
+    { "id": 33, "tasks": ["12.3"] },
+    { "id": 34, "tasks": ["12.4"] },
+    { "id": 35, "tasks": ["12.5"] },
+    { "id": 36, "tasks": ["13"] }
+  ]
+}
+```

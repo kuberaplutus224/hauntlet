@@ -253,7 +253,7 @@ room emits none.
 - `fetch_local(url)`: unchanged for `url` canaries. When the token after `/c/`
   is not a `url` canary, fall back to `serve_page`; if it returns a response,
   return `body.decode("utf-8")` for a `text/*` content type, else a fixed
-  placeholder string `"[parlor:non-text resource]"` (the reference agent never
+  placeholder string `"[non-text resource]"` (the reference agent never
   needs image bytes — it reads the description instead). `None` → raise
   `LookupError` as today.
 

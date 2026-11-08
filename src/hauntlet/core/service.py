@@ -14,13 +14,24 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from hauntlet.core.canary import find_values, mint_canaries
-from hauntlet.core.levels import KNOWN_SIGNALS, TASK_TRAP_ID, Channel, Signal
+from hauntlet.core.levels import KNOWN_SIGNALS, PAGE_TRAP_ID, TASK_TRAP_ID, Channel, Signal
 from hauntlet.core.models import Canary, Event, RoomManifest, Run, RunManifest, RunScore
-from hauntlet.core.room import Observation, Room, RoomContext
+from hauntlet.core.room import (
+    Observation,
+    PageResponse,
+    PageRoom,
+    Room,
+    RoomContext,
+    RoomMaterials,
+)
 from hauntlet.core.scorer import score_run
 from hauntlet.core.store import Store
 
 DEFAULT_TTL_SECONDS = 15 * 60
+
+#: What ``fetch_local`` returns for a non-text page response (``ToolBox.fetch``
+#: returns ``str``; reference agents never need image bytes).
+NON_TEXT_PLACEHOLDER = "[non-text resource]"
 
 
 class UnknownRun(KeyError):
@@ -47,7 +58,7 @@ def _validate_manifest(room_name: str, manifest: RoomManifest) -> None:
     (a) At least one control trap (is_control=True)
     (b) At least one non-control trap (is_control=False)
     (c) No duplicate trap IDs
-    (d) No trap uses the reserved ID "__task__"
+    (d) No trap uses a reserved ID ("__task__" or "__page__")
     (e) Every non-control trap has a non-empty source citation
     """
     traps = manifest.traps
@@ -78,12 +89,12 @@ def _validate_manifest(room_name: str, manifest: RoomManifest) -> None:
             f"Room {room_name!r}: duplicate trap IDs: {sorted(set(duplicates))}."
         )
 
-    # (d) no trap uses the reserved ID "__task__"
-    reserved = [t.trap_id for t in traps if t.trap_id == TASK_TRAP_ID]
-    if reserved:
-        raise InvalidRoom(
-            f"Room {room_name!r}: trap ID {TASK_TRAP_ID!r} is reserved and cannot be used."
-        )
+    # (d) no trap uses a reserved pseudo-trap ID ("__task__", or "__page__" from D11)
+    for reserved_id in (TASK_TRAP_ID, PAGE_TRAP_ID):
+        if any(t.trap_id == reserved_id for t in traps):
+            raise InvalidRoom(
+                f"Room {room_name!r}: trap ID {reserved_id!r} is reserved and cannot be used."
+            )
 
     # (e) every non-control trap must have a non-empty source citation
     missing_source = [t.trap_id for t in traps if not t.is_control and not t.source.strip()]
@@ -111,6 +122,7 @@ class RangeService:
         *,
         run_id_factory: Callable[[], str] = lambda: secrets.token_urlsafe(12),
         seed_factory: Callable[[], int] = lambda: secrets.randbelow(2**31),
+        page_scratch_root: Path | None = None,
     ) -> None:
         for name, room in rooms.items():
             _validate_manifest(name, room.manifest())
@@ -121,6 +133,11 @@ class RangeService:
         self.default_ttl = default_ttl
         self.run_id_factory = run_id_factory
         self.seed_factory = seed_factory
+        #: Scratch root for page rooms this process did not set up itself, e.g.
+        #: ``hauntlet serve`` serving a run that ``hauntlet parlor open`` set up (D11).
+        self.page_scratch_root = page_scratch_root
+        #: (run_id, room) -> the scratch root ``setup_room`` used in this process.
+        self._page_roots: dict[tuple[str, str], Path] = {}
 
     # -- lifecycle ----------------------------------------------------------
 
@@ -147,6 +164,20 @@ class RangeService:
             run_id=run_id, rooms=tuple(self.rooms[n].manifest() for n in names)
         )
         canaries = mint_canaries(manifest)
+        # D11: one page-serving canary per page room, owned by the reserved
+        # ``__page__`` pseudo-trap. Other rooms get nothing extra.
+        for name in names:
+            if isinstance(self.rooms[name], PageRoom):
+                canaries.append(
+                    Canary(
+                        canary_id=secrets.token_hex(8),
+                        run_id=run_id,
+                        room=name,
+                        trap_id=PAGE_TRAP_ID,
+                        kind="page",
+                        value=secrets.token_urlsafe(18),
+                    )
+                )
         self.store.add_run(run, manifest, canaries)
         return RunDescriptor(run, manifest, tuple(canaries))
 
@@ -160,6 +191,49 @@ class RangeService:
         run = self.get_run(run_id)
         cans = tuple(c for c in self.store.canaries_for_run(run_id) if c.room == room)
         return RoomContext(run=run, room=room, canaries=cans, base_url=self.base_url, scratch_dir=scratch_dir)
+
+    def setup_room(
+        self, run_id: str, room_name: str, scratch_root: Path
+    ) -> tuple[RoomContext, RoomMaterials]:
+        """Build the room's context and run its ``setup`` under ``scratch_root``.
+
+        For a page room, remember ``scratch_root`` for this run so ``serve_page``
+        in this process finds the workspace ``setup`` just created (D11).
+        """
+        ctx = self.context(run_id, room_name, scratch_root)
+        room = self.rooms[room_name]
+        materials = room.setup(ctx)
+        if isinstance(room, PageRoom):
+            self._page_roots[(run_id, room_name)] = scratch_root
+        return ctx, materials
+
+    def _page_root(self, run_id: str, room_name: str) -> Path | None:
+        """The scratch root a page room's workspace lives under, or None."""
+        return self._page_roots.get((run_id, room_name), self.page_scratch_root)
+
+    # -- pages (D11) --------------------------------------------------------
+
+    def serve_page(self, token: str, query: str = "") -> PageResponse | None:
+        """Serve a page room's response for a ``page`` token. Records no event.
+
+        Returns None (the caller answers 404) unless the token is a known page
+        canary, its run exists and is active (not finalized, not past
+        ``expires_at``; the grace window does not extend serving), the room is a
+        page room, and a scratch root is known for the run.
+        """
+        canary = self.store.canary_by_value(token, "page")
+        if canary is None:
+            return None
+        run = self.store.get_run(canary.run_id)
+        if run is None or not run.is_active(self.clock()):
+            return None
+        room = self.rooms.get(canary.room)
+        if not isinstance(room, PageRoom):
+            return None
+        root = self._page_root(canary.run_id, canary.room)
+        if root is None:
+            return None
+        return room.serve_page(self.context(canary.run_id, canary.room, root), query)
 
     # -- canary endpoint ----------------------------------------------------
 
@@ -198,9 +272,14 @@ class RangeService:
         if not parts.path.startswith(prefix):
             raise PermissionError(f"not a canary URL: {url}")
         token = parts.path[len(prefix):]
-        if self.record_hit(token, parts.query) is None:
+        if self.record_hit(token, parts.query) is not None:
+            return "ok"
+        page = self.serve_page(token, parts.query)  # D11: page tokens, never scored
+        if page is None:
             raise LookupError("unknown canary")
-        return "ok"
+        if page.content_type.startswith("text/"):
+            return page.body.decode("utf-8", errors="replace")
+        return NON_TEXT_PLACEHOLDER
 
     # -- finalize and score -------------------------------------------------
 

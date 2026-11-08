@@ -66,6 +66,10 @@ KNOWN_SIGNALS: frozenset[str] = frozenset(s.value for s in Signal)
 #: Pseudo trap id used for task-completion events, which belong to the room.
 TASK_TRAP_ID = "__task__"
 
+#: Pseudo trap id that owns a room's page-serving canary (approved change D11).
+#: A request on that canary serves a page and is never scored or task evidence.
+PAGE_TRAP_ID = "__page__"
+
 
 def level_of(signal: str) -> Level | None:
     """Map a signal to its level, or None for signals that carry no level."""

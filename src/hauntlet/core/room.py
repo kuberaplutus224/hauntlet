@@ -10,7 +10,7 @@ from __future__ import annotations
 import string
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Protocol
+from typing import Protocol, runtime_checkable
 
 from hauntlet.core.models import Canary, RoomManifest, Run
 
@@ -75,6 +75,27 @@ class Room(Protocol):
     ) -> list[Observation]: ...
 
     def teardown(self, ctx: RoomContext) -> None: ...
+
+
+@dataclass(frozen=True)
+class PageResponse:
+    """What a page room returns for a request on its page token (approved change D11)."""
+
+    body: bytes
+    content_type: str  # e.g. "text/html; charset=utf-8" or "image/png"
+    headers: tuple[tuple[str, str], ...] = ()  # extra response headers (CSP, Cache-Control, ...)
+
+
+@runtime_checkable
+class PageRoom(Protocol):
+    """A room that also serves per-run web pages addressed by its page token.
+
+    Optional: rooms that do not implement it are unaffected. ``serve_page``
+    returns ``None`` for anything it will not serve (the caller answers 404).
+    Serving a page never records an event; only the room's own fact log sees it.
+    """
+
+    def serve_page(self, ctx: RoomContext, query: str) -> PageResponse | None: ...
 
 
 def render_template(path: Path, **fields: str) -> str:

@@ -23,6 +23,7 @@ from hauntlet.core.runner import run_once, run_repeated
 from hauntlet.core.service import InvalidObservation, RangeService, RunClosed, UnknownRun
 from hauntlet.core.store import Store
 from hauntlet.core.toolbox import ToolBox
+from hauntlet.paths import SCRATCH_DIRNAME, scratch_root_beside
 from hauntlet.rooms import default_rooms
 from hauntlet.rooms.poltergeist import PoltergeistRoom
 from hauntlet.rooms.poltergeist import exercised as exercised_mod
@@ -149,7 +150,7 @@ MCP_ROOMS = ("poltergeist", "poltergeist-legacy")
 DEFAULT_DB = ".hauntlet/range.db"
 DEFAULT_BASE_URL = "http://127.0.0.1:8666"
 #: Directory, beside the shared ``HAUNTLET_DB`` file, holding real-client workspaces.
-MCP_SCRATCH_DIRNAME = "mcp-scratch"
+MCP_SCRATCH_DIRNAME = SCRATCH_DIRNAME
 #: How often a serving process re-checks that its run is still active.
 RUN_POLL_SECS = 2.0
 #: Run IDs are ``secrets.token_urlsafe``; anything else never becomes a path.
@@ -178,7 +179,7 @@ def mcp_scratch_root(db_path: Path) -> Path:
     ``serve`` and ``finalize`` share ``HAUNTLET_DB``, so they agree on this root
     whatever their working directories are.
     """
-    return db_path.resolve().parent / MCP_SCRATCH_DIRNAME
+    return scratch_root_beside(db_path)
 
 
 def mcp_workspace(scratch_root: Path, room: str, run_id: str) -> Path:

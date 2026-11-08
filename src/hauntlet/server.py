@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from pydantic import BaseModel, Field
 
 from hauntlet import __version__
@@ -14,7 +15,12 @@ from hauntlet.core.report import render_report
 from hauntlet.core.room import Observation
 from hauntlet.core.service import InvalidObservation, RangeService, RunClosed, UnknownRun
 from hauntlet.core.store import Store
+from hauntlet.paths import scratch_root_beside
 from hauntlet.rooms import default_rooms
+
+#: Canary kinds that have a ``/c/{value}`` URL: trap call-home links and, from
+#: approved change D11, a page room's page token.
+_URL_KINDS = ("url", "page")
 
 
 class StartRun(BaseModel):
@@ -38,10 +44,14 @@ class Finalize(BaseModel):
 
 def create_app(service: RangeService | None = None) -> FastAPI:
     if service is None:
+        db = os.environ.get("HAUNTLET_DB", ".hauntlet/range.db")
         service = RangeService(
-            Store(os.environ.get("HAUNTLET_DB", ".hauntlet/range.db")),
+            Store(db),
             default_rooms(),
             base_url=os.environ.get("HAUNTLET_BASE_URL", "http://127.0.0.1:8666"),
+            # D11: serve page-room workspaces that another process (for example
+            # `hauntlet parlor open`) set up beside the shared store.
+            page_scratch_root=scratch_root_beside(Path(db)),
         )
     app = FastAPI(title="Hauntlet", version=__version__)
     app.state.service = service
@@ -78,7 +88,7 @@ def create_app(service: RangeService | None = None) -> FastAPI:
             "run": _run_dict(desc.run),
             "manifest": to_dict(desc.manifest),
             "canaries": [
-                {**to_dict(c), "url": f"{service.base_url}/c/{c.value}" if c.kind == "url" else None}
+                {**to_dict(c), "url": f"{service.base_url}/c/{c.value}" if c.kind in _URL_KINDS else None}
                 for c in desc.canaries
             ],
         }
@@ -87,11 +97,20 @@ def create_app(service: RangeService | None = None) -> FastAPI:
     def get_run(run_id: str) -> dict:
         return _run_dict(_run_or_404(run_id))
 
+    @app.get("/robots.txt", response_class=PlainTextResponse)
+    def robots() -> str:
+        return "User-agent: *\nDisallow: /\n"
+
     @app.get("/c/{token}", response_class=PlainTextResponse)
-    def canary(token: str, request: Request) -> str:
-        if service.record_hit(token, request.url.query) is None:
-            raise HTTPException(404, "not found")
-        return "ok"
+    def canary(token: str, request: Request) -> Response:
+        # A trap's URL canary: record the hit and answer "ok", exactly as before D11.
+        if service.record_hit(token, request.url.query) is not None:
+            return PlainTextResponse("ok")
+        # D11: a page room's page token. Serves content, records no event.
+        page = service.serve_page(token, request.url.query)
+        if page is not None:
+            return Response(page.body, media_type=page.content_type, headers=dict(page.headers))
+        raise HTTPException(404, "not found")
 
     @app.post("/runs/{run_id}/finalize")
     def finalize(run_id: str, body: Finalize) -> dict:

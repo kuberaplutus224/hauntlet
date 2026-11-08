@@ -30,8 +30,7 @@ def run_once(
 ) -> RunResult:
     desc = service.start_run([room_name], grace_window_secs=0)
     room = service.rooms[room_name]
-    ctx = service.context(desc.run.run_id, room_name, scratch_root)
-    materials = room.setup(ctx)
+    ctx, materials = service.setup_room(desc.run.run_id, room_name, scratch_root)
     tools = ToolBox(materials.workspace, materials.env, service.fetch_local, service.base_url)
     try:
         transcript = agent.run(materials, tools)

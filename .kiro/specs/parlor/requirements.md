@@ -610,7 +610,10 @@ every core change explicit and approved first.
   4. `canary.py`, `scorer.py`, `models.py`, `store.py`, `aggregate.py`,
      `report.py` and `toolbox.py` do not change. `levels.py` gains only the
      `PAGE_TRAP_ID` constant; `runner.py` changes only the one `setup_room` call
-     site. The store already keeps `kind` as free text. A new non-core module
+     site. The store already keeps `kind` as free text, and the existing
+     `Store.canary_by_value(value, kind)` (checked 2026-11-08) is the lookup
+     `serve_page` uses for `kind="page"`, so `store.py` needs no new method. A
+     new non-core module
      `src/hauntlet/paths.py` holds the shared `scratch_root_beside(db_path)`
      helper used by `cli.py` and `server.py`.
 
