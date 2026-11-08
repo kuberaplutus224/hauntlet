@@ -479,6 +479,49 @@
         "chatSessionId": "sess_a109afb2-5f48-4c6e-932b-3b06fe57ac71",
         "timestamp": 1794108048442
       }
+    ],
+    "9.1 Write `src/hauntlet/rooms/poltergeist/client.py`": [
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794109014866
+      },
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794109391855
+      }
+    ],
+    "9.2 Extend the reference agents": [
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794109394406
+      },
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794109819171
+      }
+    ],
+    "9.3 Register both rooms": [
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794109821786
+      },
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794110256344
+      }
+    ],
+    "9. Client helper, reference agents, registration": [
+      {
+        "executionId": "3c172b87-916f-476e-8f25-dc4d1629ba8b",
+        "chatSessionId": "sess_2f4fa887-1b78-4d0b-86ce-51d65bc89315",
+        "timestamp": 1794110256394
+      }
     ]
   }
 }
