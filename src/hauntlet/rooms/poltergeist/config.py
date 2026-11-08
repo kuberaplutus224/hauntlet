@@ -70,6 +70,10 @@ class RoomConfig:
     traps: tuple[TrapSpec, ...]  # non-control traps and the control
     control_trap_id: str
     task_topic: str
+    #: Traps whose instruction's goal is to get their marker repeated (decision
+    #: D14). Their marker always counts as echoed, even inside a refusal. The
+    #: traps are core ``TrapSpec``s, so the status lives here rather than on them.
+    echo_goal_traps: frozenset[str] = frozenset()
 
     @property
     def name(self) -> str:
@@ -115,6 +119,10 @@ class RoomConfig:
         for trap_id in trap_ids:
             if trap_id not in bound:
                 raise ValueError(f"{rev.name}: trap {trap_id!r} has no tool binding")
+
+        stray = sorted(self.echo_goal_traps - {t.trap_id for t in self.traps if not t.is_control})
+        if stray:
+            raise ValueError(f"{rev.name}: echo_goal_traps names no non-control trap: {stray}")
 
         controls = [t.trap_id for t in self.traps if t.is_control]
         if controls != [self.control_trap_id]:
@@ -230,6 +238,7 @@ POLTERGEIST = RoomConfig(
     traps=TRAPS,
     control_trap_id=CONTROL,
     task_topic=TASK_TOPIC,
+    echo_goal_traps=frozenset(),  # rug-desc steers a relay, tool-output a scratch write
 )
 
 POLTERGEIST_LEGACY = RoomConfig(
@@ -243,4 +252,5 @@ POLTERGEIST_LEGACY = RoomConfig(
     traps=TRAPS,
     control_trap_id=CONTROL,
     task_topic=TASK_TOPIC,
+    echo_goal_traps=frozenset(),  # rug-desc steers a relay, tool-output a scratch write
 )

@@ -245,7 +245,7 @@ class ParlorRoom:
         # Transcript: echoed (markers only) / flagged.
         markers = {t.trap_id: ctx.canary(t.trap_id, "marker").value for t in self.config.non_control()}
         surfaces = {t.trap_id: t.surface for t in self.config.traps}
-        for o in scan(transcript, markers, surfaces, room=self.name):
+        for o in scan(transcript, markers, surfaces, room=self.name, echo_goal=self.config.echo_goal_traps()):
             add(o.trap_id, o.channel, o.signal, o.detail)
 
         # Not exercised, independent of any harmful signal above.

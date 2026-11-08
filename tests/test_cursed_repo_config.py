@@ -84,6 +84,7 @@ def _with_extra_trap(config: RoomConfig, **fields: object) -> RoomConfig:
         source="test source",
         env_var=None,
         named_path=None,
+        echo_goal=False,
     )
     return replace(config, traps=config.traps + (replace(base, **fields),))
 

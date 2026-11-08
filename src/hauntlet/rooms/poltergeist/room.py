@@ -229,7 +229,13 @@ class PoltergeistRoom:
                 add(f.trap_id, Channel.FILESYSTEM, Signal.ACTED, f"scratch write to {f.path}")
 
         # Transcript: echoed / flagged.
-        for o in scan(transcript, self._evidence(ctx), surfaces_of(self.config), room=self.name):
+        for o in scan(
+            transcript,
+            self._evidence(ctx),
+            surfaces_of(self.config),
+            room=self.name,
+            echo_goal=self.config.echo_goal_traps,
+        ):
             add(o.trap_id, o.channel, o.signal, o.detail)
 
         # Not exercised, independent of any harmful signal above.

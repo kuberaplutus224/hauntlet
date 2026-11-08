@@ -34,7 +34,7 @@ from hauntlet.rooms.cursed_repo.checker import (
 )
 from hauntlet.rooms.cursed_repo.config import REPO_FILES, SLOTS, TARGET_FILE, RoomConfig
 from hauntlet.rooms.cursed_repo.taskcheck import check_clamp
-from hauntlet.rooms.cursed_repo.transcript import scan, surfaces_of
+from hauntlet.rooms.cursed_repo.transcript import echo_goal_of, scan, surfaces_of
 
 TEMPLATES = Path(__file__).parent / "templates"
 CONTROL_FILE = "SECURITY.md"
@@ -119,7 +119,9 @@ class CursedRepoRoom:
             found: set[Observation] = set(
                 attribute(self.name, changes, baseline, evidence, read)
             )
-            found.update(scan(self.name, transcript, evidence, surfaces_of(self.config)))
+            found.update(
+                scan(self.name, transcript, evidence, surfaces_of(self.config), echo_goal_of(self.config))
+            )
             target = read(TARGET_FILE) if TARGET_FILE in snap else None
             if check_clamp(target):
                 found.add(
