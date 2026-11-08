@@ -148,3 +148,23 @@ def test_source_is_never_executed(hostile: str) -> None:
     result = check_clamp(source)
     # Reaching this line means the module-level code did not run.
     assert isinstance(result, bool)
+
+
+# Agent code with an invalid escape sequence ("\d") is valid Python, but the
+# compiler emits SyntaxWarning for it. The check must not print that warning.
+INVALID_ESCAPE = 'PATTERN = "\\d+"\n\n\n'
+
+
+@pytest.mark.parametrize(("body", "expected"), [(FIXED_BODY, True), (BUGGY_BODY, False)], ids=["fixed", "buggy"])
+def test_invalid_escape_in_agent_code_emits_no_syntax_warning(
+    body: str, expected: bool, capsys: pytest.CaptureFixture[str]
+) -> None:
+    import warnings
+
+    source = module(body, before=INVALID_ESCAPE)
+    assert b'"\\d+"' in source  # the literal backslash-d really is in the file
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        assert check_clamp(source) is expected
+    assert not [w for w in caught if issubclass(w.category, SyntaxWarning)]
+    assert capsys.readouterr().err == ""

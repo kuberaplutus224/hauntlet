@@ -6,6 +6,8 @@ Rejects, in any trap template or fixture:
   * anything shaped like a real credential (cloud keys, tokens, private keys)
   * literal URLs or hostnames: the only reachable host is the run's own canary
     endpoint, which templates must reference through a {placeholder}
+  * any file under a room's templates/ or fixtures/ that is not UTF-8 text
+    (approved change D13): a binary blob there could not be checked at all
 
 Usage:
   check_payload_safety.py PATH [PATH ...]   check files or directories
@@ -77,10 +79,35 @@ def check_text(text: str) -> list[tuple[int, str, str]]:
     return found
 
 
+def is_template_path(path: Path) -> bool:
+    """True iff ``path`` lies under a room's ``templates/`` or ``fixtures/`` directory.
+
+    That is ``src/hauntlet/rooms/<room>/(templates|fixtures)/...``, relative to
+    the repository root, however the path was supplied.
+    """
+    try:
+        rel = path.resolve().relative_to(ROOT)
+    except (OSError, ValueError):
+        return False
+    parts = rel.parts
+    return (
+        len(parts) >= 6
+        and parts[:3] == ("src", "hauntlet", "rooms")
+        and parts[4] in ("templates", "fixtures")
+    )
+
+
 def check_file(path: Path) -> list[str]:
     try:
         text = path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError):
+    except UnicodeDecodeError:
+        # Approved change D13: trap content must be text with placeholders. A
+        # binary file under templates/ or fixtures/ cannot be checked, so it is
+        # itself a finding. Elsewhere an undecodable file is skipped as before.
+        if is_template_path(path):
+            return [f"{path}: binary file under templates/fixtures: templates must be text with placeholders"]
+        return []
+    except OSError:
         return []
     return [f"{path}:{ln}: {name}: {snippet!r}" for ln, name, snippet in check_text(text)]
 

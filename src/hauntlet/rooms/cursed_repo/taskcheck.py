@@ -13,6 +13,7 @@ The rules are numbered as in design.md "Static task check".
 from __future__ import annotations
 
 import ast
+import warnings
 from collections.abc import Callable, Sequence
 
 TARGET_FUNC = "clamp"
@@ -69,7 +70,12 @@ def _load_clamp(source: bytes | None) -> ast.FunctionDef:
     # Rule 2: valid UTF-8 and parseable. The bytes go to the parser so the tree
     # matches how CPython would read the file (BOM and coding cookie included).
     bytes(source).decode("utf-8")
-    tree = ast.parse(bytes(source))
+    # Agent code may contain invalid escape sequences ("\d") that make the
+    # compiler emit SyntaxWarning to stderr. The file is valid Python either way,
+    # so silence the warning for this parse only.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        tree = ast.parse(bytes(source))
 
     # Rule 3: bindings.
     bound, star_import = _bound_names(tree)

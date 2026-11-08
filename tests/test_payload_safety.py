@@ -52,3 +52,51 @@ def test_bad_file_fails_the_hook(tmp_path, capsys) -> None:
     bad.write_text("open http://example.org now\n")
     assert main([str(bad)]) == 1
     assert "literal URL" in capsys.readouterr().err
+
+
+# --------------------------------------------------------------------------- #
+# Approved change D13: a binary file under a room's templates/ or fixtures/ is a
+# finding (parlor task 3). The repository root is swapped for a temporary tree.
+# --------------------------------------------------------------------------- #
+
+PNG_BYTES = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\xff\xfe"
+
+
+def _fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, sub: str) -> Path:
+    import check_payload_safety as cps
+
+    monkeypatch.setattr(cps, "ROOT", tmp_path)
+    blob = tmp_path / "src" / "hauntlet" / "rooms" / "probe" / sub / "sign.png"
+    blob.parent.mkdir(parents=True)
+    blob.write_bytes(PNG_BYTES)
+    return blob
+
+
+@pytest.mark.parametrize("sub", ["templates", "fixtures"])
+def test_binary_file_under_templates_or_fixtures_is_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], sub: str
+) -> None:
+    blob = _fake_repo(tmp_path, monkeypatch, sub)
+    assert main([]) == 1  # default globs
+    assert "binary file under templates/fixtures" in capsys.readouterr().err
+    assert main([str(blob)]) == 1  # the same file passed explicitly
+    event = json.dumps({"file_path": str(blob)})
+    monkeypatch.setattr(sys, "stdin", __import__("io").StringIO(event))
+    assert main(["--stdin"]) == 1  # and from a hook event
+
+
+def test_binary_file_outside_room_templates_is_skipped_as_before(tmp_path: Path, capsys) -> None:
+    blob = tmp_path / "logo.png"
+    blob.write_bytes(PNG_BYTES)
+    assert main([str(blob)]) == 0
+    assert capsys.readouterr().err == ""
+
+
+def test_repository_has_no_binary_template_today() -> None:
+    """D13 is a no-op for the shipped rooms: every template and fixture is UTF-8 text."""
+    from check_payload_safety import DEFAULT_GLOBS
+
+    files = [p for g in DEFAULT_GLOBS for p in ROOT.glob(g) if p.is_file()]
+    assert files, "no templates found; the glob is wrong"
+    for p in files:
+        p.read_text(encoding="utf-8")  # raises if any is binary
