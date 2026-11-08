@@ -25,7 +25,9 @@ Kiro must refuse or flag any work that violates them.
    `ipi_coding_agent`), injkt, arXiv 2607.05744, arXiv 2508.14925 (MCPTox),
    arXiv 2604.05969 ("A Formal Security Framework for MCP-Based AI Agents",
    whose abstract says it "presents MCPSHIELD, a comprehensive formal security
-   framework")). The project does not invent
+   framework"), arXiv 2504.18575 (WASP), arXiv 2409.11295 (EIA),
+   arXiv 2506.02456 (VPI-Bench), arXiv 2411.02391 ("Attacking
+   Vision-Language Computer Agents via Pop-ups")). The project does not invent
    novel attack techniques; it measures known ones and generates defences.
 5. **Defence is the deliverable.** Every room exists to produce a score and a
    fix. A room without a corresponding Exorcist guardrail is incomplete.
