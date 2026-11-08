@@ -8,9 +8,21 @@ secret. Then the **Exorcist** generates the Kiro steering file, hook, sandbox
 config and MCP allow-list that close each gap, and re-runs the house to show the
 score improve.
 
-> Built for **Kiroween 2026** (Frankenstein category) with Kiro. Status: early
-> build. The canary core and a one-trap stub room ("the Threshold") work end to
-> end; the Cursed Repo, Poltergeist, Parlor and Exorcist are next.
+> Built for **Kiroween 2026** (Frankenstein category) with Kiro. Status: the
+> canary core and four rooms (Threshold, Cursed Repo, Poltergeist and Parlor)
+> work end to end; the Exorcist is next.
+
+## Rooms
+
+| Room | Tests | Surfaces | Docs |
+|---|---|---|---|
+| `threshold` | coding agents | a one-trap stub: `NOTES.md`, with a benign link in `CONTRIBUTING.md` as the control | no README; see [`rooms/threshold/`](src/hauntlet/rooms/threshold/) |
+| `cursed-repo`, `cursed-repo-tests` | coding agents | README, agents guide, code comment, config file and issue note; the `-tests` variant plants one trap in the failing test file | [Cursed Repo](src/hauntlet/rooms/cursed_repo/README.md) |
+| `poltergeist`, `poltergeist-legacy` | MCP clients | a tool description changed after approval (rug pull) and a tool's return value; `-legacy` speaks the older protocol revisions | [Poltergeist](src/hauntlet/rooms/poltergeist/README.md) |
+| `parlor` | browser agents | visible text, CSS-hidden text, an ARIA attribute, a `title` attribute and text drawn in an image | [Parlor](src/hauntlet/rooms/parlor/README.md) |
+
+Each room has a benign control, reported as a false positive if the agent
+reacts to it.
 
 ## The scoring ladder
 
@@ -39,7 +51,25 @@ uv run pytest                                   # golden + property-based tests
 uv run hauntlet serve                           # HTTP range on :8666
 ```
 
-Reports are written to `reports/` as self-contained HTML.
+Reports are written to `reports/` as self-contained HTML. Pick a room with
+`--room`, for example `uv run hauntlet run --room parlor --agent naive`.
+
+### Testing your own client
+
+Start `uv run hauntlet serve`, start a run with `POST /runs`, then:
+
+```bash
+# Poltergeist: add this command to your MCP client's config, then finalize
+uv run hauntlet mcp serve --room poltergeist --run=RUN_ID
+uv run hauntlet mcp finalize --run=RUN_ID --transcript transcript.jsonl
+
+# Parlor: open the run, give the printed task to your browser agent, then finalize
+uv run hauntlet parlor open --run=RUN_ID
+uv run hauntlet parlor finalize --run=RUN_ID --transcript=transcript.jsonl --perception=dom_text
+```
+
+Use the `--run=RUN_ID` form: run IDs can start with `-`. Each room README has
+the full procedure.
 
 ## HTTP API
 
@@ -47,7 +77,8 @@ Reports are written to `reports/` as self-contained HTML.
 |---|---|---|
 | GET | `/health` | Liveness and room list |
 | POST | `/runs` | Start a run; returns canary URLs and dummy secrets to plant |
-| GET | `/c/{token}` | Canary endpoint (L1; L4 if a dummy secret is in the query) |
+| GET | `/c/{token}` | Canary endpoint (L1; L4 if a dummy secret is in the query). A Parlor page token serves that run's pages instead and scores nothing |
+| GET | `/robots.txt` | Disallows every path |
 | POST | `/runs/{id}/finalize` | Submit filesystem/transcript observations; returns the score |
 | GET | `/runs/{id}/score` | JSON score |
 | GET | `/runs/{id}/report` | HTML autopsy |
@@ -61,11 +92,14 @@ Hauntlet is a **defensive** range for agents you own.
 - Every planted secret is a non-functional dummy (`HAUNTLET-DUMMY-…`).
 - Every induced side effect is confined to a disposable scratch workspace.
 - The reference agents can reach only the run's own canary endpoint.
-- Trap patterns are adapted from cited public benchmarks (RepoGuardBench,
-  CIPR, CodeIPI), not invented.
+- Trap patterns are adapted from cited public benchmarks, not invented. The
+  sources are listed in rule 4 of the safety rules and cited per trap in each
+  room's README.
+- Parlor pages are served only for an active run, with its page token, and are
+  marked `noindex`.
 - `scripts/check_payload_safety.py` rejects destructive commands, realistic
-  credentials and literal hosts in any trap template, and runs as a Kiro hook on
-  every save.
+  credentials, literal hosts and binary files in any trap template, and runs as
+  a Kiro hook on every save.
 
 See [`.kiro/steering/safety-rules.md`](.kiro/steering/safety-rules.md).
 

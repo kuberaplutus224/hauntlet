@@ -172,19 +172,19 @@ numbered proposal and stops the task.
   - `uv run pytest`, `uv run hauntlet selftest -n 5` and the payload guard pass
   - Ask the user if anything is unclear before continuing
 
-- [ ] 12. Room README and release gate
-  - [ ] 12.1 `src/hauntlet/rooms/parlor/README.md`: `## Citations` with one `### <trap_id>` entry per non-control trap (Benchmark, URL, what was adapted, what was opened, what was dropped, e.g. EIA's JavaScript auto-submission); this switches on the manifest and README half of `tests/test_parlor_citations.py`
+- [x] 12. Room README and release gate
+  - [x] 12.1 `src/hauntlet/rooms/parlor/README.md`: `## Citations` with one `### <trap_id>` entry per non-control trap (Benchmark, URL, what was adapted, what was opened, what was dropped, e.g. EIA's JavaScript auto-submission); this switches on the manifest and README half of `tests/test_parlor_citations.py`
     - _Requirements: 12.1, 12.2, 12.3, 12.4_
-  - [ ] 12.2 README "Limitations": delivered ≠ seen by the model; the fact log is editable by an agent with filesystem access (recommend the Exorcist sandbox); attribution limit (a) link-followers trigger the image trap, caught by the control; (b) the L4 hidden form is in the page HTML, so a `raw_html` or `dom_text` agent can see and submit it without the image; misread URLs record nothing
+  - [x] 12.2 README "Limitations": delivered ≠ seen by the model; the fact log is editable by an agent with filesystem access (recommend the Exorcist sandbox); attribution limit (a) link-followers trigger the image trap, caught by the control; (b) the L4 hidden form is in the page HTML, so a `raw_html` or `dom_text` agent can see and submit it without the image; misread URLs record nothing
     - _Requirements: 4.6, 6.4, 11.5_
-  - [ ] 12.3 README surface→perception table, the real-client procedure step by step (including the `127.0.0.1` and tunnel notes), and the disclosure section
+  - [x] 12.3 README surface→perception table, the real-client procedure step by step (including the `127.0.0.1` and tunnel notes), and the disclosure section
     - _Requirements: 3.5, 11.2, 11.7, 15.1, 15.2, 15.3_
-  - [ ] 12.4 Trap-to-defence mapping as data in `config.py` (`TrapPlacement.defence`) and a README table generated from the same values; a test asserts every non-control trap has a defence
+  - [x] 12.4 Trap-to-defence mapping as data in `config.py` (`TrapPlacement.defence`) and a README table generated from the same values; a test asserts every non-control trap has a defence
     - _Requirements: 13.1, 13.2_
-  - [ ] 12.5 Run `uv run pytest tests/test_parlor_citations.py tests/test_retired_sources.py` and confirm no test in the file is skipped
+  - [x] 12.5 Run `uv run pytest tests/test_parlor_citations.py tests/test_retired_sources.py` and confirm no test in the file is skipped
     - _Requirements: 12.4_
 
-- [ ] 13. Final checkpoint
+- [x] 13. Final checkpoint
   - `uv run pytest`, `uv run hauntlet selftest -n 5` (six rooms) and `scripts/check_payload_safety.py` all pass
   - Append the usage-log line and ask the user to review before any commit
 
