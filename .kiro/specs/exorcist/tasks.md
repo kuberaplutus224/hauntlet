@@ -215,16 +215,16 @@ obedience parser to restore a predicted value.
 - [x] 14. Checkpoint: demo loop green
   - `uv run pytest` passes; `uv run hauntlet selftest` unchanged; core unchanged; actual demo results reported (task 13.4)
 
-- [ ] 15. Approved change D17: CLI
-  - [ ] 15.1 Subcommands
+- [x] 15. Approved change D17: CLI
+  - [x] 15.1 Subcommands
     - `src/hauntlet/cli.py`: `hauntlet exorcist demo --room R [--out DIR]`, `generate --run ID`, `delta --bundle ID --after ID` per design.md "CLI". All three share `HAUNTLET_DB` and `HAUNTLET_BASE_URL`; refusals exit 2 with the reason. `demo` is added to `hauntlet run --agent` through `get_agent`
     - _Requirements: 12.1–12.4, 8.8, D17_
-  - [ ] 15.2 Write `tests/test_exorcist_cli.py`
+  - [x] 15.2 Write `tests/test_exorcist_cli.py`
     - `demo` for one file room and one MCP room writes a bundle and a delta and prints their paths; `demo --room parlor` refuses and names the supported rooms; `generate` refuses an unfinalized run
     - Real-client simulation: `hauntlet serve` app + `mcp serve` subprocess driven by a scripted MCP client as the after run, then `mcp finalize` (D19 copy present), then `exorcist delta`. The report is labelled "real client, declared by the tester" and the fact-log signal is computed. The test does not claim the client is Kiro
     - _Requirements: 7.4, 7.5, 10.6, 10.9, 12.1–12.4_
 
-- [ ] 16. Checkpoint: CLI green
+- [x] 16. Checkpoint: CLI green
   - `uv run pytest` passes; core unchanged
 
 - [ ] 17. Approved change D16 and its amendment: hosted routes

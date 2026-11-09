@@ -1067,13 +1067,130 @@ def cmd_parlor_finalize(args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------- #
+# hauntlet exorcist (approved change D17)
+#
+# demo:     run the before/after demo loop in-process, write the bundle + delta.
+# generate: write a bundle for a finalized run in the shared store.
+# delta:    attach a real-client after run to an existing bundle, write the delta.
+# All three resolve HAUNTLET_DB and HAUNTLET_BASE_URL the same way; a refusal
+# exits 2 with the reason.
+# --------------------------------------------------------------------------- #
+
+
+def _exorcist_err(msg: str) -> None:
+    print(f"hauntlet exorcist: {msg}", file=sys.stderr, flush=True)
+
+
+def _find_bundle(root: Path, bundle_id: str) -> Path:
+    if not _RUN_ID.fullmatch(bundle_id):
+        raise McpRefused(f"invalid bundle ID {bundle_id!r}")
+    if root.is_dir():
+        for before_dir in sorted(root.iterdir()):
+            cand = before_dir / bundle_id
+            if (cand / "bundle.json").is_file():
+                return cand
+    raise McpRefused(f"no bundle {bundle_id!r} under {root}")
+
+
+def cmd_exorcist_demo(args: argparse.Namespace) -> int:
+    from hauntlet.exorcist.paths import exorcist_root
+    from hauntlet.exorcist.service import DemoUnsupported, ExorcistService
+
+    db = _db_path()
+    # The demo creates its own before/after runs in-process, so it uses a fresh
+    # store; its bundles land beside HAUNTLET_DB and it uses the shared base URL.
+    service = RangeService(Store(":memory:"), default_rooms(), base_url=_base_url())
+    ex = ExorcistService(service, exorcist_root(db), reports_dir=Path(args.out))
+    try:
+        result = ex.demo(args.room)
+    except DemoUnsupported as exc:
+        _exorcist_err(str(exc))
+        return 2
+    print(f"bundle: {result.bundle_dir}")
+    deltas = result.bundle_dir / "deltas"
+    print(f"delta:  {deltas / f'{result.after.run_id}.txt'}")
+    print(f"report: {Path(args.out) / f'exorcist-delta-{result.after.run_id}.html'}")
+    rd = result.delta.rooms[0]
+    before = rd.before
+    after = rd.after
+    print(
+        f"{args.room}: before worst=L{before.worst_level} fp={before.false_positives or 'none'} "
+        f"-> after worst=L{after.worst_level} detected={after.detected} "
+        f"task={after.task_completed} fp={after.false_positives or 'none'}"
+    )
+    return 0
+
+
+def cmd_exorcist_generate(args: argparse.Namespace) -> int:
+    from hauntlet.exorcist.eligibility import NotFinal, require_final
+    from hauntlet.exorcist.generate import generate
+    from hauntlet.exorcist.manifest import MANIFEST_MD
+    from hauntlet.exorcist.paths import exorcist_root
+    from hauntlet.exorcist.validate import validate
+    from hauntlet.exorcist.writer import write_bundle
+
+    db = _db_path()
+    try:
+        service = _shared_service(db)
+        if not _RUN_ID.fullmatch(args.run):
+            raise McpRefused(f"invalid run ID {args.run!r}")
+        try:
+            run = service.get_run(args.run)
+        except UnknownRun:
+            raise McpRefused(f"unknown run {args.run!r}") from None
+        score = service.score(args.run)
+        try:
+            require_final(run, score, args.run)
+        except NotFinal as exc:
+            raise McpRefused(str(exc)) from None
+        spec = generate(score, service.manifest(args.run))
+        validate(spec.files)
+        bundle_id, bundle_dir = write_bundle(exorcist_root(db), spec, time.time())
+    except McpRefused as exc:
+        _exorcist_err(f"generate refused: {exc}")
+        return 2
+    print(f"bundle: {bundle_dir}")
+    print(f"manual steps: {bundle_dir / MANIFEST_MD}")
+    print(f"next: hauntlet exorcist delta --bundle {bundle_id} --after <after-run-id>")
+    return 0
+
+
+def cmd_exorcist_delta(args: argparse.Namespace) -> int:
+    from hauntlet.exorcist.delta import AfterRunRejected
+    from hauntlet.exorcist.generate import generate
+    from hauntlet.exorcist.paths import exorcist_root
+    from hauntlet.exorcist.service import ExorcistService
+
+    db = _db_path()
+    try:
+        service = _shared_service(db)
+        bundle_dir = _find_bundle(exorcist_root(db), args.bundle)
+        before_run_id = json.loads((bundle_dir / "bundle.json").read_text(encoding="utf-8"))["before_run_id"]
+        before_score = service.score(before_run_id)
+        before_manifest = service.manifest(before_run_id)
+        spec = generate(before_score, before_manifest)  # deterministic: equals what was written
+        ex = ExorcistService(service, exorcist_root(db), reports_dir=Path(args.out))
+        try:
+            delta = ex.attach((before_score, before_manifest), spec, bundle_dir, args.after)
+        except AfterRunRejected as exc:
+            raise McpRefused(f"after run refused: {exc}") from None
+    except (McpRefused, UnknownRun) as exc:
+        _exorcist_err(f"delta refused: {exc}")
+        return 2
+    print(f"path: {delta.path}")
+    print(f"delta:  {bundle_dir / 'deltas' / f'{args.after}.txt'}")
+    print(f"report: {Path(args.out) / f'exorcist-delta-{args.after}.html'}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="hauntlet", description="A haunted house for AI agents.")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     r = sub.add_parser("run", help="run a reference agent through a room")
     r.add_argument("--room", default="threshold")
-    r.add_argument("--agent", default="naive")
+    r.add_argument("--agent", default="naive", help="naive, hardened, or demo (the Exorcist demo agent)")
     r.add_argument("--repeat", type=int, default=1)
     r.add_argument("--out", default="reports")
     r.set_defaults(func=cmd_run)
@@ -1134,6 +1251,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pf.add_argument("--out", default="reports", help="directory for the run summary and HTML report")
     pf.set_defaults(func=cmd_parlor_finalize)
+
+    ex = sub.add_parser("exorcist", help="generate Kiro guardrails from a run, re-run, show the delta")
+    exsub = ex.add_subparsers(dest="exorcist_cmd", required=True)
+    ed = exsub.add_parser("demo", help="run the before/after demo loop in-process and write the delta")
+    ed.add_argument("--room", required=True, help="a demo-supported room (not parlor)")
+    ed.add_argument("--out", default="reports", help="directory for the delta HTML report")
+    ed.set_defaults(func=cmd_exorcist_demo)
+    eg = exsub.add_parser("generate", help="write a guardrail bundle for a finalized run (HAUNTLET_DB)")
+    eg.add_argument("--run", required=True, help="a finalized, non-provisional run ID (write --run=ID if it starts with -)")
+    eg.set_defaults(func=cmd_exorcist_generate)
+    edl = exsub.add_parser("delta", help="attach a real-client after run to a bundle and write the delta (HAUNTLET_DB)")
+    edl.add_argument("--bundle", required=True, help="bundle ID from `exorcist generate`")
+    edl.add_argument("--after", required=True, help="a finalized real-client after run ID")
+    edl.add_argument("--out", default="reports", help="directory for the delta HTML report")
+    edl.set_defaults(func=cmd_exorcist_delta)
     return p
 
 
