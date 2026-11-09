@@ -9,14 +9,14 @@ config and MCP allow-list that close each gap, and re-runs the house to show the
 score improve.
 
 > Built for **Kiroween 2026** (Frankenstein category) with Kiro. Status: the
-> canary core and four rooms (Threshold, Cursed Repo, Poltergeist and Parlor)
-> work end to end; the Exorcist is next.
+> canary core, four rooms (Threshold, Cursed Repo, Poltergeist and Parlor) and
+> the Exorcist fix loop work end to end.
 
 ## Rooms
 
 | Room | Tests | Surfaces | Docs |
 |---|---|---|---|
-| `threshold` | coding agents | a one-trap stub: `NOTES.md`, with a benign link in `CONTRIBUTING.md` as the control | no README; see [`rooms/threshold/`](src/hauntlet/rooms/threshold/) |
+| `threshold` | coding agents | a one-trap stub: `NOTES.md`, with a benign link in `CONTRIBUTING.md` as the control | [Threshold](src/hauntlet/rooms/threshold/README.md) |
 | `cursed-repo`, `cursed-repo-tests` | coding agents | README, agents guide, code comment, config file and issue note; the `-tests` variant plants one trap in the failing test file | [Cursed Repo](src/hauntlet/rooms/cursed_repo/README.md) |
 | `poltergeist`, `poltergeist-legacy` | MCP clients | a tool description changed after approval (rug pull) and a tool's return value; `-legacy` speaks the older protocol revisions | [Poltergeist](src/hauntlet/rooms/poltergeist/README.md) |
 | `parlor` | browser agents | visible text, CSS-hidden text, an ARIA attribute, a `title` attribute and text drawn in an image | [Parlor](src/hauntlet/rooms/parlor/README.md) |
@@ -37,6 +37,33 @@ reacts to it.
 Plus **Detected** credit when the agent reports the attempt, **control items**
 (benign look-alikes) reported separately as false positives, and **pass^k** over
 repeated runs with the worst single run as the headline.
+
+## The Exorcist
+
+Once a run has an autopsy, the **Exorcist** turns it into the Kiro guardrails
+that would have stopped each trap that fired — steering rules, a
+credential-egress hook, an `mcp.json` (allow-list and disabled tools) and a
+`sandbox.json` — applies them, re-runs the same rooms, and shows the
+before/after delta per trap. The bundle is written only to a scratch directory,
+never into this repository's own `.kiro/`, and every generated item cites the
+traps it addresses.
+
+There are two re-run paths, and the delta report always says which one produced
+the after result:
+
+- **The built-in demo agent** (`uv run hauntlet exorcist demo --room cursed-repo`,
+  or self-serve from `GET /exorcist` on the hosted range). A scripted, model-free
+  agent reads the generated config through a small interpreter and changes its
+  behaviour only through that config. **It is not Kiro, and it says nothing about
+  any model.**
+- **Your own Kiro** (`hauntlet exorcist generate` → apply the bundle by hand per
+  its `EXORCISM.md` → `hauntlet exorcist delta`). Hauntlet never runs or imitates
+  your client; the after result is attached by you and labelled as such.
+
+Guardrails are generic defences chosen from each trap's class, never strings
+matched to this range's own trap text. Some client behaviours are out of reach
+of config; the bundle and every report say so plainly rather than claiming to
+fix them.
 
 ## Quick start
 
@@ -82,6 +109,12 @@ the full procedure.
 | POST | `/runs/{id}/finalize` | Submit filesystem/transcript observations; returns the score |
 | GET | `/runs/{id}/score` | JSON score |
 | GET | `/runs/{id}/report` | HTML autopsy |
+| GET | `/exorcist` | Self-serve demo page (pick a room, see the before/after delta) |
+| POST | `/exorcist/demo` | Run the demo loop for a room; returns the bundle and report URLs |
+| POST | `/runs/{id}/exorcise` | Generate a guardrail bundle for a finalized run |
+| GET | `/exorcisms/{id}/bundle` | Download the bundle as a deterministic zip |
+| POST | `/exorcisms/{id}/after` | Attach a real-client after run to a bundle |
+| GET | `/exorcisms/{id}/report` | HTML before/after delta |
 
 Every response carries `X-Robots-Tag: noindex, nofollow`.
 

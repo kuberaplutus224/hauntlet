@@ -424,6 +424,32 @@ probe is recorded in the fact log as a refused revision, and the run summary
 lists it as `refused protocol revision '2026-07-28'`. The `poltergeist` room
 (2026-07-28) is unchanged: it serves such a probe normally.
 
+## The Exorcist
+
+The Exorcist turns a finalized run of this room into Kiro guardrails (steering,
+hooks, an `mcp.json` and a `sandbox.json`), applies them, re-runs the room, and
+reports the before/after delta per trap. The bundle is written only to a scratch
+`exorcist/` directory beside the event store, never into this repository's own
+`.kiro/`.
+
+- **Demo path, no setup:** `uv run hauntlet exorcist demo --room poltergeist`.
+  A scripted demo agent (not Kiro, and it says nothing about any model) runs the
+  room, the generated bundle is applied through a small config interpreter, and
+  the room is re-run. The delta is written beside the bundle and to `reports/`.
+- **Your own Kiro, real client:**
+  1. finalize a run of this room as above (`hauntlet mcp finalize …`), and wait
+     for its grace window to close;
+  2. `uv run hauntlet exorcist generate --run RUN_ID` — writes the bundle and
+     prints the path to its `EXORCISM.md`;
+  3. follow the per-room steps in that `EXORCISM.md`: copy the bundle's `.kiro/`
+     into a fresh workspace, apply it, and run your client as the *after* run.
+     Kiro will not let the agent write the config itself, so this is by hand;
+  4. `uv run hauntlet exorcist delta --bundle BUNDLE_ID --after AFTER_RUN_ID`.
+
+Every generated item cites the traps it addresses in `EXORCISM.md`, never inside
+a guardrail file, and the delta report says plainly whether the re-run was the
+demo agent or a real client. Hauntlet never runs or imitates your client.
+
 ## Known limitations
 
 - **The fact log lives in the scratch workspace.** The workspace is a directory

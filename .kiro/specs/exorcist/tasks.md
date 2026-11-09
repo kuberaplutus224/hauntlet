@@ -242,14 +242,14 @@ obedience parser to restore a predicted value.
 - [x] 18. Checkpoint: hosted green
   - `uv run pytest` passes; core unchanged; `uv run hauntlet serve` started by hand serves `/exorcist`
 
-- [ ] 19. Room READMEs and release gate
+- [x] 19. Room READMEs and release gate
   - Add an "Exorcist" section to `src/hauntlet/rooms/poltergeist/README.md` and `src/hauntlet/rooms/parlor/README.md`: how to generate, apply by hand and attach, with a pointer to `EXORCISM.md` for the cited steps
   - Add a short note to the Cursed Repo and Threshold READMEs: demo path only
   - Top-level `README.md`: one paragraph on the Exorcist and the two re-run paths, with the demo-agent caveat ("not Kiro, says nothing about any model")
   - Disclosure checklist (Requirement 15, manual review): no repository file, generated bundle or report describes a privately disclosed finding beyond the approved general wording
   - _Requirements: 7.1, 15.1, 15.2_
 
-- [ ] 20. Final checkpoint
+- [x] 20. Final checkpoint
   - `uv run pytest`, `uv run hauntlet selftest` (unchanged), `uv run python scripts/check_payload_safety.py`, `uv run hauntlet sample-report` (no diff in `docs/sample-report.html`), `git diff --stat src/hauntlet/core` empty
   - Report the final demo results table (before/after per demo room) and any not-interpreted items or open assumptions (A1–A5) that remain
 

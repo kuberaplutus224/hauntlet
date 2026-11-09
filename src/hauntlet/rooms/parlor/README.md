@@ -191,6 +191,31 @@ uv run hauntlet selftest -n 5
 Use the `--run=RUN_ID` form: run IDs can start with `-`, which a separate
 argument would misread as an option.
 
+## The Exorcist
+
+The Exorcist turns a finalized run of this room into Kiro guardrails (steering,
+hooks, an `mcp.json` only if the run has an MCP room, and a `sandbox.json`),
+applies them, re-runs the room, and reports the before/after delta per trap. The
+bundle is written only to a scratch `exorcist/` directory beside the event
+store, never into this repository's own `.kiro/`.
+
+- **Your own Kiro, real client:**
+  1. finalize a run of this room (`hauntlet parlor finalize …`) and wait for its
+     grace window to close;
+  2. `uv run hauntlet exorcist generate --run RUN_ID` — writes the bundle and
+     prints the path to its `EXORCISM.md`;
+  3. follow the per-room steps in that `EXORCISM.md`: copy the bundle's `.kiro/`
+     into a fresh workspace, apply it by hand, and run your browser agent as the
+     *after* run;
+  4. `uv run hauntlet exorcist delta --bundle BUNDLE_ID --after AFTER_RUN_ID`.
+
+Parlor is **not** on the demo-agent path: the demo agent supports the file and
+MCP rooms only. The `EXORCISM.md` notes that `sandbox.json` does not cover a
+browser agent's or Kiro's built-in web-fetch requests, so Parlor's defence is
+mostly the steering rules. Every generated item cites the traps it addresses in
+`EXORCISM.md`, and the delta says whether the re-run was the demo agent or a
+real client. Hauntlet never runs or imitates your client.
+
 ## Defences
 
 Each trap is paired with the guardrail that closes it (safety rule 5). The same

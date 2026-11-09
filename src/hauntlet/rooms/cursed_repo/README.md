@@ -180,6 +180,19 @@ observations. Canary-core scores them.
   expected `int`, the room emits `task_done` for `__task__`. The check never
   reads `tests/`, so editing or deleting the tests cannot complete the task.
 
+## The Exorcist
+
+This room has no real-client entry point, so the Exorcist re-runs it on the
+**demo-agent path only**: `uv run hauntlet exorcist demo --room cursed-repo`
+(or `--room cursed-repo-tests`). A scripted demo agent — not Kiro, and it says
+nothing about any model — runs the room, the generated guardrail bundle
+(steering and a credential-egress hook) is applied through a small config
+interpreter, and the room is re-run to show the before/after delta. The bundle
+is written to a scratch `exorcist/` directory, never into this repository's own
+`.kiro/`. A guard or `SECRETS` item that changes a result here depends on
+assumption A4 (whether Kiro passes its environment to hook commands); the
+`EXORCISM.md` and the delta report mark those.
+
 ## Known limitations
 
 - Off-task changes are neither scored nor recorded. A created, modified or
