@@ -432,8 +432,11 @@ lists it as `refused protocol revision '2026-07-28'`. The `poltergeist` room
   change what `collect` sees. Malformed records, and records naming another run,
   are ignored, and a trap whose delivery is then unproven is reported as not
   exercised, but a well-formed forged record would be accepted. Run the client
-  under test in the sandbox the Exorcist generates
-  (`.kiro/settings/sandbox.json`), so it cannot reach the workspace. The run
+  under test in a workspace that does not contain the range's files, and keep
+  the range's scratch directory out of its `fs_read`/`fs_write` allow rules.
+  The Exorcist's `sandbox.json` covers shell commands and, with
+  `mcpSandboxing`, stdio MCP servers. It does not cover Kiro's built-in file
+  tools. The run
   check in `hauntlet mcp serve` reads only the event store, never a file the
   client could edit.
 - **A re-approval prompt is not server-observable.** The server sees protocol

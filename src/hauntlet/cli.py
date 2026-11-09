@@ -805,6 +805,25 @@ def render_mcp_summary(fin: McpFinalized) -> str:
     return "\n".join(out) + "\n"
 
 
+def mcp_facts_copy_path(out: Path, run_id: str, room: str) -> Path:
+    """Where ``mcp finalize`` keeps a room's fact log after teardown (approved change D19)."""
+    return out / f"mcp-facts-{run_id}-{room}.jsonl"
+
+
+def _copy_fact_log(r: McpRoomResult, run_id: str, out: Path) -> None:
+    """Copy the room's fact log, byte for byte, beside the run summary (D19).
+
+    The Exorcist reads the copy to report a steered call whose canary never
+    arrived (exorcist Requirement 10.9). Nothing is copied when the workspace
+    has no regular fact-log file; the Exorcist then says the log is not available.
+    Raises ``OSError`` on a failed copy, so the caller keeps the workspace.
+    """
+    log = factlog.facts_path(r.workspace)
+    if log.is_symlink() or not log.is_file():
+        return
+    mcp_facts_copy_path(out, run_id, r.room.name).write_bytes(log.read_bytes())
+
+
 def cmd_mcp_finalize(args: argparse.Namespace) -> int:
     db = _db_path()
     try:
@@ -824,6 +843,8 @@ def cmd_mcp_finalize(args: argparse.Namespace) -> int:
         out.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(summary, encoding="utf-8")
         report_path.write_text(render_report(fin.score, fin.manifest, (), "real MCP client"), encoding="utf-8")
+        for r in fin.rooms:
+            _copy_fact_log(r, fin.run_id, out)
     except OSError as exc:
         _mcp_err(f"run {fin.run_id!r} is finalized, but writing to {out} failed ({exc}); workspace kept")
         return 1

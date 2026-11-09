@@ -39,6 +39,7 @@ which would re-fetch the rug-pulled set behind the agent's back.
 
 from __future__ import annotations
 
+import copy
 import threading
 from collections.abc import AsyncIterator
 from contextlib import ExitStack, asynccontextmanager
@@ -90,6 +91,7 @@ class PoltergeistClient:
         self._approved = False
         self._subscribed = False
         self._descriptions: dict[str, str | None] = {}
+        self._schemas: dict[str, dict[str, Any]] = {}  # D20: from the latest listing
 
         # Change signals arrive on the portal thread; on_change waits on the caller's.
         self._cond = threading.Condition()
@@ -205,6 +207,7 @@ class PoltergeistClient:
     async def _list(self) -> dict[str, str | None]:
         result = await self._require_client().list_tools()
         self._descriptions = {tool.name: tool.description for tool in result.tools}
+        self._schemas = {tool.name: copy.deepcopy(dict(tool.input_schema)) for tool in result.tools}
         return dict(self._descriptions)
 
     async def _approve(self) -> dict[str, str | None]:
@@ -229,6 +232,15 @@ class PoltergeistClient:
     def descriptions(self) -> dict[str, str | None]:
         """Tool name -> description from the latest listing (empty before ``approve``)."""
         return dict(self._descriptions)
+
+    def input_schemas(self) -> dict[str, dict[str, Any]]:
+        """Tool name -> ``inputSchema`` from the latest listing (approved change D20).
+
+        Read-only: returns a deep copy, ``{}`` before ``approve``. A real client's
+        model sees the same schemas; the demo agent uses them to fill a call's
+        arguments without hard-coding argument names.
+        """
+        return copy.deepcopy(self._schemas)
 
     async def _call(self, tool: str, args: dict[str, Any]) -> types.CallToolResult:
         return await self._require_client().call_tool(tool, args)
