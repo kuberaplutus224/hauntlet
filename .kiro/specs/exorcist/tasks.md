@@ -61,48 +61,48 @@ obedience parser to restore a predicted value.
 - [x] 4. Checkpoint: outside changes green
   - `uv run pytest` passes; `uv run hauntlet selftest` passes with output unchanged; `uv run python scripts/check_payload_safety.py` is clean; `git diff --stat src/hauntlet/core` is empty
 
-- [ ] 5. Approved change D15: threat profiles
-  - [ ] 5.1 Shared profile types
+- [x] 5. Approved change D15: threat profiles
+  - [x] 5.1 Shared profile types
     - `src/hauntlet/exorcist/model.py`: `Source`, `Effect`, `TrapThreat`, `McpTools`, `RoomThreats` exactly as design.md "Data models" (frozen; `effects` non-empty, checked in `__post_init__`)
     - _Requirements: 13.1_
-  - [ ] 5.2 `threats.py` in each room package
+  - [x] 5.2 `threats.py` in each room package
     - `rooms/threshold/threats.py`, `rooms/cursed_repo/threats.py` (both configs), `rooms/poltergeist/threats.py` (both revisions), `rooms/parlor/threats.py`, with the values in design.md's D15 table
     - Poltergeist `McpTools`: `task_tools = ("list_topics", "get_note", "submit_answer")`; derive `steered_tools` and `relay_tools` from `config.TOOLS` kinds `relay`/`scratch` at import
     - `real_client_env` per design "Environment (8.9)": threshold `{"HAUNTLET_DEMO_KEY"}`; cursed-repo / cursed-repo-tests derived from `config.traps` `env_var`; Poltergeist and Parlor empty
     - Profiles import only `hauntlet.exorcist.model` and their own room's config; rooms import nothing else new
     - _Requirements: 13.1, D15_
-  - [ ] 5.3 Registry
+  - [x] 5.3 Registry
     - `src/hauntlet/exorcist/profiles.py`: `profile_for(room_name) -> RoomThreats`, raising `KeyError` with the known names; the only Exorcist module that names rooms
     - _Requirements: 13.1_
-  - [ ] 5.4 Write `tests/test_threat_profiles.py`
+  - [x] 5.4 Write `tests/test_threat_profiles.py`
     - For every room in `default_rooms()`: each non-control trap has a profile, no profile names an unknown trap or a control, and every effect set is non-empty
     - MCP rooms: `task_tools` and `steered_tools` are advertised tool names; the two sets are disjoint; `relay_tools ⊆ steered_tools`
     - _Requirements: 13.2_
 
-- [ ] 6. Generator: pure modules
-  - [ ] 6.1 Eligibility
+- [x] 6. Generator: pure modules
+  - [x] 6.1 Eligibility
     - `exorcist/eligibility.py`: `classify(score, manifest)` with the ordered rules in design.md "Eligibility"; `require_final(run, score)` raises for unknown, unfinalized or provisional runs
     - _Requirements: 1.1–1.6_
-  - [ ] 6.2 Property EP1
+  - [x] 6.2 Property EP1
     - `tests/test_exorcist_eligibility.py`: the `runs()` strategy (design "Correctness properties") plus an independent oracle written from Requirement 1.3; classification matches; cited traps ∪ no-guardrail equals fired ∪ not-exercised; `__task__` never appears
     - _Requirements: 1.3–1.5, 4.2_
-  - [ ] 6.3 Grammar
+  - [x] 6.3 Grammar
     - `exorcist/grammar.py`: the eight sentence templates verbatim from design.md; source display names in enum order; `render(rule, sources)` and `parse(bullet) -> (rule, sources) | None` (whitespace-normalised); `CREDENTIAL_NAME` regex and `MIN_SECRET_LEN = 12` defined once here
     - Unit tests: `parse(render(r, s)) == (r, s)` for every rule and every non-empty source subset; near-miss sentences give `None`
     - _Requirements: 5.3, 8.4_
-  - [ ] 6.4 Catalogue, generate and render
+  - [x] 6.4 Catalogue, generate and render
     - `exorcist/catalogue.py`: the selection table in design.md "Catalogue and grammar"
     - `exorcist/generate.py`: `generate(score, manifest, profiles) -> BundleSpec`, with items and citations recorded per design. Guardrail content is computed only from eligible `(source, effects)`, MCP tool lists and server names
     - `exorcist/render.py`: steering files, `credential-egress.json`, `mcp.json` (placeholders `<after-run-id>`, `<hauntlet-checkout>`, `<path-to-range-db>`, `<range-base-url>`), `sandbox.json`, and the guard copied from `exorcist/guards/credential_egress.py`. Output is deterministic: sorted keys and lists, `\n` line ends, no timestamps
     - `exorcist/guards/credential_egress.py`: as design.md "Hooks and the guard script" (stdlib only; exits 0 or 2; names the variable, never the value)
     - _Requirements: 2.1–2.5, 5.1–5.3, 6.1, 6.4_
-  - [ ] 6.5 Permissions suggestion
+  - [x] 6.5 Permissions suggestion
     - In `generate`: the YAML text from design.md's rules table, with the user-level label and the "Always allow" review note; `deny` or `ask` only; each rule commented with its citations
     - _Requirements: 4.5, 7.2_
-  - [ ] 6.6 Validate
+  - [x] 6.6 Validate
     - `exorcist/validate.py`: the checks in design.md "Bundle layout and writer". Raises `BundleInvalid(path, rule)`
     - _Requirements: 2.7_
-  - [ ] 6.7 Generator properties
+  - [x] 6.7 Generator properties
     - `tests/test_exorcist_generate.py`:
       - **EP2:** steering and hook bytes are equal for runs with permuted trap IDs, fresh canaries and the same class multiset
       - **EP3:** no canary value, no `hauntlet-mark-`/`HAUNTLET-DUMMY-`, and no shared 6-gram with any file under `src/hauntlet/rooms/*/templates` or `fixtures`; steering and hooks also contain no trap ID or room name
@@ -112,11 +112,11 @@ obedience parser to restore a predicted value.
     - Example test: `scripts/check_payload_safety.py` passes on `exorcist/guards/` and on rendered files written to a temp dir
     - _Requirements: 2.5, 2.7, 4.4, 4.5, 5.1–5.4, 6.3, 6.4_
 
-- [ ] 7. Writer and bundle manifest
-  - [ ] 7.1 Paths and writer
+- [x] 7. Writer and bundle manifest
+  - [x] 7.1 Paths and writer
     - `exorcist/paths.py` `exorcist_root(db)`; `exorcist/writer.py` `write_bundle(root, before_run_id, spec, created_at) -> Path` with every check in design.md (ID charset, `.kiro` refusals, `mkdir(exist_ok=False)`, `O_CREAT|O_EXCL|O_NOFOLLOW`, containment after resolve); `write_delta(bundle_dir, after_run_id, files)` under the same checks
     - _Requirements: 3.1–3.4_
-  - [ ] 7.2 Bundle manifest
+  - [x] 7.2 Bundle manifest
     - `bundle.json`: items, cites, classes, no-guardrail list, assumptions, SHA-256 of each `.kiro/` file, `created_at`, before run ID, schema version
     - `EXORCISM.md`: the same content for people, plus:
       - the cannot-fix list verbatim from the requirements;
@@ -126,12 +126,12 @@ obedience parser to restore a predicted value.
       - the manual steps per real-client room from design.md "Manual steps for real Kiro", each citing its doc URL
     - No private-finding detail: client limits use only the approved general wording (Requirement 15)
     - _Requirements: 4.1–4.6, 7.1–7.3, 15.1, 15.2_
-  - [ ] 7.3 Property EP6 and manifest tests
+  - [x] 7.3 Property EP6 and manifest tests
     - `tests/test_exorcist_paths.py`, **EP6:** hostile IDs, `..`, absolute paths, pre-placed symlinks at each level, a root under a `.kiro` directory, an existing bundle directory; each is written inside the root or refused
     - Manifest tests: every guardrail file's digest matches; `EXORCISM.md` contains every cited trap, each cannot-fix item and each manual step's URL; the 4.6 statement is present exactly when the guard or `SECRETS` is
     - _Requirements: 3.1–3.3, 4.1–4.3, 4.6, 7.1_
 
-- [ ] 8. Checkpoint: generator green
+- [x] 8. Checkpoint: generator green
   - `uv run pytest` passes (EP1–EP6, EP16 included); payload safety clean; core unchanged
 
 - [ ] 9. Interpreter and hook runner
@@ -202,7 +202,7 @@ obedience parser to restore a predicted value.
   - [ ] 13.2 Check Requirement 8.3
     - Before is L3 or above in every hosted demo room (`cursed-repo`, `poltergeist`). If not, stop and report; do not tune
   - [ ] 13.3 Write `tests/test_demo_agent_causality.py`
-    - **EP8:** every outcome that differs from the baseline has an attribution. For each attributed item, a bundle with only that item removed (hook entry, steering bullet, `disabledTools` or `autoApprove` entry; digests updated) restores the baseline outcome of the actions attributed to it alone. Check 9.3 alongside
+    - **EP8:** every outcome that differs from the baseline has an attribution. For each attributed item, a bundle with only that item removed restores the baseline outcome of the actions attributed to it alone. Removed means: a hook entry or steering bullet deleted; for an MCP key (`disabledTools`, `autoApprove`), the key reverted to its baseline value (`autoApprove: ["*"]`), because an absent `autoApprove` still makes every call ask. Digests are updated. Check 9.3 alongside
     - Assert that no Poltergeist after-change is attributed to `credential-egress` or `SECRETS`, and that every file-room attribution to either cites A4 in the report and manifest (4.6)
     - _Requirements: 4.6, 8.6, 9.3, 9.4_
   - [ ] 13.4 Compare with design.md "Expected demo results"
@@ -265,7 +265,7 @@ obedience parser to restore a predicted value.
 - `src/hauntlet/core/` stays unchanged throughout. Each checkpoint checks
   `git diff --stat src/hauntlet/core`. Anything that needs a core change is a
   new numbered proposal (D21+) and stops the task.
-- Tasks 1–4 were done on 2026-11-08. Task 3 also corrected Parlor README
+- Tasks 1–8 were done on 2026-11-08. Task 3 also corrected Parlor README
   limitation 7, which made the same wrong sandbox claim as the three D18 texts
   (text only).
 - Tasks that write the same file run in separate waves: `exorcist/generate.py`

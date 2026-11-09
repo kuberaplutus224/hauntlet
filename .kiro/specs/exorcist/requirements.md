@@ -214,10 +214,13 @@ Kiro actually reads, so I can apply the bundle without guessing.
    selector or regex matcher. A blocking command action SHALL block with exit
    code 2 and allow with exit code 0 (verified table, "Hook exit codes").
 3. The generated `mcp.json` SHALL contain an entry only for the range's own
-   room server. It SHALL change only `autoApprove` (set to an explicit list of
-   the task's tools, or empty) and `disabledTools` (tools the room's threat
-   profile marks as not needed by the task). It SHALL NOT contain `"*"` in
-   `autoApprove`, and it SHALL NOT set `disabled: true` for the room server,
+   room server. It SHALL change only `autoApprove`, which SHALL always be `[]`,
+   and `disabledTools` (tools the room's threat profile marks as not needed by
+   the task). A tool's description can change after it was approved, so no
+   tool skips approval: auto-approving a task tool would be the config
+   equivalent of "Always allow" ("What configuration cannot fix", item 1).
+   The validator SHALL reject a generated bundle with a non-empty `autoApprove`.
+   The entry SHALL NOT set `disabled: true` for the room server,
    because a disabled server cannot be re-run. The after run does not exist
    when the bundle is written, so the entry's `--run` argument SHALL be the
    literal placeholder `<after-run-id>`. The manual steps tell the tester to
@@ -297,8 +300,9 @@ which trap it answers, so I can judge whether to keep it.
    - in a room whose real-client channels carry no environment value (the
      Poltergeist rooms), the demo environment is empty, so neither item
      changes that room's demo result. Any change on `rug-desc` comes from
-     steering (`DATA`, `TOOLS`) and the MCP config (`disabledTools`,
-     `autoApprove`);
+     steering (`DATA`, `TOOLS`) and the MCP config (`disabledTools`, and the
+     empty `autoApprove`, under which every call asks and the demo treats an
+     ask as a deny);
    - WHERE the egress guard or `SECRETS` changes a file-room demo result, every
      such attribution SHALL cite assumption A4: Kiro passing its environment to
      hook commands is unverified.
@@ -366,8 +370,13 @@ deployment and nothing is faked.
    - copy the bundle's `.kiro/` tree into it, merging `mcp.json` by hand
      without overwriting any existing server entry;
    - trust the workspace (IDE, or interactive CLI 2.33+);
-   - for CLI, run `kiro-cli chat --v3 --no-interactive …`, adding `--sandbox`
-     when the bundle has a `sandbox.json`;
+   - for an MCP room, use the interactive IDE. The bundle leaves `autoApprove`
+     empty and a headless CLI run treats every ask as a deny, so the task's own
+     MCP calls would be denied there. The tester approves each task call when
+     Kiro asks. The steps SHALL NOT suggest adding tools to `autoApprove`;
+   - for a room without an MCP server, the CLI may also be used: `kiro-cli chat
+     --v3 --no-interactive …`, adding `--sandbox` when the bundle has a
+     `sandbox.json`;
    - start a new run of the same room through the room's existing commands;
    - do the task, finalize, and attach the after run (Requirement 10.6).
 
@@ -845,3 +854,12 @@ agent's shell would. Each room declares its channel as data
 or `SECRETS` cites A4. The file-room before predictions go back to what the
 code produces, untuned. Attributing the `rug-desc` change to the MCP config
 (`disabledTools` / `autoApprove`) alongside steering was accepted.
+
+Checkpoint-8 review (2026-11-08): `autoApprove` is always `[]` for the room
+server (2.3). Setting it to the task tools contradicted cannot-fix item 1. It
+auto-approved a tool whose description can change, which is the config
+equivalent of "Always allow". The validator rejects any non-empty
+`autoApprove`. The real-Kiro steps for MCP rooms use the interactive IDE,
+because a headless run turns every ask, including the task's calls, into a
+deny. In the demo, every demo-agent MCP call is an ask, which the demo treats
+as a deny. The task driver's calls stay ungated, as designed.
