@@ -159,8 +159,8 @@ obedience parser to restore a predicted value.
 - [x] 10. Checkpoint: interpreter green
   - `uv run pytest` passes; core unchanged
 
-- [ ] 11. Demo agent
-  - [ ] 11.1 `src/hauntlet/agents/demo.py`
+- [x] 11. Demo agent
+  - [x] 11.1 `src/hauntlet/agents/demo.py`
     - `DemoAgent(config_dir, env_channel)`, `name = "demo"`; agent environment = `env_channel(materials)` (design "Environment (8.9)"); never calls `tools.getenv` and never reads `materials.env` itself (passes `materials` to the driver unchanged)
     - Obedience parser with the shapes in design.md's table; `directed` set only by an imperative addressed to the agent; sources set from where content was read
     - "Learning a value from content": pre-read through the instructing tool, argument from the task text by schema property name (D20 `input_schemas()`), value by `^\s*<V>\s*[:=]\s*(\S+)`
@@ -168,51 +168,51 @@ obedience parser to restore a predicted value.
     - File rooms through `do_task(materials, tools)`; MCP rooms through `do_task(materials, tools, react)`. Any other room raises `UnsupportedRoom`, named by the room the materials carry, with no room-name literal in code
     - `_task.py` does not change
     - _Requirements: 8.1–8.4, 8.6, 8.7, 8.9_
-  - [ ] 11.2 Baseline config and registration (`env_channel=exorcist.profiles.real_client_env`)
+  - [x] 11.2 Baseline config and registration (`env_channel=exorcist.profiles.real_client_env`)
     - Built-in baseline under a scratch dir: empty steering and hooks, `mcp.json` with one `hauntlet` server entry and `autoApprove: ["*"]` (only when materials name an MCP connection), no sandbox. `get_agent("demo")` returns `DemoAgent(baseline)` (`src/hauntlet/agents/__init__.py`, D17 (h))
     - _Requirements: 8.3, 8.8, 14.1 (h)_
-  - [ ] 11.3 Demo-agent rule tests
+  - [x] 11.3 Demo-agent rule tests
     - `tests/test_demo_agent_static.py` (9.1): scans `agents/demo.py`, `exorcist/interpreter.py`, `exorcist/hookrun.py`, `exorcist/grammar.py` and the guard. It fails on any registered room name, any trap ID from `default_rooms()`, `hauntlet-mark-`, `HAUNTLET-DUMMY-`, `getenv`, `.env` in `demo.py`, or an import of `hauntlet.rooms.*` (the demo agent may import `hauntlet.agents._task` only)
     - `tests/test_demo_agent_env.py` (9.9, **EP17**): every demo room × several seeds; the agent environment and every hook-runner `env` argument (captured with a stub) equal `{k: materials.env[k] for k in real_client_env}`, which is `{}` with no canary value for the Poltergeist rooms; each file room's `real_client_env` equals the env names its `setup` plants (from config); a `ToolBox` subclass records `getenv` calls (must be zero)
     - `tests/test_demo_agent_driver.py` (9.7, **EP14**): two seeds per demo room; driver writes and calls recorded through a `ToolBox` subclass and a client proxy carry no canary value and are equal once task data is masked
     - _Requirements: 8.1, 8.7, 8.9, 9.1, 9.7, 9.9_
 
-- [ ] 12. Demo flow, fact-log signal and delta
-  - [ ] 12.1 Fact-log reader
+- [x] 12. Demo flow, fact-log signal and delta
+  - [x] 12.1 Fact-log reader
     - `exorcist/mcpfacts.py`: `steered_relay_calls(facts, mcp)`. Loaders: the demo workspace (`<scratch>/<room>-<run_id>`, with a test that this matches `cli.mcp_workspace`), and `<reports>/mcp-facts-<run>-<room>.jsonl` (D19). Uses `factlog.read`, so malformed and foreign-run records are skipped
     - _Requirements: 1.2, 10.9_
-  - [ ] 12.2 Delta model and report
+  - [x] 12.2 Delta model and report
     - `exorcist/delta.py`: `admit` (the four 10.6 checks, first failure named) and `classify_change` with the ordered rules in design.md; `steered-call-no-canary` from 12.1; "fact log not available" when no source exists
     - `exorcist/report.py`: `.json`, `.html` (own template, `html.escape` on every value) and `.txt` in the design's section order. The first line is the path label; the Costs section lists task regressions and new false positives. Demo-path notes cover the inert sandbox, ungated task tools and the 4.6 statement. Before and after autopsy reports are linked through the existing `render_report`. The word "fixed" never appears
     - _Requirements: 7.5, 10.1–10.9, 4.6_
-  - [ ] 12.3 Delta properties
+  - [x] 12.3 Delta properties
     - `tests/test_exorcist_delta.py`:
       - **EP10:** every format holds every before trap's level and signals, with or without an after run; "not exercised after" is never improved; a higher level is always marked a regression;
       - **EP11:** first line by path;
       - **EP12:** admission holds iff all four checks hold;
       - **EP15:** synthetic fact logs × after scores
     - _Requirements: 10.1–10.6, 10.9_
-  - [ ] 12.4 `ExorcistService.demo`
+  - [x] 12.4 `ExorcistService.demo`
     - `exorcist/service.py`: the four steps in design.md "Demo flow" (`run_once(..., keep_workspace=True)`, fact-log read, teardown through `service.context` + `room.teardown`, generate → validate → write, after run, admit, delta). Refuses unsupported rooms. `generate(run_id)` and `attach(bundle_id, after_run_id)` share the same pieces
     - _Requirements: 8.3, 10.6, 11.1, 12.1–12.3_
 
-- [ ] 13. Goldens and causality (demo rooms: threshold, cursed-repo, cursed-repo-tests, poltergeist, poltergeist-legacy)
-  - [ ] 13.1 Run each demo room once and record the actual results
+- [x] 13. Goldens and causality (demo rooms: threshold, cursed-repo, cursed-repo-tests, poltergeist, poltergeist-legacy)
+  - [x] 13.1 Run each demo room once and record the actual results
     - Before and after: worst level, Detected, task, false positives, per-trap levels, attributions
-  - [ ] 13.2 Check Requirement 8.3
+  - [x] 13.2 Check Requirement 8.3
     - Before is L3 or above in every hosted demo room (`cursed-repo`, `poltergeist`). If not, stop and report; do not tune
-  - [ ] 13.3 Write `tests/test_demo_agent_causality.py`
+  - [x] 13.3 Write `tests/test_demo_agent_causality.py`
     - **EP8:** every outcome that differs from the baseline has an attribution. For each attributed item, a bundle with only that item removed restores the baseline outcome of the actions attributed to it alone. Removed means: a hook entry or steering bullet deleted; for an MCP key (`disabledTools`, `autoApprove`), the key reverted to its baseline value (`autoApprove: ["*"]`), because an absent `autoApprove` still makes every call ask. Digests are updated. Check 9.3 alongside
     - Assert that no Poltergeist after-change is attributed to `credential-egress` or `SECRETS`, and that every file-room attribution to either cites A4 in the report and manifest (4.6)
     - _Requirements: 4.6, 8.6, 9.3, 9.4_
-  - [ ] 13.4 Compare with design.md "Expected demo results"
+  - [x] 13.4 Compare with design.md "Expected demo results"
     - If any value differs, **stop and report** the table of predicted vs actual to the user before writing goldens. Do not change code to match
-  - [ ] 13.5 Pin the goldens
+  - [x] 13.5 Pin the goldens
     - `tests/test_demo_agent_golden.py` (9.2): per demo room, the action trace and per-trap levels under the baseline and under the generated bundle
     - `tests/test_exorcist_repo_kiro_untouched.py` (3.5): hash the repository's `.kiro/` tree, run `ExorcistService.demo` for one file room and one MCP room, and hash again; the hashes are equal
     - _Requirements: 3.5, 9.2_
 
-- [ ] 14. Checkpoint: demo loop green
+- [x] 14. Checkpoint: demo loop green
   - `uv run pytest` passes; `uv run hauntlet selftest` unchanged; core unchanged; actual demo results reported (task 13.4)
 
 - [ ] 15. Approved change D17: CLI
@@ -265,7 +265,8 @@ obedience parser to restore a predicted value.
 - `src/hauntlet/core/` stays unchanged throughout. Each checkpoint checks
   `git diff --stat src/hauntlet/core`. Anything that needs a core change is a
   new numbered proposal (D21+) and stops the task.
-- Tasks 1–10 were done on 2026-11-08. Task 3 also corrected Parlor README
+- Tasks 1–14 were done on 2026-11-08. The demo agent records a per-action
+  `trace` and a `denials` list used by the delta and the causality tests. Task 3 also corrected Parlor README
   limitation 7, which made the same wrong sandbox claim as the three D18 texts
   (text only).
 - Tasks that write the same file run in separate waves: `exorcist/generate.py`

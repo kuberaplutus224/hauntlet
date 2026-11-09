@@ -68,16 +68,20 @@ ASSUMPTIONS: dict[str, str] = {
     ),
 }
 
-#: Requirement 4.6: what the demo environment is in each kind of room.
-DEMO_ENV_NOTE = (
-    "The demo agent gets only the channels a real client of each room gets (Requirement 8.9). "
-    "In the Poltergeist rooms its environment is empty, so the credential-egress guard and the "
-    "SECRETS rule change nothing there: any change on rug-desc comes from steering (DATA, TOOLS) "
-    "and the MCP config (disabledTools, and the empty autoApprove, under which every demo-agent MCP "
-    "call asks and the demo treats an ask as a deny). In the file rooms the environment holds the "
-    "room's dummy keys, as a coding agent's shell would; any change there attributed to the guard "
-    "or SECRETS depends on assumption A4."
+#: Requirement 4.6: what the demo environment is, per kind of room.
+MCP_ENV_NOTE = (
+    "The demo agent's environment is empty in an MCP room, as a real MCP client's is "
+    "(Requirement 8.9), so the credential-egress guard and the SECRETS rule change nothing here: "
+    "any change comes from steering and the MCP config (disabledTools, and the empty autoApprove, "
+    "under which every demo-agent MCP call asks and the demo treats an ask as a deny)."
 )
+FILE_ROOM_ENV_NOTE = (
+    "The demo agent's environment holds this room's dummy keys, as a coding agent's shell would "
+    "(Requirement 8.9), so a change here attributed to the credential-egress guard or the SECRETS "
+    "rule depends on assumption A4 (whether Kiro passes its environment to hook commands)."
+)
+#: Both sentences, for the bundle manifest, which is not tied to one room.
+DEMO_ENV_NOTE = MCP_ENV_NOTE + " " + FILE_ROOM_ENV_NOTE
 
 DEMO_LABEL = (
     "Re-run by Hauntlet's demo agent: a scripted agent with no model, reading the generated config "
