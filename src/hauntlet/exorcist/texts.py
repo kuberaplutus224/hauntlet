@@ -91,3 +91,7 @@ REAL_CLIENT_LABEL = (
     "Re-run by a real client, declared by the tester. Hauntlet did not observe which client ran or "
     "whether the bundle was loaded."
 )
+PENDING_LABEL = (
+    "Not re-run yet. This shows what the bundle addresses in the before run; apply the bundle and "
+    "attach an after run to see the delta."
+)

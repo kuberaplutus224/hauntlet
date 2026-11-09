@@ -21,7 +21,7 @@ from hauntlet.core.room import RoomMaterials
 from hauntlet.core.service import RangeService
 from hauntlet.core.toolbox import ToolBox
 from hauntlet.exorcist import mcpfacts, report
-from hauntlet.exorcist.delta import DEMO, REAL, Delta, admit, build_delta
+from hauntlet.exorcist.delta import DEMO, PENDING, REAL, Delta, admit, build_delta
 from hauntlet.exorcist.generate import generate
 from hauntlet.exorcist.manifest import needs_demo_env_note
 from hauntlet.exorcist.model import BundleSpec
@@ -30,6 +30,7 @@ from hauntlet.exorcist.texts import (
     DEMO_LABEL,
     FILE_ROOM_ENV_NOTE,
     MCP_ENV_NOTE,
+    PENDING_LABEL,
     REAL_CLIENT_LABEL,
 )
 from hauntlet.exorcist.validate import validate
@@ -105,6 +106,65 @@ class ExorcistService:
             self._write_delta(bundle_dir, after.run_id, delta)
             return DemoResult(room, bundle_id, bundle_dir, before, after, delta)
 
+    # -- generate / find / attach by bundle (shared by the CLI and the hosted routes) --
+
+    def generate_bundle(self, run_id: str) -> tuple[str, Path]:
+        """Write a bundle for a finalized, non-provisional run. Returns ``(id, dir)``.
+
+        Raises ``UnknownRun`` for an unknown run and ``NotFinal`` for one that is
+        not finalized or still provisional (Requirement 1.1).
+        """
+        from hauntlet.exorcist.eligibility import require_final
+        from hauntlet.exorcist.generate import generate
+        from hauntlet.exorcist.validate import validate
+        from hauntlet.exorcist.writer import write_bundle
+
+        run = self.service.get_run(run_id)
+        score = self.service.score(run_id)
+        require_final(run, score, run_id)
+        spec = generate(score, self.service.manifest(run_id))
+        validate(spec.files)
+        return write_bundle(self.root, spec, self.clock())
+
+    def find_bundle(self, bundle_id: str) -> Path:
+        """The bundle directory for ``bundle_id`` under the root, else ``FileNotFoundError``."""
+        import re
+
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,64}", bundle_id or ""):
+            raise FileNotFoundError(f"invalid bundle ID {bundle_id!r}")
+        if self.root.is_dir():
+            for before_dir in sorted(self.root.iterdir()):
+                cand = before_dir / bundle_id
+                if (cand / "bundle.json").is_file():
+                    return cand
+        raise FileNotFoundError(f"no bundle {bundle_id!r}")
+
+    def _before_of(self, bundle_dir: Path):
+        import json
+
+        before_run_id = json.loads((bundle_dir / "bundle.json").read_text(encoding="utf-8"))["before_run_id"]
+        return self.service.score(before_run_id), self.service.manifest(before_run_id)
+
+    def attach_to_bundle(self, bundle_dir: Path, after_run_id: str) -> Delta:
+        """Attach a real-client after run to an existing bundle (re-derives its spec)."""
+        from hauntlet.exorcist.generate import generate
+
+        before_score, before_manifest = self._before_of(bundle_dir)
+        spec = generate(before_score, before_manifest)
+        return self.attach((before_score, before_manifest), spec, bundle_dir, after_run_id)
+
+    def before_only_delta(self, bundle_dir: Path) -> Delta:
+        """A delta with no after run yet (Requirement 10.1), for a freshly generated bundle."""
+        from hauntlet.exorcist.generate import generate
+
+        before_score, before_manifest = self._before_of(bundle_dir)
+        spec = generate(before_score, before_manifest)
+        return build_delta(
+            before_score, before_manifest, spec,
+            path=PENDING, path_label=PENDING_LABEL,
+            after=None, demo_env_note=None,
+        )
+
     def _run_demo(self, room: str, config_dir: Path, scratch: Path) -> DemoRun:
         agent = DemoAgent(config_dir, real_client_env)
         rm = self.service.rooms[room]
@@ -172,7 +232,10 @@ class ExorcistService:
     # -- delta assembly ----------------------------------------------------
 
     def _admit(self, before: DemoRun, after: DemoRun, created_at: float) -> None:
-        admit(before.score, self.service.get_run(after.run_id), after.score, created_at)
+        # The demo creates its own after run after the bundle, so the created-at
+        # ordering is guaranteed; -inf skips that one check (it matters only for a
+        # tester-attached run, which `attach` admits with the real bundle time).
+        admit(before.score, self.service.get_run(after.run_id), after.score, float("-inf"))
 
     def _delta(
         self, spec: BundleSpec, before, after, *, path, path_label, after_run_id, denials, not_interpreted,

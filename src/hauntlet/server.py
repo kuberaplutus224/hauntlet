@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import os
+from importlib.resources import files
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -137,4 +139,120 @@ def create_app(service: RangeService | None = None) -> FastAPI:
         _run_or_404(run_id)
         return render_report(service.score(run_id), service.manifest(run_id))
 
+    _mount_exorcist(app, service)
     return app
+
+
+class _ExorciseAfter(BaseModel):
+    run_id: str
+
+
+class _DemoRequest(BaseModel):
+    room: str
+
+
+def _exorcist_caps() -> "HostedCaps":
+    from hauntlet.exorcist.hosted import HostedCaps
+
+    def _num(name: str, default: float) -> float:
+        try:
+            return type(default)(os.environ[name])
+        except (KeyError, ValueError):
+            return default
+
+    rooms = os.environ.get("HAUNTLET_EXORCIST_DEMO_ROOMS", "cursed-repo,poltergeist")
+    return HostedCaps(
+        max_concurrent=int(_num("HAUNTLET_EXORCIST_MAX_CONCURRENT", 1)),
+        per_minute=int(_num("HAUNTLET_EXORCIST_PER_MINUTE", 6)),
+        retention_secs=_num("HAUNTLET_EXORCIST_RETENTION_SECS", 3600.0),
+        demo_rooms=tuple(r.strip() for r in rooms.split(",") if r.strip()),
+    )
+
+
+def _mount_exorcist(app: FastAPI, service: RangeService) -> None:
+    """D16 and its amendment: the hosted Exorcist routes, built beside RangeService."""
+    from hauntlet.exorcist.delta import AfterRunRejected
+    from hauntlet.exorcist.eligibility import NotFinal
+    from hauntlet.exorcist.hosted import HostedExorcist, NotFound, Overloaded
+    from hauntlet.exorcist.paths import exorcist_root
+    from hauntlet.exorcist.service import DemoUnsupported, ExorcistService
+
+    db = os.environ.get("HAUNTLET_DB", ".hauntlet/range.db")
+    caps = _exorcist_caps()
+    ex = HostedExorcist(
+        ExorcistService(service, exorcist_root(Path(db)), reports_dir=None, clock=service.clock),
+        caps,
+        clock=service.clock,
+    )
+    app.state.exorcist = ex
+
+    _PAGE = (files("hauntlet.exorcist") / "static" / "exorcist.html").read_text(encoding="utf-8")
+
+    @app.get("/exorcist", response_class=HTMLResponse)
+    def exorcist_page() -> str:
+        rooms = json.dumps([r for r in caps.demo_rooms if ex.service.supports(r)])
+        inject = f'<body x-data="exorcist()"><script>window.__DEMO_ROOMS__ = {rooms};</script>'
+        return _PAGE.replace('<body x-data="exorcist()">', inject, 1)
+
+    @app.post("/exorcist/demo")
+    def exorcist_demo(body: _DemoRequest) -> dict:
+        try:
+            return ex.demo(body.room)
+        except DemoUnsupported as exc:
+            raise HTTPException(400, str(exc)) from None
+        except Overloaded as exc:
+            raise HTTPException(429, str(exc)) from None
+
+    @app.post("/runs/{run_id}/exorcise")
+    def exorcise(run_id: str) -> dict:
+        _run_or_404_outer(service, run_id)
+        try:
+            return ex.exorcise(run_id)
+        except NotFinal as exc:
+            raise HTTPException(409, str(exc)) from None
+        except NotFound as exc:
+            raise HTTPException(404, str(exc)) from None
+        except Overloaded as exc:
+            raise HTTPException(429, str(exc)) from None
+
+    @app.get("/exorcisms/{bundle_id}/bundle")
+    def exorcism_bundle(bundle_id: str) -> Response:
+        try:
+            data = ex.bundle_zip(bundle_id)
+        except NotFound as exc:
+            raise HTTPException(404, str(exc)) from None
+        return Response(
+            data,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="exorcism-{bundle_id}.zip"'},
+        )
+
+    @app.post("/exorcisms/{bundle_id}/after")
+    def exorcism_after(bundle_id: str, body: _ExorciseAfter) -> dict:
+        from hauntlet.core.service import UnknownRun
+
+        try:
+            ex.attach(bundle_id, body.run_id)
+        except NotFound as exc:
+            raise HTTPException(404, str(exc)) from None
+        except UnknownRun:
+            raise HTTPException(404, f"unknown after run {body.run_id!r}") from None
+        except AfterRunRejected as exc:
+            raise HTTPException(400, str(exc)) from None
+        return {"report_url": f"/exorcisms/{bundle_id}/report"}
+
+    @app.get("/exorcisms/{bundle_id}/report", response_class=HTMLResponse)
+    def exorcism_report(bundle_id: str) -> str:
+        try:
+            return ex.report_html(bundle_id)
+        except NotFound as exc:
+            raise HTTPException(404, str(exc)) from None
+
+
+def _run_or_404_outer(service: RangeService, run_id: str) -> None:
+    from hauntlet.core.service import UnknownRun
+
+    try:
+        service.get_run(run_id)
+    except UnknownRun:
+        raise HTTPException(404, "unknown run") from None

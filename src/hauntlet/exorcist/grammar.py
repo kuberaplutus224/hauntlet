@@ -73,9 +73,13 @@ def _norm(text: str) -> str:
 
 
 def render_sources(sources: frozenset[Source] | set[Source]) -> str:
+    """Source names in enum order, joined in natural English: "a", "a and b", "a, b and c"."""
     if not sources:
         raise ValueError("DATA needs at least one source")
-    return ", ".join(SOURCE_NAMES[s] for s in SOURCE_ORDER if s in sources)
+    names = [SOURCE_NAMES[s] for s in SOURCE_ORDER if s in sources]
+    if len(names) == 1:
+        return names[0]
+    return f"{', '.join(names[:-1])} and {names[-1]}"
 
 
 def render(rule: Rule, sources: frozenset[Source] | set[Source] = frozenset()) -> str:
@@ -88,13 +92,14 @@ def render(rule: Rule, sources: frozenset[Source] | set[Source] = frozenset()) -
 
 
 _SOURCE_ALT = "|".join(re.escape(n) for n in sorted(_NAME_TO_SOURCE, key=len, reverse=True))
+#: Natural-English list: NAME, or "a, b and c" (the final item joined by " and ").
+_SOURCES_PAT = rf"(?:{_SOURCE_ALT})(?:(?:, (?:{_SOURCE_ALT}))* and (?:{_SOURCE_ALT}))?"
 _DATA_RE = re.compile(
     "^"
-    + re.escape(SENTENCES[Rule.DATA]).replace(
-        re.escape("{sources}"), rf"(?P<sources>(?:{_SOURCE_ALT})(?:, (?:{_SOURCE_ALT}))*)"
-    )
+    + re.escape(SENTENCES[Rule.DATA]).replace(re.escape("{sources}"), rf"(?P<sources>{_SOURCES_PAT})")
     + "$"
 )
+_SOURCE_SPLIT = re.compile(r", | and ")
 _FIXED = {_norm(s): r for r, s in SENTENCES.items() if r is not Rule.DATA}
 
 
@@ -106,7 +111,7 @@ def parse(bullet: str) -> tuple[Rule, frozenset[Source]] | None:
     m = _DATA_RE.match(text)
     if m is None:
         return None
-    names = m.group("sources").split(", ")
+    names = _SOURCE_SPLIT.split(m.group("sources"))
     if len(set(names)) != len(names):
         return None
     return Rule.DATA, frozenset(_NAME_TO_SOURCE[n] for n in names)

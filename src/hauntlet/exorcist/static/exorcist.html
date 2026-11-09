@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Exorcist — Hauntlet</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+          integrity="sha384-l8f0VcPi/M1iHPv8egOnY/15TDwqgbOR1anMIJWvU6nLRgZVLTLSaNqi/TOoT5Fh"
+          crossorigin="anonymous"></script>
+  <style>
+    body { font: 15px/1.5 system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; }
+    button { font: inherit; padding: .4rem .8rem; cursor: pointer; }
+    .room { margin: .4rem 0; }
+    a { color: #6a2; }
+    .note { color: #666; font-size: .9em; }
+    code { background: #f3f3f3; padding: 0 .2rem; }
+  </style>
+</head>
+<body x-data="exorcist()">
+  <h1>The Exorcist</h1>
+  <p>Pick a room. Hauntlet runs its scripted <strong>demo agent</strong> through the room,
+     generates the Kiro guardrails that address what fired, re-runs with them applied, and
+     shows the before/after delta.</p>
+  <p class="note">The demo agent is a scripted agent with no model, reading the generated config
+     through Hauntlet's interpreter. It is not Kiro, and it says nothing about any model.</p>
+
+  <template x-for="room in rooms" :key="room">
+    <div class="room">
+      <button :disabled="busy" @click="run(room)" x-text="'Exorcise ' + room"></button>
+    </div>
+  </template>
+
+  <p x-show="busy">Running…</p>
+  <p x-show="error" class="note" x-text="error"></p>
+
+  <template x-if="result">
+    <p>
+      Done:
+      <a :href="result.report_url" x-text="'delta report'"></a>
+      ·
+      <a :href="result.bundle_url" x-text="'download bundle'"></a>
+    </p>
+  </template>
+
+  <script>
+    function exorcist() {
+      return {
+        rooms: window.__DEMO_ROOMS__ || [],
+        busy: false,
+        error: "",
+        result: null,
+        async run(room) {
+          this.busy = true; this.error = ""; this.result = null;
+          try {
+            const r = await fetch("/exorcist/demo", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ room }),
+            });
+            if (!r.ok) { this.error = "Request refused (" + r.status + ")."; return; }
+            this.result = await r.json();
+          } catch (e) {
+            this.error = String(e);
+          } finally {
+            this.busy = false;
+          }
+        },
+      };
+    }
+  </script>
+</body>
+</html>

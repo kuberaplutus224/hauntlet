@@ -19,6 +19,7 @@ from hauntlet.exorcist.model import BundleSpec, ClassifiedTrap, TrapClass
 # Path labels.
 DEMO = "demo-agent"
 REAL = "real-client"
+PENDING = "pending"  # a bundle was generated but not re-run yet
 
 # Change outcomes (design "Delta"). "fixed" never appears.
 AFTER_NOT_RUN = "after not run yet"

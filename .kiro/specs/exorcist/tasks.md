@@ -227,19 +227,19 @@ obedience parser to restore a predicted value.
 - [x] 16. Checkpoint: CLI green
   - `uv run pytest` passes; core unchanged
 
-- [ ] 17. Approved change D16 and its amendment: hosted routes
-  - [ ] 17.1 Routes and service wiring
+- [x] 17. Approved change D16 and its amendment: hosted routes
+  - [x] 17.1 Routes and service wiring
     - `src/hauntlet/server.py` `create_app`: build an `ExorcistService` beside `RangeService` with the env-configured caps, and add the six routes in design.md "Hosted service". Existing routes and the `noindex` middleware are unchanged. IDs are checked against `[A-Za-z0-9_-]` before any filesystem lookup. The retention sweeper is confined to `exorcist_root`
     - `src/hauntlet/exorcist/static/exorcist.html`: demo button per configured demo room, links to report and bundle; Alpine.js, no build step, no inline secrets, and `meta robots noindex`
     - _Requirements: 11.1–11.6, D16_
-  - [ ] 17.2 Write `tests/test_exorcist_server.py`
+  - [x] 17.2 Write `tests/test_exorcist_server.py`
     - The demo round trip for `cursed-repo` and `poltergeist`; 429 over the concurrency and per-minute caps (fake clock); 400 for an unsupported room; 409 when exorcising an unfinalized run
     - The bundle zip is deterministic (the same bytes twice) and extracts to the bundle tree
     - Attaching an after run: success, and each admission failure
     - 404 for unknown, expired (after the sweeper) and malformed IDs; `X-Robots-Tag` on every exorcist response; no route accepts a body containing a bundle or config
     - _Requirements: 11.1–11.6_
 
-- [ ] 18. Checkpoint: hosted green
+- [x] 18. Checkpoint: hosted green
   - `uv run pytest` passes; core unchanged; `uv run hauntlet serve` started by hand serves `/exorcist`
 
 - [ ] 19. Room READMEs and release gate

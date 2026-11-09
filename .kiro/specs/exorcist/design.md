@@ -830,9 +830,19 @@ Routes:
 
 Every response keeps the existing `noindex` middleware. An unknown, expired or
 malformed ID returns 404, and IDs are checked against `[A-Za-z0-9_-]` before
-any filesystem lookup. On each request, a sweeper removes bundle directories
-older than the retention period, only under `exorcist_root`, after checking
-that the path is contained there. The hosted interpreter loads only bundles
+any filesystem lookup. On each demo or exorcise request, a sweeper removes
+bundle directories older than the retention period, only under `exorcist_root`,
+after checking that the path is contained there. Age is the bundle's recorded
+`created_at` (from `bundle.json`, the same clock as the caps), not the
+filesystem mtime, so a copied or touched bundle ages correctly and the sweep is
+testable with a controllable clock. The `/exorcist/demo` and
+`/runs/{id}/exorcise` routes are the two under the concurrency and per-minute
+caps. The bundle archive is a `ZIP_STORED` zip with a fixed entry timestamp and
+sorted entries, so the same bundle yields byte-identical bytes; it excludes
+`deltas/` and `baseline/`. The demo's own before/after runs are admitted
+without the `created_at` ordering check (the demo creates the after run after
+the bundle, so the order is guaranteed); the tester-attach path keeps the full
+Requirement 10.6 admission. The hosted interpreter loads only bundles
 under `exorcist_root`. No route accepts uploaded config (11.5). Demo runs use
 in-process rooms and `fetch_local`, so they make no outbound network call.
 
