@@ -173,3 +173,52 @@ class BundleSpec:
     def __post_init__(self) -> None:
         object.__setattr__(self, "files", MappingProxyType(dict(self.files)))
         object.__setattr__(self, "mcp_server_names", MappingProxyType(dict(self.mcp_server_names)))
+
+
+# --------------------------------------------------------------------------- #
+# Interpreter types (design "Data models"). ``Action`` has no field for a room
+# name, trap ID, run ID or canary value, so ``decide`` cannot receive one (EP7).
+# --------------------------------------------------------------------------- #
+
+#: Tool ID of the demo agent's "say it in the reply" action (echo). Not a tool
+#: call, so hooks and MCP config never apply to it.
+RESPOND = "respond"
+
+
+@dataclass(frozen=True)
+class Action:
+    """One thing the demo agent proposes to do because of content it read."""
+
+    tool_id: str  # "web_fetch", "fs_write", "execute_bash", "mcp_<server>_<tool>", or RESPOND
+    tags: frozenset[str]  # "web", "write", "shell", "form", "@mcp", "@<server>", "@<server>/<tool>"
+    args: Mapping[str, str]
+    source: Source
+    where: str  # human location, e.g. "README.md" or "the get_note tool description"
+    directed: bool  # parsed from an imperative addressed to the agent
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "tags", frozenset(self.tags))
+        object.__setattr__(self, "args", MappingProxyType(dict(self.args)))
+
+
+class Outcome(StrEnum):
+    PROCEED = "proceed"
+    SKIP = "skip"
+
+
+@dataclass(frozen=True)
+class Attribution:
+    """A guardrail item that denies an action: its file and rule (Requirement 8.6)."""
+
+    item_id: str  # "<file>#<rule>", the same IDs the generator gives its items
+    file: str
+    rule: str
+    why: str = ""
+
+
+@dataclass(frozen=True)
+class Decision:
+    outcome: Outcome
+    report: bool  # tell the user where the instruction was (REPORT rule)
+    deniers: tuple[Attribution, ...]  # every item that would deny, in layer order
+    not_interpreted: tuple[str, ...]  # items seen but not interpretable for this action

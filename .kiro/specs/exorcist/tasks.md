@@ -134,15 +134,15 @@ obedience parser to restore a predicted value.
 - [x] 8. Checkpoint: generator green
   - `uv run pytest` passes (EP1–EP6, EP16 included); payload safety clean; core unchanged
 
-- [ ] 9. Interpreter and hook runner
-  - [ ] 9.1 Hook runner
+- [x] 9. Interpreter and hook runner
+  - [x] 9.1 Hook runner
     - `exorcist/hookrun.py`: `run(script, event, env, cwd, timeout)` exactly as design.md "Hook runner" (`sys.executable -I -B -S -c BOOT`, audit hook, cwd, env, `min(timeout, HOOK_TIMEOUT_CAP=5)`, kill on timeout, 4 KiB output cap). Returns `allow | block | not_interpreted(reason)`
     - _Requirements: 8.5_
-  - [ ] 9.2 Interpreter
+  - [x] 9.2 Interpreter
     - `exorcist/interpreter.py`: `Config.load(dir)` and `decide(action, text, config, agent_env)` with the five layers, matcher semantics and attribution in design.md "Config interpreter". `not_interpreted` collects unparsed bullets, non-`always` steering, non-`PreToolUse` or agent-type hooks, commands not of the form `python3 <bundle path>`, guard digest mismatches, ambiguous `mcp.json`, and hook runner `not_interpreted` results
     - Edited steering and JSON files are marked "edited since generation" by digest; they are not refused
     - _Requirements: 8.2, 8.4–8.6_
-  - [ ] 9.3 Interpreter and hook runner tests
+  - [x] 9.3 Interpreter and hook runner tests
     - `tests/test_exorcist_hookrun.py`, **EP13:**
       - the shipped guard fed arbitrary JSON exits 0 or 2;
       - canary scripts placed in a temp bundle (and added to its digest list) that try a socket, a `subprocess` call, a file write, `os.system` and `ctypes` are each refused by the audit hook;
@@ -156,7 +156,7 @@ obedience parser to restore a predicted value.
       - `SECRETS` with an empty agent env never denies
     - _Requirements: 6.1, 6.2, 8.2, 8.4, 8.5, 9.5, 9.6, 9.8_
 
-- [ ] 10. Checkpoint: interpreter green
+- [x] 10. Checkpoint: interpreter green
   - `uv run pytest` passes; core unchanged
 
 - [ ] 11. Demo agent
@@ -265,7 +265,7 @@ obedience parser to restore a predicted value.
 - `src/hauntlet/core/` stays unchanged throughout. Each checkpoint checks
   `git diff --stat src/hauntlet/core`. Anything that needs a core change is a
   new numbered proposal (D21+) and stops the task.
-- Tasks 1–8 were done on 2026-11-08. Task 3 also corrected Parlor README
+- Tasks 1–10 were done on 2026-11-08. Task 3 also corrected Parlor README
   limitation 7, which made the same wrong sandbox claim as the three D18 texts
   (text only).
 - Tasks that write the same file run in separate waves: `exorcist/generate.py`

@@ -465,7 +465,8 @@ beyond "web patterns", so the suggestion uses no `match` for `web_fetch`.
 `Config.load(dir)` reads `dir/.kiro/` and builds:
 
 - **Steering rules.** For each `*.md` whose front matter is first and says
-  `inclusion: always`, each `- ` bullet is parsed with `grammar`. Files with any
+  `inclusion: always`, each `- ` bullet is parsed with `grammar`. A file with no
+  front matter counts as `always`, Kiro's documented default. Files with any
   other inclusion mode, and unparsed bullets, go to `not_interpreted`. This
   matches CLI V1/V2, the narrowest surface.
 - **Hooks.** For each `*.json` in `.kiro/hooks/` with `version: v1`, keep the
