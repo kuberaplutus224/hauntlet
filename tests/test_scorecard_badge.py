@@ -49,3 +49,31 @@ def test_badge_and_forbidden_labels(case) -> None:
 def test_badge_follows_the_caller_not_the_score(case) -> None:
     for path in ("demo-agent", "real-client", "reference:naive", "not-recorded"):
         assert build(replace(case.inp, path=path)).badge == badge_for(path)
+
+
+# --------------------------------------------------------------------------- #
+# HTML half (task 12.4): the badge is the header's first element, and stays put
+# --------------------------------------------------------------------------- #
+
+
+@settings(max_examples=60, deadline=None)
+@given(case=scorecard_inputs())
+def test_badge_is_the_first_header_element(case) -> None:
+    from _scorecard_html import parse
+
+    from hauntlet.scorecard.render import CSS, render
+
+    vm = build(case.inp)
+    html = render(vm)
+    doc = parse(html)
+    tags = [t for t, _ in doc.elements]
+    header_at = tags.index("header")
+    tag, attrs = doc.elements[header_at + 1]
+    assert tag == "p" and attrs.get("class") == "badge"
+    first_text = next(n for n in doc.nodes if n.inside("header"))
+    assert first_text.text == badge_for(case.inp.path)
+    assert "position:sticky" in CSS.replace(" ", "").split("header.frame{", 1)[1].split("}", 1)[0]
+    if case.inp.path == "demo-agent":
+        assert copy.C2 not in html and REAL_CLIENT_LABEL not in html
+    if case.inp.path == "real-client":
+        assert copy.C1 not in html and DEMO_LABEL not in html

@@ -122,34 +122,34 @@ the copy or the data to make a page look as expected.
 - [x] 10. Checkpoint: pure modules green
   - `uv run pytest` passes (SP4 builder half, SP5–SP9, SP15, SP18); core unchanged since task 6
 
-- [ ] 11. Sources (I/O)
-  - [ ] 11.1 `scorecard/sources.py`
+- [x] 11. Sources (I/O)
+  - [x] 11.1 `scorecard/sources.py`
     - `load_run`, `live_fact_log`, `reports_fact_log`, `bundle_evidence`, `load_bundle`, `load_delta` from design.md "Inputs". Every string goes through the D31 redactor with the run's D30 canaries before `facts.py`
     - Fact-log path rules exactly as design.md "Fact-log path": the ID charset check first; `get_run` must succeed; the stored `Run.run_id` is used; rooms come from the manifest ∩ registered MCP/Parlor rooms; `cli.mcp_workspace` (imported inside the function) plus the room's `factlog.facts_path`; not a symlink; resolved under the scratch root
     - Latest delta by the after run's `created_at`, ties broken by run ID; unreadable `bundle.json` or delta gives the C27 state, never an exception
     - _Requirements: 1.1, 7.3, 8.3, 8.9, 10.3_
-  - [ ] 11.2 Write `tests/test_scorecard_sources.py`
+  - [x] 11.2 Write `tests/test_scorecard_sources.py`
     - The live path equals `mcpfacts.demo_facts_path` for both Poltergeist rooms and the `hauntlet parlor open` workspace for Parlor
     - Hostile IDs (`..`, `/`, `%2F`, absolute, over-long, well-formed but unknown) and a symlinked fact log give `UnknownRun`/404 or "fact log not available". An `open` spy shows that no file outside the scratch root is opened
     - Two attached after runs: the one created later is shown
     - A corrupt `bundle.json` and a corrupt delta JSON each give the C27 state
     - _Requirements: 8.9, design "Fact-log path"_
 
-- [ ] 12. Renderer and static assets
-  - [ ] 12.1 `scorecard/static/scorecard.css`
+- [x] 12. Renderer and static assets
+  - [x] 12.1 `scorecard/static/scorecard.css`
     - The token block and the rules in design.md "Stylesheet and tokens": fills with on-tokens, outlined grey and info chips, `:focus-visible`, 44 px targets, the serif stack `ui-serif, Georgia, serif` for headline, section titles and `.verdict-sentence`, the system sans body stack, sticky header, single column below 640 px, `overflow-x` only on the evidence list, and both motion blocks
     - _Requirements: 11.1, 11.3, 11.4, 12.1, 12.4–12.7, 2.2_
-  - [ ] 12.2 `scorecard/static/scorecard.js`
+  - [x] 12.2 `scorecard/static/scorecard.js`
     - The Alpine component in design.md "The Alpine component": `js` class at `alpine:init`; view, room and log-scope state with `:class`; `EventSource` with ID dedupe, `finalized` shows the "Show the verdict" link, `done` closes; a throttled live region; replay with clamped gaps and an instant reduced-motion path; launcher buttons post to `/exorcist/demo` and follow `report_url`
     - No `innerHTML`, no `x-html`, no `eval` of data
     - _Requirements: 1.4, 3.5, 5.5, 8.7, 8.8, 12.7, 12.8, 7.9_
-  - [ ] 12.3 `scorecard/render.py`
+  - [x] 12.3 `scorecard/render.py`
     - The document outline in design.md "Renderer", with the badge as the header's first child, `<code>{run_id}</code>`, both views as `.v-before`/`.v-after` spans, every run room's panel, `<details>` expanders, every fact `<li>` with `data-fact-id`, `#sc-data` JSON escaped for `<script>`, the pinned Alpine tag copied from `exorcist.html`, and CSS and JS inlined
     - `render_launcher(demo_rooms)`: header with C1, legend, one button per room
     - The only escaping path is `t()`
     - `scorecard/__init__.py`: `render_run`, `render_exorcism`, `render_launcher` and `exorcism_file_renderer`, each `sources` → `build` → `render`
     - _Requirements: 1.4, 2.1, 2.2, 7.9, 10.5–10.7, 12.3, 12.9, 13.7_
-  - [ ] 12.4 Write the HTML property tests
+  - [x] 12.4 Write the HTML property tests
     - `tests/test_scorecard_copy.py`, **SP1:** text nodes minus copy, imported texts and input values is empty
     - `tests/test_scorecard_parity.py`, **SP2:** every core-report datum, and every `render_json` field value, is present
     - `tests/test_scorecard_noscript.py`, **SP3:** with no script run, every section, the trap cards of every run room, both views and every fact are present
@@ -161,7 +161,7 @@ the copy or the data to make a page look as expected.
     - `tests/test_scorecard_a11y_static.py`, **SP14** (example): chip, pill and tag text present; click bindings only on `button`/`a`/`summary`; the 44 px rule; the reduced-motion block; `header`/`main`, one `h1`, ordered headings, `lang="en"`; theme words absent from `[data-finding]` regions (11.2)
     - _Requirements: 1.1, 1.4, 1.5, 2.2, 10.1–10.5, 11.2–11.4, 12.1–12.5, 12.7, 12.9, SP1–SP4, SP10–SP14_
 
-- [ ] 13. Checkpoint: renderer green
+- [x] 13. Checkpoint: renderer green
   - `uv run pytest` passes (SP1–SP15, SP18); payload safety clean; core unchanged since task 6
   - Write one page per path (demo, real client, reference, not recorded) to a temp dir and report the paths, so the maintainer can open them
 

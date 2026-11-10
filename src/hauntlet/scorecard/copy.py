@@ -156,6 +156,7 @@ def join_and(items: list[str]) -> str:
 # --------------------------------------------------------------------------- #
 
 PRODUCT = "Hauntlet"
+TITLE = "Hauntlet scorecard"
 SECTION_VERDICT = "Verdict"
 SECTION_LEVELS = "Levels"
 SECTION_ROOMS = "Rooms: the parts stitched together"
@@ -184,6 +185,10 @@ NO_EXORCISM_YET = "No exorcism generated yet."
 NONE = "none"
 NO_FACTS = "No facts recorded for this trap."
 CLASS_HEADING = "Class"
+SIGNALS_HEADING = "Signals"
+PREFIX_BEFORE = "Before:"
+PREFIX_AFTER = "After:"
+VIEW_GROUP = "View"
 
 # Pills (Requirement 3.4)
 PILL_DETECTED = "Detected in {d} of {a} rooms"
@@ -236,6 +241,15 @@ GENERATE_NOT_YET = (
 DELTA_CLI = "uv run hauntlet exorcist delta --bundle {bundle_id} --after <run_id>"
 DELTA_CLI_INTRO = "To attach a real-client after run:"
 CITES = "Addresses"
+FILE_HEADING_ITEMS = "Items"
+
+# Launcher (/exorcist, Requirement 7.9)
+LAUNCH_INTRO = (
+    "Pick a room. Hauntlet runs its demo agent through the room, generates the Kiro guardrails "
+    "that address what fired, re-runs with them applied, and opens the scorecard."
+)
+LAUNCH_BUTTON = "Exorcise {room}"
+RUNNING = "Running…"
 
 # Evidence log (Requirement 8)
 EVIDENCE_SCOPE_ROOM = "Show this room"

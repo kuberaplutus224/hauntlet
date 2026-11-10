@@ -24,14 +24,16 @@ from _exorcist_strategies import ROOMS, SyntheticRun, runs
 from hypothesis import strategies as st
 
 from hauntlet.core.levels import Level, Signal
-from hauntlet.core.models import Run, RunScore, TrapScore
+from hauntlet.core.models import Event, Run, RunScore, TrapScore
 from hauntlet.exorcist import report
 from hauntlet.exorcist.delta import DEMO, PENDING, REAL, build_delta
 from hauntlet.exorcist.generate import generate
 from hauntlet.exorcist.manifest import bundle_json
 from hauntlet.exorcist.mcpfacts import STEERED_CALL_NO_CANARY
 from hauntlet.exorcist.texts import DEMO_ENV_NOTE, DEMO_LABEL, PENDING_LABEL, REAL_CLIENT_LABEL
+from hauntlet.redact import redactor
 from hauntlet.rooms import default_rooms
+from hauntlet.scorecard.facts import normalise_event
 from hauntlet.scorecard.inputs import ExorcismInput, RunInput, ScorecardInput
 
 REGISTERED = tuple(default_rooms())
@@ -49,6 +51,7 @@ class Case:
     bundle: dict | None
     state: str  # "active" | "provisional" | "final"
     kind: str  # "none" | "pending" | "demo" | "real"
+    events: tuple = ()  # the raw events behind the facts (details unredacted)
 
 
 def _run(run_id: str, state: str) -> tuple[Run, float, bool]:
@@ -58,6 +61,31 @@ def _run(run_id: str, state: str) -> tuple[Run, float, bool]:
     if state == "provisional":
         return run, CREATED + 70, True
     return run, CREATED + 200, False
+
+
+CHANNELS = ("network", "filesystem", "transcript")
+EVENT_SIGNALS = ("reached", "echoed", "acted", "exposed", "flagged", "task_done", "not_exercised")
+
+
+@st.composite
+def run_events(draw, run: SyntheticRun, run_id: str, t0: float, details=None) -> tuple:
+    """Stored events for random traps; details mix plain words with the run's canary values."""
+    canaries = list(run.canaries)
+    detail_text = details if details is not None else st.one_of(
+        st.sampled_from(["canary URL fetched", "created a file", "marker repeated"]),
+        st.builds(lambda i, how: (
+            f"wrote {canaries[i % len(canaries)].value}" if how == 0
+            else f"GET /c/{canaries[i % len(canaries)].value}?k={canaries[(i + 1) % len(canaries)].value}"
+        ), st.integers(0, 1000), st.integers(0, 1)),
+    )
+    out = []
+    for _ in range(draw(st.integers(0, 6))):
+        rm = draw(st.sampled_from(run.manifest.rooms))
+        trap = draw(st.sampled_from([t.trap_id for t in rm.traps] + ["__task__"]))
+        out.append(Event(run_id, rm.room, trap, draw(st.sampled_from(CHANNELS)), draw(st.sampled_from(EVENT_SIGNALS)),
+                         t0 + draw(st.floats(0, 50)), draw(detail_text), expired=draw(st.booleans())))
+    red = redactor(canaries)
+    return tuple(f for f in (normalise_event(e, run.manifest, red) for e in out) if f is not None), tuple(out)
 
 
 @st.composite
@@ -80,19 +108,20 @@ def after_scores(draw, before: SyntheticRun) -> RunScore:
 
 
 @st.composite
-def scorecard_inputs(draw, kinds=("none", "pending", "demo", "real"), states=("active", "provisional", "final"), path=None):
+def scorecard_inputs(draw, kinds=("none", "pending", "demo", "real"), states=("active", "provisional", "final"), path=None, details=None):
     before = draw(runs())
     state = draw(st.sampled_from(states))
     kind = draw(st.sampled_from(kinds)) if state == "final" else "none"
     run, now, provisional = _run(before.score.run_id, state)
     score = replace(before.score, provisional=provisional)
     before = SyntheticRun(score, before.manifest, before.canaries)
-    before_ri = RunInput(run, score, before.manifest)
+    facts, events = draw(run_events(before, run.run_id, CREATED, details))
+    before_ri = RunInput(run, score, before.manifest, facts)
 
     if kind == "none":
         p = path or draw(st.sampled_from(["demo-agent", "real-client", "reference:naive", "reference:hardened", "not-recorded"]))
         inp = ScorecardInput(p, before_ri, REGISTERED, now, served=draw(st.booleans()))
-        return Case(inp, before, None, None, state, kind)
+        return Case(inp, before, None, None, state, kind, events)
 
     spec = generate(before.score, before.manifest)
     bundle = json.loads(bundle_json(spec, BUNDLE_ID, 1.0))
@@ -101,7 +130,7 @@ def scorecard_inputs(draw, kinds=("none", "pending", "demo", "real"), states=("a
         doc = json.loads(report.render_json(delta))
         inp = ScorecardInput("not-recorded", before_ri, REGISTERED, now,
                              exorcism=ExorcismInput(BUNDLE_ID, bundle, doc))
-        return Case(inp, before, doc, bundle, state, kind)
+        return Case(inp, before, doc, bundle, state, kind, events)
 
     after = draw(after_scores(before))
     extras = {}
@@ -129,9 +158,11 @@ def scorecard_inputs(draw, kinds=("none", "pending", "demo", "real"), states=("a
     )
     doc = json.loads(report.render_json(delta))
     after_run = Run(after.run_id, CREATED + 300, CREATED + 1200, 0, finalized_at=CREATED + 360)
-    after_ri = RunInput(after_run, after, before.manifest) if draw(st.booleans()) else None
+    a_facts, a_events = draw(run_events(SyntheticRun(after, before.manifest, before.canaries), after.run_id, CREATED + 300, details))
+    after_ri = RunInput(after_run, after, before.manifest, a_facts) if draw(st.booleans()) else None
+    events = events + a_events
     inp = ScorecardInput(
         "demo-agent" if kind == "demo" else "real-client", before_ri, REGISTERED, CREATED + 2000,
         exorcism=ExorcismInput(BUNDLE_ID, bundle, doc, after_ri),
     )
-    return Case(inp, before, doc, bundle, state, kind)
+    return Case(inp, before, doc, bundle, state, kind, events)
