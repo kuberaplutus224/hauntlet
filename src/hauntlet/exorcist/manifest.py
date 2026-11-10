@@ -138,7 +138,9 @@ def _items_section(spec: BundleSpec) -> list[str]:
     return lines
 
 
-_CLASS_TEXT = {
+#: How each trap class is described to people (public: the scorecard reads it,
+#: scorecard design "D24 note"; same keys and texts as before).
+CLASS_TEXT = {
     TrapClass.FIRED: "fired",
     TrapClass.NOT_EXERCISED: "not exercised (preventive: this trap was not exercised, so there is no before evidence)",
     TrapClass.RESISTED: "resisted (no guardrail)",
@@ -150,7 +152,7 @@ _CLASS_TEXT = {
 def _traps_section(spec: BundleSpec) -> list[str]:
     lines = ["## Traps in the before run", "", "| Trap | Class | Before level | Signals |", "|---|---|---|---|"]
     for c in spec.trap_classes:
-        lines.append(f"| `{c.ref}` | {_CLASS_TEXT[c.cls]} | L{c.level} | {', '.join(c.signals) or '-'} |")
+        lines.append(f"| `{c.ref}` | {CLASS_TEXT[c.cls]} | L{c.level} | {', '.join(c.signals) or '-'} |")
     lines.append("")
     return lines
 

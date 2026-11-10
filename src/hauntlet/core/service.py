@@ -330,3 +330,17 @@ class RangeService:
         if m is None:
             raise UnknownRun(run_id)
         return m
+
+    # -- read-only accessors (approved changes D21, D30) ---------------------
+
+    def events(self, run_id: str) -> list[Event]:
+        """The run's stored events, unchanged (D21). Read-only; scores nothing."""
+        if self.store.get_manifest(run_id) is None:
+            raise UnknownRun(run_id)
+        return self.store.events_for_run(run_id)
+
+    def canaries(self, run_id: str) -> list[Canary]:
+        """The run's canaries, unchanged (D30), for redaction. Read-only."""
+        if self.store.get_manifest(run_id) is None:
+            raise UnknownRun(run_id)
+        return self.store.canaries_for_run(run_id)
