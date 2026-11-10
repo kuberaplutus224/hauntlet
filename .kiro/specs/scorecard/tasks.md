@@ -229,7 +229,7 @@ the copy or the data to make a page look as expected.
   - Disclosure checklist (Requirement 14, manual): no scorecard file, copy, test or sample describes a privately disclosed finding beyond the approved general wording; `mcp-summary-*.txt` is never read by `sources.py`
   - _Requirements: 14.1, 14.2, D24_
 
-- [ ] 22. Manual release gate (Q3)
+- [x] 22. Manual release gate (Q3)
   - At 320 px and 375 × 667 px in one Chromium-based and one WebKit-based browser, on a demo exorcism page and a live run page:
     - the badge, hero chip and verdict sentence are visible without scrolling;
     - no horizontal page scroll (the evidence list may scroll inside itself);
@@ -239,8 +239,9 @@ the copy or the data to make a page look as expected.
     - VoiceOver reads the badge, the chip text and the sentence first
   - Record the results (browser versions, pass or fail per item) in the task's completion note
   - _Requirements: 2.2, 12.3–12.7, Q3_
+  - **Completion note (2026-11-10):** passed, as reported by the maintainer. Chromium-based browser checked by Claude; Safari (WebKit) and VoiceOver checked by the maintainer. Every item passed in both browsers. Browser versions were not recorded.
 
-- [ ] 23. Final checkpoint
+- [x] 23. Final checkpoint
   - `uv run pytest`, `uv run hauntlet selftest` (unchanged), `uv run python scripts/check_payload_safety.py`, `uv run hauntlet sample-report` (no diff), and `git diff --stat src/hauntlet/core` (only the two `service.py` methods)
   - Report the test count, the release-gate results, and anything shown as "fact log not available" on the default paths (expected: Parlor after finalize, and real-client MCP runs on the hosted range without the D19 copy)
 
