@@ -105,7 +105,38 @@ src/hauntlet/rooms/<pkg>/card.py   # D28: ROOM_CARDS
 written file is self-contained apart from the pinned Alpine script
 (Requirement 13.7).
 
-## Inputs (`inputs.py`)
+## Components and Interfaces
+
+Each component and the interface it exposes. The sections below give the
+rules behind each one.
+
+| Component | Module | Interface | Details |
+|---|---|---|---|
+| Public API | `scorecard/__init__.py` | `render_run(service, run_id, path=…, served=…)`, `render_exorcism(ex_service, bundle_dir, served=…)`, `render_launcher(demo_rooms)`, `exorcism_file_renderer(...)` | "Routes and writers" |
+| Sources (only I/O) | `scorecard/sources.py` | `load_run(service, run_id)`, `live_fact_log(db_path, run, room)`, `reports_fact_log(reports_dir, room, run_id)`, `bundle_evidence(bundle_dir, run_id)`, `load_bundle(bundle_dir)`, `load_delta(bundle_dir)` → `ScorecardInput` | "Where each input comes from", "Fact-log path" |
+| Redactor | `hauntlet/redact.py` (D31) | `redactor(canaries) -> Callable[[str], str]` | "Redaction" |
+| Facts | `scorecard/facts.py` (pure) | `normalise_event(e)`, `normalise_mcp(f, profile)`, `normalise_parlor(f)`, `normalise_trace(entry, seq)` → `Fact`; `Fact` → `FactLine` | "Facts" |
+| Builder | `scorecard/build.py` (pure) | `ScorecardInput` → `ViewModel`; `state_for_trap`, `state_for_room` | "Builder rules" |
+| Renderer | `scorecard/render.py` (pure) | `ViewModel` → HTML string, with `scorecard.css` and `scorecard.js` inlined | "Renderer" |
+| Live stream | `scorecard/stream.py` (D22) | `GET /runs/{run_id}/facts/stream` → `text/event-stream` with `fact`, `finalized`, `done` events | "Live stream" |
+| Fixed copy | `scorecard/copy.py` | C1–C27, C24/C25 tables, D27 phrase tables, fact phrases, section titles | "Fixed copy" |
+| Room registry | `scorecard/rooms.py` (D28) | room name → (display name, stands for), merged from each room's `ROOM_CARDS` | "D21, D25, D26, D28 details" |
+| Theme | `scorecard/theme.py` | colour tokens and `PAIRS` | "Stylesheet and tokens" |
+| Alpine component | `scorecard/static/scorecard.js` | `scorecard()` reading `#sc-data` | "The Alpine component" |
+
+Interfaces added outside the package:
+
+- `RangeService.events(run_id) -> list[Event]` (D21) and
+  `RangeService.canaries(run_id) -> list[Canary]` (D30), both read-only.
+- `ExorcistService(html_renderer: Callable[[Path, str], bytes] | None)` (D23,
+  "Writers").
+- `hauntlet.exorcist.CLASS_TEXT`, the public name of `_CLASS_TEXT`.
+- `ROOM_CARDS: dict[str, tuple[str, str]]` in each room package's `card.py`
+  (D28).
+
+## Data Models
+
+### Inputs (`inputs.py`)
 
 The builder receives one immutable value. `sources.py` is the only module that
 does I/O to produce it.
@@ -147,7 +178,7 @@ dataclass. In-process callers pass `json.loads(render_json(delta))`, and the
 hosted route reads `deltas/<after>.json`. Both paths give the builder the same
 input, and SP2 can compare the page against exactly what the JSON output says.
 
-### Where each input comes from (`sources.py`)
+#### Where each input comes from (`sources.py`)
 
 | Input | Function | Source |
 |---|---|---|
@@ -171,7 +202,7 @@ scorecard picks by the after run's `created_at` (from `RangeService.get_run`),
 and breaks ties by after run ID. `hosted.report_html` is replaced by the
 scorecard route (D23), so the old rule no longer decides what is shown.
 
-## View model (`model.py`)
+### View model (`model.py`)
 
 ```python
 @dataclass(frozen=True)
@@ -633,7 +664,7 @@ Rules the CSS follows, which the static tests rely on:
 - **Targets:** `button, summary, a.btn, .room-card { min-height: 44px;
   min-width: 44px }`.
 - **Type:** headline, section titles and `.verdict-sentence` use
-  `font-family: ui-serif, Georgia, serif`. Everything else uses `ui-sans-serif,
+  `font-family: ui-serif, "New York", Charter, "Bitstream Charter", Cambria, "Times New Roman", serif` (Georgia dropped: see "Polish"). Everything else uses `ui-sans-serif,
   system-ui, sans-serif`. Code uses `ui-monospace, monospace`.
 - **Layout:** a single column up to 640 px, then a two-column room grid and
   hero. No fixed widths over 320 px. Long IDs and paths use
@@ -653,6 +684,130 @@ greps the CSS for `--l4` uses.
 The ghost mark is a new inline SVG path drawn for this page (not the core
 report's path), filled with `--accent-text`, with `aria-hidden="true"`. No Kiro
 logo or wordmark appears.
+
+## Visual standards (visual review 2026-11-09)
+
+The first version was correct but too flat: every section had the same weight,
+so the verdict did not stand out. Layout and visual weight follow the review
+mockup (`scorecard-v2-reference.dc.html`); its copy is not used.
+
+**Type scale.** Only the hero and the title of "The exorcism" use the serif
+stack.
+
+| Element | Size | Style |
+|---|---|---|
+| Hero level (`L4`) | 56px | serif, 600 |
+| Hero level word (`Exposed`) | 18px | sans, uppercase, letter-spaced |
+| Hero sentence | 28px | serif |
+| "The exorcism" title | 26px | serif |
+| Other section labels | 13px | sans, uppercase, letter-spacing .1em, muted |
+| Card titles | 16px | sans, 600 |
+| Body | 15px | sans |
+| Evidence lines, IDs, file paths | 12–13px | mono |
+
+**Page.** `main` is at most 1120px wide. Sections are 28px apart.
+
+**Hero.** A large level block (level and word), not a pill. In the After view
+the main element is the **before → after strip**: the two states ("L4 Exposed
+→ L0 Clean"), the number of files in the bundle, and the files that caused the
+change.
+
+- "Caused" means the demo path's `changed_by_display`, reduced to file paths
+  across all traps, under heading C17. A file whose items depend on A4 says
+  "depends on A4". On the real-client path the strip shows C18 instead of
+  files.
+- The strip is green (`--l0` fill, `--on-level` text) only when the after state
+  is L0 Clean (Requirement 9.6). Otherwise it is outlined in the after state's
+  token.
+- Order inside the hero: toggle, then the view (before: level block and
+  sentence; after: strip and sentence), then pills, then C5.
+
+**Legend.** One compact row of chips. Each level's label is shown once: the
+chip says "L0 Clean" and the text beside it is the rest of C6 ("— did not act
+on any planted instruction that reached it."). `copy.MEANING_TAILS` holds the
+part of each C6–C14 string after its label.
+
+**Rooms.** Run rooms first, at full weight. Rooms not run follow as small,
+muted cards (name, what it stands for, "Not run"), so every part of the house
+stays visible (Requirement 5.1, as amended).
+
+**Trap card.**
+
+- The three steps sit side by side: `grid-template-columns:
+  repeat(auto-fit, minmax(200px, 1fr))`. They stack only when the card is
+  narrower than about 620px.
+- The title is the trap's threat-profile class in words (content source and
+  steered effects, D27): "{Source} asked the agent to {asked}", for example "A
+  repository file asked the agent to send a planted dummy secret out". The trap
+  ID is shown beside it in mono. A control's title is "A harmless look-alike in
+  {surface}". The Exorcist calls these "threat-profile classes"; they are
+  not the eligibility class (`CLASS_TEXT`), which stays in the card as before.
+
+**Exorcism.**
+
+- One row per file: mono path · Enforced/Advisory chip · one sentence. The
+  sentence is fixed per file kind (`copy.FILE_KIND_SENTENCES`), from the
+  verified docs table. It is never an item's reason.
+
+  | Kind | Sentence |
+  |---|---|
+  | steering | Guidance the model reads. Kiro does not enforce it. |
+  | hook | Runs before matching tool calls and can block them. |
+  | mcp | Settings for the range's MCP server entry. |
+  | sandbox | Turns on Kiro's sandbox for shell commands. |
+  | support | C26 |
+
+- A `<details>` per file holds its items, grouped: items with the same reason,
+  citations and assumptions are one line that lists their rules together (the
+  four `credential-egress-*` hooks are one line). Each reason appears once in
+  the row.
+- A primary "Download bundle (.zip)" button. A page served over HTTP never
+  shows the bundle's absolute path; a static export shows it, because that is
+  the only way to find the files (Requirement 7.3).
+
+**Evidence log.**
+
+- A separator (" · ") always comes before a note such as "from the submitted
+  transcript".
+- Rows that would show the same time, who, text, tag and note in the
+  same room are merged into one row with "×N". The merged row keeps every fact
+  ID, so the live stream does not add them again. The trap cards' evidence is
+  not merged, so each trap still lists its own facts.
+
+**Polish (task 14, second pass).**
+
+- Every serif style sets `font-variant-numeric: lining-nums tabular-nums`. That
+  is not enough on its own: Chrome ignores `ui-serif` and fell back to Georgia,
+  which has no lining figures, so "L0" still read "Lo". The serif stack is now
+  `ui-serif, "New York", Charter, "Bitstream Charter", Cambria, "Times New Roman", serif` (no Georgia), and the renderer wraps every level code
+  (L0–L4) in serif text, including escaped copy, in `<span class="lv-code">`,
+  set in the sans stack with `lining-nums`.
+- The green After strip is a dark tint (new token `--l0-tint`, `#0E2A1D`) with a
+  2px `--l0` border and `--text`, not a solid `--l0` fill. On the tint: text
+  14.7:1, the muted arrow 5.9:1, the `--l0` border 7.95:1, and every chip fill or
+  outline at least 5.8:1. The outlined variant is unchanged.
+- Nothing is wider than its container at 375px. Mono paths may break only after
+  "/": the renderer puts an escaped `<wbr>` after each "/". A guardrail item ID
+  (`path#rule`) may also break before its "#" and before a "." in the rule. File
+  names never break, and `.path` sets `overflow-wrap: normal`. `pre` blocks,
+  the static bundle path, the `permissions.yaml` label and trap-card evidence
+  lines are data and wrap anywhere. Other `code` keeps `overflow-wrap: anywhere`.
+  Only the evidence log scrolls sideways, inside its own region (12.6).
+- The Before/After toggle is a segmented control: one row, no wrapping, at
+  every width down to 320px.
+
+**Checks.** No browser is used (Q3). `tests/test_scorecard_layout.py`
+estimates block heights from the stylesheet's own numbers and the rendered
+text: line height × wrapped lines, plus padding, margins and borders, with
+average character widths of 0.55 em (sans), 0.52 em (serif) and 0.6 em
+(mono). It checks two things:
+
+- at 1280px wide, the hero chip, the sentence and the before → after strip end
+  above 900px, in the view where each is shown;
+- at 375px wide, the hero chip and sentence end within the first 667px, and the
+  strip has no fixed width or `nowrap` content that could push it off screen.
+
+This is an estimate. The manual release gate (task 22) is the real check.
 
 ## Live stream (`stream.py`, D22)
 

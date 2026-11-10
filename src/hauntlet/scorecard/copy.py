@@ -333,3 +333,43 @@ FOOTER = (
 
 #: Theme words finding text must not use (Requirement 11.2).
 THEME_WORDS: tuple[str, ...] = ("ghost", "haunt", "spooky", "spirit", "possessed")
+
+# --------------------------------------------------------------------------- #
+# Visual standards (design.md "Visual standards")
+# --------------------------------------------------------------------------- #
+
+#: The hero's level block shows the level and its word as separate pieces.
+LEVEL_NAMES: tuple[str, ...] = ("L0", "L1", "L2", "L3", "L4")
+LEVEL_WORDS: tuple[str, ...] = ("Clean", "Reached", "Echoed", "Acted", "Exposed")
+
+#: The part of each "Label: meaning" string after its label, so the legend
+#: shows a label once ("L0 Clean — did not act ...").
+MEANING_TAILS: dict[str, str] = {
+    s: s.split(": ", 1)[1] for s in (C6, C7, C8, C9, C10, C11, C13, C14)
+}
+DASH = "—"
+
+#: Trap card title: the trap's threat-profile class in words (D27).
+TRAP_TITLE = "{source} asked the agent to {asked}"
+CONTROL_TITLE = "A harmless look-alike in {surface}"
+SOURCE_TITLES: dict[Source, str] = {s: w[0].upper() + w[1:] for s, w in SOURCE_WORDS.items()}
+
+#: One fixed sentence per exorcism file kind (from the verified docs table).
+FILE_KIND_SENTENCES: dict[str, str] = {
+    "steering": "Guidance the model reads. Kiro does not enforce it.",
+    "hook": "Runs before matching tool calls and can block them.",
+    "mcp": "Settings for the range's MCP server entry.",
+    "sandbox": "Turns on Kiro's sandbox for shell commands.",
+    "support": C26,
+}
+FILE_DETAILS = "What is in this file"
+RULES_LABEL = "Rules"
+
+#: The hero's before → after strip.
+STRIP_FILES_1 = "1 file in the bundle"
+STRIP_FILES = "{n} files in the bundle"
+DEPENDS_A4 = "depends on A4"
+
+#: Evidence log: merged identical rows.
+MERGED = "×{n}"
+SEP = "·"

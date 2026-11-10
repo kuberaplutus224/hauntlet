@@ -165,62 +165,71 @@ the copy or the data to make a page look as expected.
   - `uv run pytest` passes (SP1–SP15, SP18); payload safety clean; core unchanged since task 6
   - Write one page per path (demo, real client, reference, not recorded) to a temp dir and report the paths, so the maintainer can open them
 
-- [ ] 14. Approved change D26: keep the demo's evidence
+- [x] 14. Visual standards (visual review 2026-11-09)
+  - Implement design.md "Visual standards": type scale, 1120px page and 28px section gap, hero level block and before → after strip, one-row legend, run rooms first and muted small cards for rooms not run, trap steps as an auto-fit grid with the threat-profile title and mono ID, one row per exorcism file with grouped items in `<details>` and a primary download button, the evidence separator and "×N" merging
+  - Requirements 5.1 and 11.1 are amended as recorded in requirements.md
+  - Served pages never show the bundle's absolute path
+  - `exorcist/texts.py`: replace "(Requirement 8.9)" in `MCP_ENV_NOTE` and `FILE_ROOM_ENV_NOTE` with plain words. This deliberately changes the delta JSON and text, so the task 1 compatibility goldens are re-captured once for this change, and the diff is shown in the report
+  - Tests: `tests/test_scorecard_layout.py` (the height estimates above), a file-row test (no sentence repeats within a row; identical items grouped), a served-path test, an evidence test (separator before every note; merged rows keep every ID); the existing token, contrast and no-literal checks stay
+  - Regenerate the six review pages in `/tmp/hauntlet-scorecard-pages` and stop
+  - _Requirements: 3.1, 5.1, 6.2, 7.1–7.3, 8.2, 11.1, 11.3, 12.1, 12.6_
+
+- [ ] 15. Approved change D26: keep the demo's evidence
   - `src/hauntlet/exorcist/service.py` `demo`: after the after run, write `evidence/facts-<run_id>-<room>.jsonl` (MCP rooms, before and after; records redacted with the D31 redactor and the run's D30 canaries) and `evidence/trace-<run_id>.jsonl` (both runs) through `writer.write_into`
   - `src/hauntlet/exorcist/hosted.py`: `_ARCHIVE_SKIP` gains `"evidence"`
   - Tests: `tests/test_exorcist_server.py` zip listing has no `evidence/`; a new `tests/test_exorcist_demo_evidence.py` checks that the files exist for `cursed-repo` (trace only) and `poltergeist` (facts and trace), contain no canary value, and are removed by the retention sweep with their bundle
   - _Requirements: 8.3, D26_
 
-- [ ] 15. Approved change D22: the live stream
-  - [ ] 15.1 `scorecard/stream.py` and the route
+- [ ] 16. Approved change D22: the live stream
+  - [ ] 16.1 `scorecard/stream.py` and the route
     - `GET /runs/{run_id}/facts/stream` in `src/hauntlet/server.py`, with the loop, events, keepalive, `Last-Event-ID`, `Cache-Control: no-store`, the caps `HAUNTLET_STREAM_MAX` and `HAUNTLET_STREAM_POLL_SECS`, thread offload and disconnect handling from design.md "Live stream". Paths only through `sources.live_fact_log`
     - _Requirements: 8.7, 10.3, 10.7, D22_
-  - [ ] 15.2 Write `tests/test_scorecard_stream.py` (**SP16**, stream half of **SP10**)
+  - [ ] 16.2 Write `tests/test_scorecard_stream.py` (**SP16**, stream half of **SP10**)
     - Finished runs (random rooms): the `fact` events up to `done` equal the embedded `<li>` IDs and texts, in order; no canary value appears in the stream bytes
     - Active run: a second thread records a canary hit and then finalizes; the client sees the hit, then `finalized`, then `done`
     - `Last-Event-ID` resumes without duplicates; 404 for unknown and hostile IDs; 429 over the cap (cap 1); `X-Robots-Tag` present
     - _Requirements: 8.7, 8.8, 10.3, SP10, SP16_
 
-- [ ] 16. Approved change D23: switch routes and writers
-  - [ ] 16.1 Routes
+- [ ] 17. Approved change D23: switch routes and writers
+  - [ ] 17.1 Routes
     - `src/hauntlet/server.py`: `/runs/{id}/report` → `render_run(path="not-recorded", served=True)`, with `stream_url` while the run is active; `/exorcisms/{id}/report` → `render_exorcism`; `/exorcist` → `render_launcher`. JSON routes are untouched
     - _Requirements: 13.1, D23_
-  - [ ] 16.2 Writers
+  - [ ] 17.2 Writers
     - `ExorcistService(…, html_renderer=None)`: `_write_delta` uses it for `html` when set. `cli.py` and `server.py` pass `scorecard.exorcism_file_renderer`
     - `cli.py`: `hauntlet run` (path per agent, aggregates when `--repeat > 1`), `mcp finalize` and `parlor finalize` (path `real-client`, rendered before teardown), and `sample-report` (`reference:naive`) write scorecard HTML under the same file names
     - `core/report.py`, `exorcist/report.render_html` and `exorcist.html` stay; nothing on the default paths uses them
     - _Requirements: 13.3, 13.4, D23_
-  - [ ] 16.3 Write `tests/test_scorecard_server.py` and finish **SP17**
+  - [ ] 17.3 Write `tests/test_scorecard_server.py` and finish **SP17**
     - Each route: 200 and `noindex` (header and meta), 404s; the launcher demo round trip shows C1 and `DEMO_LABEL`; an active run's report carries `stream_url`
     - `tests/test_scorecard_compat.py` (second half of **SP17**): task 1's goldens still match after the switch; `sample-report` is identical twice and contains `<code>sample-report</code>`
     - The existing HTML tests listed in design.md "Routes and writers" pass unchanged
     - _Requirements: 13.1–13.6, SP17_
 
-- [ ] 17. Approved change D25: the hook
+- [ ] 18. Approved change D25: the hook
   - `.kiro/hooks/scorecard-refresh.json`: set the matcher to the design's regex; the command and timeout are unchanged
   - Regenerate `docs/sample-report.html` with `uv run hauntlet sample-report --out docs/sample-report.html`; the run again produces no diff
   - A test checks the matcher against `src/hauntlet/scorecard/render.py`, `src/hauntlet/exorcist/texts.py`, `src/hauntlet/core/report.py` (match) and `src/hauntlet/rooms/parlor/room.py` (no match)
   - _Requirements: 13.4, 13.5, D25_
 
-- [ ] 18. Checkpoint: wired up
+- [ ] 19. Checkpoint: wired up
   - `uv run pytest` passes; `uv run hauntlet selftest` unchanged; payload safety clean; core diff still only the two methods
   - `uv run hauntlet serve` started by hand: `/exorcist` → demo for `cursed-repo` and `poltergeist` → scorecard with the replay; a Poltergeist run started through `hauntlet mcp serve` shows live facts on `/runs/{id}/report`
 
-- [ ] 19. Golden pages (hard stop before pinning)
-  - [ ] 19.1 Render and report
+- [ ] 20. Golden pages (hard stop before pinning)
+  - [ ] 20.1 Render and report
     - With injected fixed clocks, seeds, run IDs and bundle IDs (test-only factories), render the demo scorecard for `cursed-repo` and `poltergeist` and the sample. Report the file paths and, per room, the hero, room cards and trap states as text
-  - [ ] 19.2 **Stop for the maintainer's review.** Do not pin until the maintainer has looked at the three pages. If a state looks wrong, report it; do not tune (Overview)
-  - [ ] 19.3 Pin
+  - [ ] 20.2 **Stop for the maintainer's review.** Do not pin until the maintainer has looked at the three pages. If a state looks wrong, report it; do not tune (Overview)
+  - [ ] 20.3 Pin
     - `tests/test_scorecard_golden.py`: byte comparison against `tests/fixtures/scorecard_golden/*.html`
     - _Requirements: 13.4, 13.6_
 
-- [ ] 20. Docs and steering
+- [ ] 21. Docs and steering
   - `.kiro/steering/tech.md`: replace the layout line with the D24 wording ("… scoring and the core report; the scorecard page lives in `src/hauntlet/scorecard/`")
   - `README.md`: a short "Scorecard" section (what each section shows, the path badge, "Facts the range observed"), with `GET /runs/{id}/facts/stream` added to the route list
   - Disclosure checklist (Requirement 14, manual): no scorecard file, copy, test or sample describes a privately disclosed finding beyond the approved general wording; `mcp-summary-*.txt` is never read by `sources.py`
   - _Requirements: 14.1, 14.2, D24_
 
-- [ ] 21. Manual release gate (Q3)
+- [ ] 22. Manual release gate (Q3)
   - At 320 px and 375 × 667 px in one Chromium-based and one WebKit-based browser, on a demo exorcism page and a live run page:
     - the badge, hero chip and verdict sentence are visible without scrolling;
     - no horizontal page scroll (the evidence list may scroll inside itself);
@@ -231,7 +240,7 @@ the copy or the data to make a page look as expected.
   - Record the results (browser versions, pass or fail per item) in the task's completion note
   - _Requirements: 2.2, 12.3–12.7, Q3_
 
-- [ ] 22. Final checkpoint
+- [ ] 23. Final checkpoint
   - `uv run pytest`, `uv run hauntlet selftest` (unchanged), `uv run python scripts/check_payload_safety.py`, `uv run hauntlet sample-report` (no diff), and `git diff --stat src/hauntlet/core` (only the two `service.py` methods)
   - Report the test count, the release-gate results, and anything shown as "fact log not available" on the default paths (expected: Parlor after finalize, and real-client MCP runs on the hosted range without the D19 copy)
 
@@ -243,7 +252,7 @@ the copy or the data to make a page look as expected.
   task.
 - **Task 1 runs before any other change**, so the compatibility goldens record
   today's behaviour, not the new one.
-- **Task 19.2 is a hard stop.** Golden pages are pinned only after the
+- **Task 20.2 is a hard stop.** Golden pages are pinned only after the
   maintainer has seen them.
 - In `src/hauntlet/core/`, only `service.py` changes, and only by `events` and
   `canaries`. Each checkpoint checks this. Anything else in core is a new
@@ -251,17 +260,17 @@ the copy or the data to make a page look as expected.
 - The scorecard never reads a private Exorcist name. Class texts come from
   `hauntlet.exorcist.CLASS_TEXT` (task 3). The Exorcist never imports
   `hauntlet.scorecard`. Its writers get the renderer through the
-  `html_renderer` argument (task 16.2).
+  `html_renderer` argument (task 17.2).
 - Fact-log paths are built only in `sources.live_fact_log`, from a
   store-validated run and a manifest room, through `cli.mcp_workspace`. The
-  stream and the routes never build a path themselves (tasks 11, 15).
+  stream and the routes never build a path themselves (tasks 11, 16).
 - Tasks that write the same file run in separate waves:
-  `src/hauntlet/server.py` (15.1, 16.1); `src/hauntlet/exorcist/service.py`
-  (14, 16.2); `tests/test_scorecard_badge.py` (9.4, 12.4);
-  `tests/test_scorecard_redaction.py` (12.4 only; 4.2 and 15.2 use their own
-  files); `tests/test_scorecard_compat.py` (1, 16.3).
+  `src/hauntlet/server.py` (16.1, 17.1); `src/hauntlet/exorcist/service.py`
+  (15, 17.2); `tests/test_scorecard_badge.py` (9.4, 12.4);
+  `tests/test_scorecard_redaction.py` (12.4 only; 4.2 and 16.2 use their own
+  files); `tests/test_scorecard_compat.py` (1, 17.3).
 - The redactor (task 4) and D30 (task 2) come before `sources.py` (task 11) and
-  D26 (task 14), which both redact with a run's canaries.
+  D26 (task 15), which both redact with a run's canaries.
 
 ## Task Dependency Graph
 
@@ -281,16 +290,17 @@ the copy or the data to make a page look as expected.
     { "id": 10, "tasks": ["11.2", "12.3"] },
     { "id": 11, "tasks": ["12.4"] },
     { "id": 12, "tasks": ["13"] },
-    { "id": 13, "tasks": ["14", "15.1"] },
-    { "id": 14, "tasks": ["15.2", "16.1"] },
-    { "id": 15, "tasks": ["16.2"] },
-    { "id": 16, "tasks": ["16.3", "17"] },
-    { "id": 17, "tasks": ["18"] },
-    { "id": 18, "tasks": ["19.1"] },
-    { "id": 19, "tasks": ["19.2"] },
-    { "id": 20, "tasks": ["19.3", "20"] },
-    { "id": 21, "tasks": ["21"] },
-    { "id": 22, "tasks": ["22"] }
+    { "id": 13, "tasks": ["14"] },
+    { "id": 14, "tasks": ["15", "16.1"] },
+    { "id": 15, "tasks": ["16.2", "17.1"] },
+    { "id": 16, "tasks": ["17.2"] },
+    { "id": 17, "tasks": ["17.3", "18"] },
+    { "id": 18, "tasks": ["19"] },
+    { "id": 19, "tasks": ["20.1"] },
+    { "id": 20, "tasks": ["20.2"] },
+    { "id": 21, "tasks": ["20.3", "21"] },
+    { "id": 22, "tasks": ["22"] },
+    { "id": 23, "tasks": ["23"] }
   ]
 }
 ```

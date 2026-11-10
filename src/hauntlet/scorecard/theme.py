@@ -25,6 +25,7 @@ TOKENS: dict[str, str] = {
     "l4": "#FF7A88",
     "on-level": "#000000",
     "info": "#69A0F6",
+    "l0-tint": "#0E2A1D",  # the After strip's background when the after state is L0 Clean
 }
 
 SURFACES = ("page", "surface-1", "surface-2")
@@ -39,12 +40,25 @@ PAIRS: frozenset[tuple[str, str, str]] = frozenset(
     {(fg, bg, "text") for fg in TEXT_ON_SURFACES for bg in SURFACES}
     | {("on-level", lv, "text") for lv in LEVELS}
     | {("on-accent", "accent", "text")}
+    # A filled control's boundary is its fill against the surface around it.
+    | {("accent", bg, "ui") for bg in SURFACES}
     # Focus ring and outlined controls on every surface.
     | {("accent-text", bg, "ui") for bg in SURFACES}
     # Outlined grey and info chips: the outline is their only boundary.
     | {("muted", bg, "ui") for bg in SURFACES}
     | {("info", bg, "ui") for bg in SURFACES}
+    # The before → after strip outlined in its after state's level token.
+    | {(lv, bg, "ui") for lv in LEVELS for bg in SURFACES}
+    # The green After strip: light text, the muted arrow and the L0 border on the tint;
+    # every chip fill and outline inside it must stand out from the tint (3:1).
+    | {("text", "l0-tint", "text"), ("muted", "l0-tint", "text"), ("l0", "l0-tint", "ui")}
+    | {(c, "l0-tint", "ui") for c in (*LEVELS, "muted", "info")}
 )
+
+#: What sits on the green After strip, for the strip contrast test.
+STRIP_TINT = "l0-tint"
+STRIP_CONTENT_UI: tuple[str, ...] = (*LEVELS, "muted", "info")  # chip fills and outlines
+STRIP_ARROW = "muted"
 
 
 def _channel(c: float) -> float:

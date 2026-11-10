@@ -11,7 +11,9 @@
 How pairs are derived from a rule: a ``color`` with a ``background`` in the same
 rule is one pair; a ``color`` with no ``background`` is checked on every
 surface; a ``background`` with no ``color`` is checked with ``--text``; an
-``outline`` or ``border`` colour is a UI pair on every surface.
+``outline`` or ``border`` colour is a UI pair on every surface and against the
+rule's own fill (unless it is the fill); a filled control's fill is a UI pair on
+every surface; everything that sits on the green strip is checked on its tint.
 
 **Validates: scorecard Requirements 11.3, 11.4, 12.1, SP13**
 """
@@ -75,6 +77,13 @@ def test_every_used_pair_is_allowed_and_passes() -> None:
             c = _var(d.get(prop))
             if c and c != "border":
                 used |= {(c, s, "ui") for s in theme.SURFACES}
+                if bg and bg not in theme.SURFACES and c != bg:
+                    used.add((c, bg, "ui"))  # a border against its own fill (the green strip)
+        if bg and bg not in theme.SURFACES and any(k in sel for k in ("button", ".btn", "summary")):
+            used |= {(bg, s_, "ui") for s_ in theme.SURFACES}  # a filled control's edge is its fill
+        if bg == theme.STRIP_TINT:
+            # Everything that sits on the green strip: chip fills and outlines, and the arrow.
+            used |= {(c, bg, "ui") for c in theme.STRIP_CONTENT_UI} | {(theme.STRIP_ARROW, bg, "text")}
     assert used
     for fg, bg, kind in sorted(used):
         assert (fg, bg, kind) in theme.PAIRS, (fg, bg, kind)
@@ -88,7 +97,8 @@ def test_accent_border_and_red_rules() -> None:
         assert _var(d.get("color")) != "accent", sel
         if "--l4" in "".join(d.values()) and sel != ":root":
             assert sel == ".lv4", sel
-        if any(k in sel for k in ("button", ".btn", "summary", ".room-card")):
+        # ".room-card.off" is a not-run room: a <div>, not a control, so its border is decorative.
+        if any(k in sel for k in ("button", ".btn", "summary", ".room-card")) and ".off" not in sel:
             for prop in ("border", "border-color"):
                 assert _var(d.get(prop)) != "border", sel
 

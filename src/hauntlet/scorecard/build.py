@@ -43,10 +43,12 @@ from hauntlet.scorecard.model import (
     FileView,
     FixLine,
     Hero,
+    ItemGroup,
     LateRow,
     Pill,
     RoomCard,
     State,
+    Strip,
     TrapCard,
     ViewModel,
 )
@@ -321,7 +323,26 @@ def _fix_lines(bundle: Mapping[str, Any]) -> list[FixLine]:
     return out
 
 
+def _groups(items: tuple[FixLine, ...]) -> tuple[ItemGroup, ...]:
+    """Items with the same reason become one line that lists their rules."""
+    # Grouped by reason, so each sentence appears once in a file's row; the
+    # group cites and depends on the union of its items' citations and assumptions.
+    groups: dict[str, list[FixLine]] = {}
+    for f in items:
+        groups.setdefault(f.reason, []).append(f)
+    return tuple(
+        ItemGroup(
+            rules=tuple(f.rule for f in fs),
+            reason=reason,
+            cites=tuple(sorted({c for f in fs for c in f.cites})),
+            assumptions=tuple(sorted({a for f in fs for a in f.assumptions})),
+        )
+        for reason, fs in groups.items()
+    )
+
+
 def _files(bundle: Mapping[str, Any], fixes: list[FixLine]) -> tuple[FileView, ...]:
+    kinds = {r(str(it.get("path", ""))): str(it.get("kind", "")) for it in bundle.get("items", ())}
     paths = list(bundle.get("digests", {}) or {})
     for f in fixes:
         if f.path not in paths:
@@ -332,10 +353,14 @@ def _files(bundle: Mapping[str, Any], fixes: list[FixLine]) -> tuple[FileView, .
         items = tuple(f for f in fixes if f.path == p)
         ids = sorted({a for f in items for a in f.assumptions})
         if not items:
-            out.append(FileView(r(p), "", copy.C26, (), ()))
+            out.append(FileView(r(p), "", copy.C26, (), (), kind="support", sentence=copy.C26))
             continue
         tag = copy.ENFORCED if any(f.tag == copy.ENFORCED for f in items) else copy.ADVISORY
-        out.append(FileView(r(p), tag, None, items, tuple((a, assumption_text.get(a, "")) for a in ids)))
+        kind = kinds.get(p, "support")
+        out.append(FileView(
+            r(p), tag, None, items, tuple((a, assumption_text.get(a, "")) for a in ids),
+            kind=kind, sentence=copy.FILE_KIND_SENTENCES.get(kind, ""), groups=_groups(items),
+        ))
     return tuple(out)
 
 
@@ -376,10 +401,25 @@ def _exorcism_view(inp: ScorecardInput) -> ExorcismView:
         attributions=tuple(r(str(x)) for x in delta.get("attributions", ())),
         assumptions=tuple(ASSUMPTIONS.items()),
         download_url=ex.download_url,
-        bundle_path=ex.bundle_path,
+        # A page served over HTTP never shows the bundle's absolute path.
+        bundle_path=None if inp.served else ex.bundle_path,
         next_step="delta-cli" if pending else "",
         next_text=copy.DELTA_CLI.format(bundle_id=ex.bundle_id) if pending else "",
     )
+
+
+def trap_title(room: str, spec) -> str:
+    """The trap's threat-profile class in words (D27), or the control title."""
+    if spec.is_control:
+        return copy.CONTROL_TITLE.format(surface=r(spec.surface))
+    try:
+        threat = profile_for(room).traps.get(spec.trap_id)
+    except KeyError:
+        threat = None
+    if threat is None:
+        return r(spec.trap_id)
+    asked = copy.join_and([copy.EFFECT_PHRASES[e] for e in EFFECT_ORDER if e in threat.effects])
+    return copy.TRAP_TITLE.format(source=copy.SOURCE_TITLES[threat.source], asked=asked)
 
 
 def _where_asked(room: str, spec) -> tuple[str, str]:
@@ -465,7 +505,27 @@ def build(inp: ScorecardInput) -> ViewModel:
         if score.provisional and not active and run.finalized_at is not None
         else None
     )
-    hero = Hero(Change(hero_before, hero_after, hero_marker), sentence_before, sentence_after, pills, toggle, provisional_note)
+    strip = None
+    if hero_after is not None:
+        caused: dict[str, bool] = {}
+        note = ""
+        if delta_path == DEMO_PATH:
+            note = copy.C17
+            for td in delta.get("traps", ()):
+                for item in td.get("changed_by_display") or ():
+                    item = str(item)
+                    a4 = item.endswith(f"({copy.DEPENDS_A4})")
+                    path_ = r(item.split("#", 1)[0])
+                    caused[path_] = caused.get(path_, False) or a4
+        elif delta_path == REAL_PATH:
+            note = copy.C18
+        strip = Strip(
+            before=hero_before, after=hero_after, files_total=len(bundle.get("digests", {}) or {}),
+            caused=tuple(sorted(caused.items())), note=note,
+            green=hero_after.kind == "level" and hero_after.level == 0,
+        )
+    hero = Hero(Change(hero_before, hero_after, hero_marker), sentence_before, sentence_after, pills, toggle,
+                provisional_note, strip)
 
     # -- rooms ---------------------------------------------------------------
     run_rooms = tuple(rm.room for rm in manifest.rooms)
@@ -515,6 +575,8 @@ def build(inp: ScorecardInput) -> ViewModel:
         )
         states_seen += [b_state] + ([a_state] if a_state else [])
 
+    # Rooms that ran first, at full weight; rooms not run after them (Requirement 5.1).
+    cards = [c for c in cards if c.run] + [c for c in cards if not c.run]
     rank = {n: i for i, n in enumerate(order)}
     default_room = (
         min(score.rooms, key=lambda rs: (-int(rs.worst_level), rank.get(rs.room, len(rank)))).room
@@ -573,6 +635,7 @@ def build(inp: ScorecardInput) -> ViewModel:
             where, asked = _where_asked(rm.room, spec)
             out.append(
                 TrapCard(
+                    title=trap_title(rm.room, spec),
                     ref=ref, room=rm.room, trap_id=spec.trap_id, is_control=spec.is_control,
                     where=where, asked=asked,
                     did_before=did_phrases(level, sigs, (), rs.l2_assessed),
@@ -609,7 +672,10 @@ def build(inp: ScorecardInput) -> ViewModel:
     for rd in delta.get("rooms", ()):
         if rd.get("fact_log_available") is False and ("after", rd["room"]) not in unavailable:
             unavailable.append(("after", rd["room"]))
-    evidence = EvidenceView(before_log, after_log, before_demo, after_demo, tuple(unavailable))
+    evidence = EvidenceView(
+        facts_mod.merge(before_log), facts_mod.merge(after_log),
+        facts_mod.merge(before_demo), facts_mod.merge(after_demo), tuple(unavailable),
+    )
 
     # -- aggregates and late -------------------------------------------------
     agg_rows = []

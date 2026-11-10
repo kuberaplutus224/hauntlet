@@ -1,4 +1,4 @@
-"""Compatibility goldens (scorecard SP17, task 1 and task 16.3).
+"""Compatibility goldens (scorecard SP17, task 1 and task 17.3).
 
 Captured before any scorecard change, so they record today's behaviour:
 

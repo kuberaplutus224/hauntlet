@@ -9,7 +9,7 @@
   every transition sits under ``no-preference``;
 - landmarks, one ``h1``, headings that never skip a level, ``lang="en"``;
 - the live region is polite;
-- fonts are system stacks; the serif stack is used for headline and verdict.
+- fonts are system stacks; the serif stack is used only for the hero and "The exorcism".
 
 **Validates: scorecard Requirements 11.1, 12.2–12.5, 12.7–12.9, SP14**
 """
@@ -75,7 +75,12 @@ def test_targets_focus_motion_and_fonts() -> None:
     outside = re.sub(r"@media\(prefers-reduced-motion:reduce\)\{.*?\}\}", "", outside)
     assert "transition:" not in outside and "animation:" not in outside
     assert "@font-face" not in css and "@import" not in css
-    assert "font-family:ui-serif,Georgia,serif" in css
-    serif_rule = re.search(r"([^{}]*)\{font-family:ui-serif,Georgia,serif", css).group(1)
-    assert "h1" in serif_rule and ".verdict-sentence" in serif_rule
+    assert 'font-family:ui-serif,"NewYork",Charter,"BitstreamCharter",Cambria,"TimesNewRoman",serif' in css
+    assert "Georgia" not in css  # Georgia has old-style numerals: "L0" reads "Lo"
+    # Amended 11.1: only the hero (level and sentence) and "The exorcism" title are serif.
+    serif_rules = re.findall(r"([^{}]*)\{[^{}]*font-family:ui-serif,", css)
+    assert len(serif_rules) == 1
+    assert set(serif_rules[0].strip().split(",")) == {".verdict-sentence", ".level-block.lvl", ".serif-title"}
+    label = re.search(r"h2\.label\{([^}]*)\}", css).group(1)
+    assert "font-size:13px" in label and "text-transform:uppercase" in label and "color:var(--muted)" in label
     assert "ui-sans-serif,system-ui,sans-serif" in css

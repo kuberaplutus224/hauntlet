@@ -3,7 +3,8 @@
 ``parse(html)`` returns a ``Doc``:
 
 - ``nodes``: every visible text node (stripped, non-empty), outside ``script``,
-  ``style`` and ``template``, each with the stack of enclosing elements;
+  ``style`` and ``template``, each with the stack of enclosing elements; text on
+  both sides of a ``<wbr>`` is one node;
 - ``elements``: every start tag as ``(tag, attrs dict)``;
 - ``headings``: heading levels in document order;
 - ``scripts``: the text of each ``<script>`` element, by ``id``.
@@ -13,9 +14,10 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass, field
+import re
 from html.parser import HTMLParser
 
-VOID = {"meta", "link", "br", "img", "input", "hr", "path", "circle"}
+VOID = {"meta", "link", "br", "img", "input", "hr", "path", "circle", "wbr"}
 HIDDEN = {"script", "style", "template", "title"}
 
 
@@ -25,8 +27,11 @@ class Node:
     stack: tuple[tuple[str, dict], ...]
 
     def inside(self, tag: str | None = None, **attrs) -> bool:
+        # Keyword names map to attribute names: a trailing "_" is dropped
+        # (``class_`` -> ``class``), and other "_" become "-" (``data_room``).
+        want = {k.rstrip("_").replace("_", "-"): v for k, v in attrs.items()}
         for t, a in self.stack:
-            if (tag is None or t == tag) and all((a.get(k.replace("_", "-")) == v if v is not True else k.replace("_", "-") in a) for k, v in attrs.items()):
+            if (tag is None or t == tag) and all((k in a) if v is True else a.get(k) == v for k, v in want.items()):
                 return True
         return False
 
@@ -60,8 +65,13 @@ class _P(HTMLParser):
         self.stack: list[tuple[str, dict]] = []
         self._script_id: str | None = None
         self._script_buf: list[str] = []
+        self._join = False  # a <wbr> is a break opportunity, not a text break
 
     def handle_starttag(self, tag, attrs):
+        if tag == "wbr":
+            self._join = True
+            return
+        self._join = False
         a = {k: (v if v is not None else "") for k, v in attrs}
         self.doc.elements.append((tag, a))
         if tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
@@ -77,6 +87,7 @@ class _P(HTMLParser):
         self.doc.elements.append((tag, a))
 
     def handle_endtag(self, tag):
+        self._join = False
         if tag == "script" and self._script_id is not None:
             self.doc.scripts[self._script_id] = "".join(self._script_buf)
             self._script_id = None
@@ -96,11 +107,21 @@ class _P(HTMLParser):
             return
         s = data.strip()
         if s:
-            self.doc.nodes.append(Node(s, tuple(self.stack)))
+            last = self.doc.nodes[-1] if self.doc.nodes else None
+            if self._join and last is not None and last.stack == tuple(self.stack):
+                last.text += s
+            else:
+                self.doc.nodes.append(Node(s, tuple(self.stack)))
+        self._join = False
+
+
+_LV_CODE = re.compile(r'<span class="lv-code">(L[0-4])</span>')
 
 
 def parse(html: str) -> Doc:
+    """Parse ``html``. A ``.lv-code`` span (a level code inside serif text) is unwrapped
+    first, so "went from L4 to L0." stays one text node; test raw HTML for the spans."""
     p = _P()
-    p.feed(html)
+    p.feed(_LV_CODE.sub(r"\1", html))
     p.close()
     return p.doc

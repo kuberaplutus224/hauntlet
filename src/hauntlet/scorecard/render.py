@@ -22,6 +22,7 @@ from importlib.resources import files
 from hauntlet.scorecard import copy
 from hauntlet.scorecard.model import (
     Change,
+    Strip,
     ExorcismView,
     FactLine,
     FileView,
@@ -53,6 +54,34 @@ MARK = (
 def t(value: object) -> str:
     """The one escaping path for every value."""
     return escape(str(value), quote=True)
+
+
+_LEVEL_CODE = re.compile(r"\bL[0-4]\b")
+
+
+def serif_text(value: object) -> str:
+    """Escaped text for a serif element, with every level code (L0–L4) in a sans
+    ``.lv-code`` span. Serif fallbacks such as Georgia have old-style numerals, so a
+    serif "L0" can read as "Lo"; ``lining-nums`` cannot fix a font without lining figures."""
+    return _LEVEL_CODE.sub(lambda m: f'<span class="lv-code">{m.group(0)}</span>', t(value))
+
+
+def path(value: object) -> str:
+    """A mono path that may break only after "/": each segment escaped, ``<wbr>`` between.
+
+    A guardrail item ID is a path plus "#rule"; it may also break before the "#",
+    and before a "." inside the rule ("#<server>.<key>" in mcp.json), so a long rule
+    never pushes the line past its container. File names are never broken.
+    """
+    text = str(value)
+    file_part, hash_, rule = text.partition("#")
+    parts = file_part.split("/")
+    segs = [p + "/" for p in parts[:-1]] + [parts[-1]]
+    out = "<wbr>".join(t(x) for x in segs if x)
+    if hash_:
+        head, *keys = rule.split(".")
+        out += "<wbr>" + t("#" + head) + "".join("<wbr>" + t("." + k) for k in keys)
+    return out
 
 
 def _json_for_script(doc: object) -> str:
@@ -115,7 +144,7 @@ def _list(items, cls: str = "") -> str:
 
 
 def _code_list(items) -> str:
-    return '<ul class="chips">' + "".join(f"<li><code>{t(i)}</code></li>" for i in items) + "</ul>"
+    return '<ul class="chips">' + "".join(f'<li><code class="path">{path(i)}</code></li>' for i in items) + "</ul>"
 
 
 # --------------------------------------------------------------------------- #
@@ -139,54 +168,100 @@ def _header(vm: ViewModel) -> str:
     )
 
 
+def level_block(state: State) -> str:
+    """The hero's large level block: the level (56px serif) and its word (18px, uppercase)."""
+    if state.kind == "level":
+        return (
+            f'<div class="level-block lv{state.level}" data-chip>'
+            f'<span class="lvl">{serif_text(copy.LEVEL_NAMES[state.level])}</span>'
+            f'<span class="word">{t(copy.LEVEL_WORDS[state.level])}</span></div>'
+        )
+    cls = "info" if state.kind == "info" else "grey"
+    return f'<div class="level-block {cls}" data-chip><span class="word">{t(state.label)}</span></div>'
+
+
+def strip_html(st: Strip) -> str:
+    """The After view's main element (design "Visual standards")."""
+    cls = "strip green" if st.green else f"strip out tok-{st.after.token}"
+    n = copy.STRIP_FILES_1 if st.files_total == 1 else copy.STRIP_FILES.format(n=st.files_total)
+    caused = ""
+    if st.caused:
+        lis = "".join(
+            f'<li><code class="path">{path(p)}</code>'
+            + (f'<span class="a4">{t(copy.DEPENDS_A4)}</span>' if a4 else "")
+            + "</li>"
+            for p, a4 in st.caused
+        )
+        caused = f'<p class="strip-note">{t(st.note)}</p><ul class="strip-caused">{lis}</ul>'
+    elif st.note:
+        caused = f'<p class="strip-note">{t(st.note)}</p>'
+    return (
+        f'<div class="{cls}" data-strip>'
+        f'<p class="strip-states">{chip(st.before, big=True)}{ARROW}{chip(st.after, big=True)}</p>'
+        f'<p class="strip-files">{t(n)}</p>{caused}</div>'
+    )
+
+
 def _hero(vm: ViewModel) -> str:
     h = vm.hero
     sv = h.toggle == "toggle"
-    sentence = split(sv, f"<span>{t(h.sentence_before)}</span>", f"<span>{t(h.sentence_after or '')}</span>")
-    pills = []
-    for p in h.pills:
-        after = None
-        if p.after is not None:
-            cost = f'<span class="cost">{t(copy.COST)}</span>' if p.cost else ""
-            after = f"<span>{t(p.before)}</span>{ARROW}<span>{t(p.after)}</span>{cost}"
-        body = split(sv, f"<span>{t(p.before)}</span>", after) if after else f"<span>{t(p.before)}</span>"
-        pills.append(f'<li class="pill" data-pill="{t(p.name)}">{body}</li>')
+    before_view = (
+        f'<div class="hero-main">{level_block(h.change.before)}'
+        f'<p class="verdict-sentence" data-sentence>{serif_text(h.sentence_before)}</p></div>'
+    )
     out = [
         '<section id="verdict" aria-labelledby="h-verdict">',
-        f'<h2 id="h-verdict">{t(copy.SECTION_VERDICT)}</h2>',
-        '<div class="card verdict">',
-        f"<div>{change_html(h.change, sv, big=True)}</div>",
-        "<div>",
-        f'<p class="verdict-sentence">{sentence}</p>',
+        f'<h2 class="label" id="h-verdict">{t(copy.SECTION_VERDICT)}</h2>',
+        '<div class="card hero">',
     ]
-    if h.provisional_note:
-        out.append(f'<p class="muted">{t(h.provisional_note)}</p>')
-    out.append(f'<ul class="pills" data-finding>{"".join(pills)}</ul>')
-    if h.toggle == "toggle":
+    if sv:
         out.append(
-            f'<div class="toggle needs-js" role="group" aria-label="{t(copy.VIEW_GROUP)}">'
+            f'<div class="toggle seg needs-js" role="group" aria-label="{t(copy.VIEW_GROUP)}">'
             '<button type="button" class="btn" aria-pressed="true" :aria-pressed="(view === \'before\').toString()" '
             f'@click="view = \'before\'">{t(copy.VIEW_BEFORE)}</button>'
             '<button type="button" class="btn" aria-pressed="false" :aria-pressed="(view === \'after\').toString()" '
             f'@click="view = \'after\'">{t(copy.VIEW_AFTER)}</button></div>'
         )
-    elif h.toggle == "pending":
+        after_view = (
+            (strip_html(h.strip) if h.strip else "")
+            + f'<p class="verdict-sentence after" data-sentence>{serif_text(h.sentence_after or "")}</p>'
+        )
+        out.append(split(True, before_view, after_view, "div"))
+    else:
+        out.append(before_view)
+    if h.provisional_note:
+        out.append(f'<p class="muted">{t(h.provisional_note)}</p>')
+    pills = []
+    for p in h.pills:
+        body = f"<span>{t(p.before)}</span>"
+        if p.after is not None:
+            cost = f'<span class="cost">{t(copy.COST)}</span>' if p.cost else ""
+            body = split(sv, body, f"<span>{t(p.before)}</span>{ARROW}<span>{t(p.after)}</span>{cost}")
+        pills.append(f'<li class="pill" data-pill="{t(p.name)}">{body}</li>')
+    out.append(f'<ul class="pills" data-finding>{"".join(pills)}</ul>')
+    if h.toggle == "pending":
         out.append(f'<p class="muted">{t(copy.AFTER_NOT_RUN)}</p>')
     if vm.path_label:
-        out.append(f'<p class="muted">{t(vm.path_label)}</p>')
+        out.append(f'<p class="muted small">{t(vm.path_label)}</p>')
     out.append(f'<p class="limits">{t(copy.C5)}</p>')
-    out.append("</div></div></section>")
+    out.append("</div></section>")
     return "".join(out)
 
 
-def _legend(vm: ViewModel) -> str:
+def legend_items(states) -> str:
     items = []
-    for s in vm.legend:
-        meaning = f"<span>{t(s.meaning)}</span>" if s.meaning else ""
-        items.append(f"<li>{chip(s)}{meaning}</li>")
+    for s_ in states:
+        tail = ""
+        if s_.meaning:
+            tail = f'<span class="dash">{t(copy.DASH)}</span><span>{t(copy.MEANING_TAILS.get(s_.meaning, s_.meaning))}</span>'
+        items.append(f"<li>{chip(s_)}{tail}</li>")
+    return "".join(items)
+
+
+def _legend(vm: ViewModel) -> str:
     return (
         '<section id="levels" aria-labelledby="h-levels">'
-        f'<h2 id="h-levels">{t(copy.SECTION_LEVELS)}</h2><ul class="legend">{"".join(items)}</ul></section>'
+        f'<h2 class="label" id="h-levels">{t(copy.SECTION_LEVELS)}</h2><ul class="legend">{legend_items(vm.legend)}</ul></section>'
     )
 
 
@@ -199,7 +274,7 @@ def _room_card(c: RoomCard, vm: ViewModel, sv: bool) -> str:
     stands = f'<span class="stands">{t(c.stands_for)}</span>' if c.stands_for else ""
     if not c.run:
         return (
-            f'<div class="room-card" data-room="{t(c.room)}" aria-disabled="true">'
+            f'<div class="room-card off" data-room="{t(c.room)}" aria-disabled="true">'
             f"<b>{t(c.name)}</b>{stands}<span>{chip_not_run()}</span></div>"
         )
     pressed = "true" if c.room == vm.default_room else "false"
@@ -221,10 +296,12 @@ def chip_not_run() -> str:
 
 def _rooms(vm: ViewModel) -> str:
     sv = vm.hero.toggle == "toggle"
-    cards = "".join(_room_card(c, vm, sv) for c in vm.rooms)
+    ran = "".join(_room_card(c, vm, sv) for c in vm.rooms if c.run)
+    off = "".join(_room_card(c, vm, sv) for c in vm.rooms if not c.run)
+    off_html = f'<div class="rooms-off">{off}</div>' if off else ""
     return (
         '<section id="rooms" aria-labelledby="h-rooms">'
-        f'<h2 id="h-rooms">{t(copy.SECTION_ROOMS)}</h2><div class="rooms">{cards}</div></section>'
+        f'<h2 class="label" id="h-rooms">{t(copy.SECTION_ROOMS)}</h2><div class="rooms">{ran}</div>{off_html}</section>'
     )
 
 
@@ -232,36 +309,41 @@ def _fix(f: FixLine) -> str:
     cls = "tag enforced" if f.tag == copy.ENFORCED else "tag"
     assumptions = "".join(f'<span class="tag">{t(a)}</span>' for a in f.assumptions)
     return (
-        f'<li><span class="tagline"><span class="{cls}" data-tag>{t(f.tag)}</span><code>{t(f.item_id)}</code>'
+        f'<li><span class="tagline"><span class="{cls}" data-tag>{t(f.tag)}</span><code class="path">{path(f.item_id)}</code>'
         f"{assumptions}</span><span>{t(f.reason)}</span></li>"
     )
 
 
+def _note(note: str) -> str:
+    return f'<span class="sep"> {t(copy.SEP)} </span><span class="note">{t(note)}</span>' if note else ""
+
+
 def _fact(ln: FactLine, idx: int) -> str:
     tag = f'<span class="tg" data-tag>{t(ln.tag)}</span>' if ln.tag else "<span></span>"
-    note = f'<span class="note">{t(ln.note)}</span>' if ln.note else ""
+    count = f'<span class="count">{t(copy.MERGED.format(n=ln.count))}</span>' if ln.count > 1 else ""
     return (
         f'<li data-room="{t(ln.room)}" data-fact-id="{t(ln.fact_id)}" data-idx="{idx}" '
         'x-show="visibleLine($el)">'
         f'<span class="t">{t(ln.time)}</span><span class="who">{t(ln.who)}</span>'
-        f"<span><span>{t(ln.text)}</span>{note}</span>{tag}</li>"
+        f"<span><span>{t(ln.text)}</span>{_note(ln.note)}{count}</span>{tag}</li>"
     )
 
 
 def _evidence_list(lines: tuple[FactLine, ...]) -> str:
     if not lines:
         return f'<p class="na">{t(copy.NO_FACTS)}</p>'
-    return '<ul class="details">' + "".join(
+    # Evidence lines are data (tool arguments, paths) and may have no spaces: wrap anywhere.
+    return '<ul class="details wrap-any">' + "".join(
         f'<li><span class="t">{t(ln.time)}</span> <span>{t(ln.text)}</span>'
         + (f' <span class="tag" data-tag>{t(ln.tag)}</span>' if ln.tag else "")
-        + (f' <span class="note">{t(ln.note)}</span>' if ln.note else "")
+        + _note(ln.note)
         + "</li>"
         for ln in lines
     ) + "</ul>"
 
 
 def _trap(tc: TrapCard, sv: bool) -> str:
-    head = [f"<h3>{t(tc.trap_id)}</h3>"]
+    head = [f"<h3>{t(tc.title)}</h3>", f'<code class="id">{t(tc.trap_id)}</code>']
     if tc.is_control:
         head.append(f'<span class="tag" data-tag>{t(copy.CONTROL_MARK)}</span>')
     if tc.class_label:
@@ -301,7 +383,7 @@ def _trap(tc: TrapCard, sv: bool) -> str:
             inner = f'<p class="muted">{t(tc.changed_by_note)}</p>'
         else:
             chips = "".join(
-                f'<li class="{"a4" if "depends on A4" in c else ""}"><code>{t(c)}</code></li>' for c in tc.changed_by
+                f'<li class="{"a4" if "depends on A4" in c else ""}"><code class="path">{path(c)}</code></li>' for c in tc.changed_by
             ) or f"<li>{t(copy.NONE)}</li>"
             inner = f'<p><strong>{t(tc.changed_by_note)}</strong></p><ul class="chips">{chips}</ul>'
         changed = f'<div class="v v-after" x-show="view === \'after\'">{inner}</div>'
@@ -352,7 +434,7 @@ def _panels(vm: ViewModel) -> str:
         out.append(
             f'<section class="room-panel" data-room="{t(room)}" aria-labelledby="{t(hid)}" '
             'x-show="room === $el.dataset.room">'
-            f'<h2 id="{t(hid)}">{t(copy.SECTION_TRAPS.format(room=name))}</h2>'
+            f'<h2 class="label" id="{t(hid)}">{t(copy.SECTION_TRAPS.format(room=name))}</h2>'
             f'<div data-finding>{"".join(extra)}</div>{"".join(_trap(tc, sv) for tc in traps)}</section>'
         )
     return f'<div id="traps">{"".join(out)}</div>'
@@ -364,20 +446,28 @@ def _panels(vm: ViewModel) -> str:
 
 
 def _file(f: FileView) -> str:
+    """One row: mono path · Enforced/Advisory chip · one sentence; items in <details>."""
     tag = ""
     if f.tag:
         cls = "tag enforced" if f.tag == copy.ENFORCED else "tag"
         tag = f'<span class="{cls}" data-tag>{t(f.tag)}</span>'
-    note = f'<p class="muted">{t(f.note)}</p>' if f.note else ""
-    items = "".join(
-        f'<li><code>{t(i.rule)}</code> <span>{t(i.reason)}</span>'
-        f'<span class="muted"> {t(copy.CITES)}</span>{_code_list(i.cites)}</li>'
-        for i in f.items
-    )
-    items = f'<ul class="details">{items}</ul>' if items else ""
+    line = f'<div class="file-line"><code class="path">{path(f.path)}</code>{tag}<span class="file-sentence">{t(f.sentence)}</span></div>'
+    if not f.groups:
+        return f'<li class="file-row" data-file-row>{line}</li>'
+    groups = []
+    for g in f.groups:
+        rules = '<span class="sep">, </span>'.join(f"<code>{t(x)}</code>" for x in g.rules)
+        assumptions = "".join(f'<span class="tag">{t(a)}</span>' for a in g.assumptions)
+        groups.append(
+            f'<li><span class="rules">{rules}</span>{assumptions}<span class="reason">{t(g.reason)}</span>'
+            f'<span class="muted small">{t(copy.CITES)}</span>{_code_list(g.cites)}</li>'
+        )
     assumptions = "".join(f"<li><strong>{t(a)}</strong> <span>{t(x)}</span></li>" for a, x in f.assumptions)
     assumptions = f'<ul class="details">{assumptions}</ul>' if assumptions else ""
-    return f'<div class="card"><div class="tagline"><h3><code>{t(f.path)}</code></h3>{tag}</div>{note}{items}{assumptions}</div>'
+    return (
+        f'<li class="file-row" data-file-row>{line}<details><summary>{t(copy.FILE_DETAILS)}</summary>'
+        f'<ul class="groups">{"".join(groups)}</ul>{assumptions}</details></li>'
+    )
 
 
 def _cannot_fix(ex: ExorcismView) -> str:
@@ -391,7 +481,7 @@ def _cannot_fix(ex: ExorcismView) -> str:
 
 def _exorcism(vm: ViewModel) -> str:
     ex = vm.exorcism
-    out = ['<section id="exorcism" aria-labelledby="h-exorcism">', f'<h2 id="h-exorcism">{t(copy.SECTION_EXORCISM)}</h2>', "<div data-finding>"]
+    out = ['<section id="exorcism" aria-labelledby="h-exorcism">', f'<h2 class="serif-title" id="h-exorcism">{serif_text(copy.SECTION_EXORCISM)}</h2>', "<div data-finding>"]
     if not ex.present:
         if ex.next_step == "generate":
             out.append(
@@ -408,8 +498,8 @@ def _exorcism(vm: ViewModel) -> str:
         if ex.download_url:
             out.append(f'<p><a class="btn primary" href="{t(ex.download_url)}">{t(copy.DOWNLOAD)}</a></p>')
         elif ex.bundle_path:
-            out.append(f'<p class="muted">{t(copy.BUNDLE_DIR.format(path=ex.bundle_path))}</p>')
-        out.append('<div class="files">' + "".join(_file(f) for f in ex.files) + "</div>")
+            out.append(f'<p class="muted wrap-any">{t(copy.BUNDLE_DIR.format(path=ex.bundle_path))}</p>')
+        out.append('<ul class="file-rows">' + "".join(_file(f) for f in ex.files) + "</ul>")
         if ex.no_guardrail:
             out.append(f"<h3>{t(copy.NO_GUARDRAIL_HEADING)}</h3><ul>")
             out += [f"<li><code>{t(ref)}</code> <span>{t(why)}</span></li>" for ref, why in ex.no_guardrail]
@@ -425,7 +515,7 @@ def _exorcism(vm: ViewModel) -> str:
         if ex.permissions:
             out.append(
                 f"<details><summary>{t(copy.PERMISSIONS_HEADING)}</summary>"
-                f'<p class="muted">{t(copy.PERMISSIONS_LABEL)}</p><pre><code>{t(ex.permissions)}</code></pre></details>'
+                f'<p class="muted wrap-any">{t(copy.PERMISSIONS_LABEL)}</p><pre><code>{t(ex.permissions)}</code></pre></details>'
             )
         if ex.next_step == "delta-cli":
             out.append(f"<p>{t(copy.DELTA_CLI_INTRO)}</p><pre><code>{t(ex.next_text)}</code></pre>")
@@ -461,7 +551,7 @@ def _evidence(vm: ViewModel) -> tuple[str, list[FactLine]]:
     order: list[FactLine] = []
     out = [
         '<section id="evidence" aria-labelledby="h-evidence">',
-        f'<h2 id="h-evidence">{t(copy.SECTION_EVIDENCE)}</h2>',
+        f'<h2 class="label" id="h-evidence">{t(copy.SECTION_EVIDENCE)}</h2>',
         f"<p>{t(copy.C16)}</p>",
         '<div class="toggle needs-js" role="group">',
         '<button type="button" class="btn" aria-pressed="true" :aria-pressed="(logScope === \'room\').toString()" '
@@ -521,7 +611,7 @@ def _aggregates(vm: ViewModel) -> str:
     note = f'<p class="muted">{t(vm.aggregates_note)}</p>' if vm.aggregates_note else ""
     return (
         '<section id="aggregates" aria-labelledby="h-agg">'
-        f'<h2 id="h-agg">{t(copy.SECTION_AGGREGATES)}</h2>'
+        f'<h2 class="label" id="h-agg">{t(copy.SECTION_AGGREGATES)}</h2>'
         f'<div class="scroll"><table><tr>{head}</tr>{rows}</table></div>'
         f'<p class="muted">{t(copy.AGG_NOTE)}</p>{note}</section>'
     )
@@ -534,7 +624,7 @@ def _late(vm: ViewModel) -> str:
         rows = "".join(f"<tr><td>{t(r.trap_id)}</td><td>{t(r.signal)}</td><td>{t(r.arrived)}</td></tr>" for r in vm.late)
         out += (
             '<section id="late" aria-labelledby="h-late">'
-            f'<h2 id="h-late">{t(copy.SECTION_LATE)}</h2>'
+            f'<h2 class="label" id="h-late">{t(copy.SECTION_LATE)}</h2>'
             f'<div class="scroll"><table><tr>{head}</tr>{rows}</table></div>'
             f'<p class="muted">{t(copy.LATE_NOTE)}</p></section>'
         )
@@ -571,7 +661,7 @@ def render(vm: ViewModel) -> str:
         "hasAfter": bool(vm.after_run_id),
         "runId": vm.run_id,
         "streamUrl": vm.stream_url,
-        "seenIds": [ln.fact_id for ln in order],
+        "seenIds": [i for ln in order for i in (ln.ids or (ln.fact_id,))],
         "replayGaps": _gaps(order),
     }
     return _document(_header(vm), body, data)
@@ -589,15 +679,13 @@ def render_launcher(demo_rooms: list[str], legend: tuple[State, ...]) -> str:
         f'<header class="frame"><p class="badge" role="note">{t(badge_for("demo-agent"))}</p>'
         f'<div class="brand">{MARK}<h1 class="frame-title">{t(copy.PRODUCT)}</h1></div></header>'
     )
-    items = "".join(
-        f"<li>{chip(s)}" + (f"<span>{t(s.meaning)}</span>" if s.meaning else "") + "</li>" for s in legend
-    )
+    items = legend_items(legend)
     body = (
         '<section id="exorcism" aria-labelledby="h-exorcism">'
-        f'<h2 id="h-exorcism">{t(copy.SECTION_EXORCISM)}</h2><p>{t(copy.LAUNCH_INTRO)}</p>'
+        f'<h2 class="serif-title" id="h-exorcism">{serif_text(copy.SECTION_EXORCISM)}</h2><p>{t(copy.LAUNCH_INTRO)}</p>'
         f'<div class="toggle needs-js">{buttons}</div>'
         f'<p x-show="busy">{t(copy.RUNNING)}</p><p class="na" x-show="error" x-text="error"></p></section>'
         '<section id="levels" aria-labelledby="h-levels">'
-        f'<h2 id="h-levels">{t(copy.SECTION_LEVELS)}</h2><ul class="legend">{items}</ul></section>'
+        f'<h2 class="label" id="h-levels">{t(copy.SECTION_LEVELS)}</h2><ul class="legend">{items}</ul></section>'
     )
     return _document(header, body, {"defaultRoom": "", "seenIds": [], "replayGaps": []})

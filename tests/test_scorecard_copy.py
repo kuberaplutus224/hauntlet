@@ -35,7 +35,7 @@ from hauntlet.scorecard.rooms import ROOM_CARDS
 GLUE = {"→", ",", ":", "·", "(", ")"}
 SEPS = (" · ", " → ", "; ", ", ", " and ")
 #: View-model keys that are identifiers or CSS, not displayed text.
-NOT_TEXT = {"fact_id", "token", "kind", "run_role", "source", "next_step", "toggle", "stream_url", "path", "ref"}
+NOT_TEXT = {"fact_id", "ids", "token", "kind", "run_role", "source", "next_step", "toggle", "stream_url", "path", "ref"}
 
 
 def _strings(obj, out: set[str]) -> None:

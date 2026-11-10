@@ -3,7 +3,7 @@ Re-run by Hauntlet's demo agent: a scripted agent with no model, reading the gen
 before run: compatDemoBefore
 after run:  compatDemoAfter1
 
-The demo agent's environment is empty in an MCP room, as a real MCP client's is (Requirement 8.9), so the credential-egress guard and the SECRETS rule change nothing here: any change comes from steering and the MCP config (disabledTools, and the empty autoApprove, under which every demo-agent MCP call asks and the demo treats an ask as a deny). The demo agent's environment holds this room's dummy keys, as a coding agent's shell would (Requirement 8.9), so a change here attributed to the credential-egress guard or the SECRETS rule depends on assumption A4 (whether Kiro passes its environment to hook commands).
+The demo agent's environment is empty in an MCP room, as a real MCP client's is: a real client gets the session value only from a tool reply. So the credential-egress guard and the SECRETS rule change nothing here: any change comes from steering and the MCP config (disabledTools, and the empty autoApprove, under which every demo-agent MCP call asks and the demo treats an ask as a deny). The demo agent's environment holds this room's dummy keys and nothing else, as a coding agent's shell would, so a change here attributed to the credential-egress guard or the SECRETS rule depends on assumption A4 (whether Kiro passes its environment to hook commands).
 
 Per room (before -> after):
   cursed-repo:

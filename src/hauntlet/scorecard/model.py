@@ -36,6 +36,18 @@ class Pill:
 
 
 @dataclass(frozen=True)
+class Strip:
+    """The After view's main element: before → after, the bundle size, and what caused it."""
+
+    before: State
+    after: State
+    files_total: int
+    caused: tuple[tuple[str, bool], ...]  # (file path, depends on A4); demo path only
+    note: str  # C17 above the files (demo), C18 (real client)
+    green: bool  # only when the after state is L0 Clean (Requirement 9.6)
+
+
+@dataclass(frozen=True)
 class Hero:
     change: Change
     sentence_before: str
@@ -43,6 +55,7 @@ class Hero:
     pills: tuple[Pill, ...]
     toggle: str  # "toggle" | "pending" | "none"
     provisional_note: str | None
+    strip: Strip | None = None
 
 
 @dataclass(frozen=True)
@@ -83,10 +96,13 @@ class FactLine:
     note: str
     run_role: str  # "before" | "after"
     source: str  # "event" | "mcp" | "parlor" | "demo"
+    count: int = 1  # adjacent identical rows merged into this one (×N)
+    ids: tuple[str, ...] = ()  # every merged fact ID, this one first
 
 
 @dataclass(frozen=True)
 class TrapCard:
+    title: str  # the threat-profile class in words, or the control title
     ref: str
     room: str
     trap_id: str
@@ -112,12 +128,25 @@ class TrapCard:
 
 
 @dataclass(frozen=True)
+class ItemGroup:
+    """Items of one file with the same reason, citations and assumptions: one line."""
+
+    rules: tuple[str, ...]
+    reason: str
+    cites: tuple[str, ...]
+    assumptions: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class FileView:
     path: str
     tag: str  # "Advisory" | "Enforced" | "" (support file)
     note: str | None  # C26 for a support file
     items: tuple[FixLine, ...]
     assumptions: tuple[tuple[str, str], ...]  # (id, text)
+    kind: str = "support"  # "steering" | "hook" | "mcp" | "sandbox" | "support"
+    sentence: str = ""  # copy.FILE_KIND_SENTENCES[kind]
+    groups: tuple[ItemGroup, ...] = ()
 
 
 @dataclass(frozen=True)

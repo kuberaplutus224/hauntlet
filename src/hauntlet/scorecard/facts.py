@@ -26,7 +26,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable, Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from types import MappingProxyType
 from typing import Any
 
@@ -296,6 +296,23 @@ def to_line(f: Fact, fact_id: str, run: Run, manifest: RunManifest, run_role: st
         fact_id=fact_id, room=f.room, trap_id=f.trap_id, time=_time(f, run), who=_who(f), text=text,
         tag=_tag(f, controls), note=_note(f), run_role=run_role, source=f.source,
     )
+
+
+def merge(lines: tuple[FactLine, ...]) -> tuple[FactLine, ...]:
+    """Merge rows that would look the same (same room, shown time, who, text, tag and
+    note) into the first of them, with a count (×N). Rows with the same shown time
+    are interchangeable, so nothing is reordered that the reader could see."""
+    out: list[FactLine] = []
+    at: dict[tuple, int] = {}
+    for ln in lines:
+        key = (ln.room, ln.time, ln.who, ln.text, ln.tag, ln.note, ln.run_role, ln.source)
+        if key in at:
+            i = at[key]
+            out[i] = replace(out[i], count=out[i].count + 1, ids=out[i].ids + (ln.fact_id,))
+            continue
+        at[key] = len(out)
+        out.append(replace(ln, ids=(ln.fact_id,)))
+    return tuple(out)
 
 
 def lines(facts: Iterable[Fact], run: Run, manifest: RunManifest, run_role: str) -> tuple[tuple[FactLine, ...], tuple[FactLine, ...]]:

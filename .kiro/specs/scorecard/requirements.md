@@ -264,9 +264,11 @@ through and how each went, so I can pick the room to fix first.
 
 #### Acceptance Criteria
 
-1. THE page SHALL show one card per registered room, in registry order. Each
-   card SHALL show the room's display name, what it stands for (D28), a state
-   chip, and a one-line summary.
+1. THE page SHALL show one card per registered room: the rooms in the run
+   first, in registry order, at full weight; then the rooms not run, in
+   registry order, as small muted cards (visual review 2026-11-09). Each card
+   SHALL show the room's display name and what it stands for (D28). A run
+   room's card SHALL also show a state chip and a one-line summary.
 2. A room that is not in the run SHALL show the grey state C12 "Not run", with
    no level and no summary counts.
 3. A room in the run SHALL show its `worst_level` as the chip, with the hero's
@@ -470,12 +472,14 @@ like a lab report, so the theme never gets in the way of the finding.
 
 #### Acceptance Criteria
 
-1. THE theme SHALL live in the frame only: the ghost mark, the headline and
-   section titles, and the verdict sentence, which use the system serif stack
-   `ui-serif, Georgia, serif`. Finding text (story cards, evidence log,
-   exorcism items, pills) SHALL be plain and literal, in the system sans-serif
-   body stack (`ui-sans-serif, system-ui, sans-serif`). No web font SHALL be
-   loaded (review 2026-11-09).
+1. THE theme SHALL live in the frame only: the ghost mark, the hero (level
+   block and verdict sentence) and the title of "The exorcism", which use the
+   system serif stack `ui-serif, "New York", Charter, "Bitstream Charter", Cambria, "Times New Roman", serif`. Every level code (L0–L4) inside serif text is
+   set in the sans stack with lining numerals. Other section titles are
+   small sans-serif labels (design, "Visual standards"). Finding text (story
+   cards, evidence log, exorcism items, pills) SHALL be plain and literal, in
+   the system sans-serif body stack (`ui-sans-serif, system-ui, sans-serif`).
+   No web font SHALL be loaded (reviews 2026-11-09).
 2. Finding text SHALL NOT use theme words ("ghost", "haunt", "spooky",
    "spirit", "possessed"). Room and feature names ("Cursed Repo",
    "Poltergeist", "Parlor", "Exorcist") are allowed.
@@ -496,6 +500,7 @@ like a lab report, so the theme never gets in the way of the finding.
    | l0 … l4 | `#33D480` `#EFE08A` `#FFC857` `#FF9F5A` `#FF7A88` | level chips |
    | on-level | `#000000` | text on level chips |
    | info | `#69A0F6` | info states (C15, Task done) |
+   | l0-tint | `#0E2A1D` | the After strip's background when the after state is L0 Clean (visual review) |
 
    `on-accent` is pure white because `#FAFAFA` on `#9046FF` is 4.47:1, under
    4.5:1. `#9046FF` SHALL NOT be used as text on any surface (3.26:1 on
@@ -811,4 +816,12 @@ C26 and C27 are added to the fixed copy table, and the permitted changes in
 under D24's import rule). The stream builds a run's fact-log path only from a
 store-validated run ID through the existing workspace helper (design, "Live
 stream").
+
+Visual review (2026-11-09, task 14, before D26): the page was correct but did not
+meet the visual standard. Requirement 5.1 now orders run rooms first, and
+Requirement 11.1 limits the serif stack to the hero and the title of "The
+exorcism". The rest is in design.md, "Visual standards". `exorcist/texts.py`
+drops "(Requirement 8.9)" from the two demo-environment notes in favour of plain
+words, which changes the delta JSON and text for those notes only (13.2); the
+compatibility goldens are re-captured once for that change.
 
