@@ -122,7 +122,7 @@ class TrapCard:
     no_guardrail: str | None
     citation: str
     changed_by: tuple[str, ...] | None  # changed_by_display; None when not shown
-    changed_by_note: str | None  # C17, C18, or None
+    changed_by_note: str | None  # C17, C28 (a control), C18, or None
     class_label: str | None
     cites: tuple[str, ...]  # items generated for the trap (delta ``cites``), verbatim
 

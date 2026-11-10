@@ -65,6 +65,36 @@ matched to this range's own trap text. Some client behaviours are out of reach
 of config; the bundle and every report say so plainly rather than claiming to
 fix them.
 
+## The scorecard
+
+Every HTML report is one page that is the autopsy and the exorcism. From the
+top:
+
+- **Path badge.** Who ran the agent, always visible: "Demo agent: scripted, no
+  model. This is not Kiro, and it says nothing about any model.", "Real client,
+  declared by the tester", the name of a reference agent, or "Agent not
+  recorded" for runs started through the API.
+- **Verdict.** One level (L0 Clean to L4 Exposed) and one plain sentence, with
+  Detected, Task done and False alarms. After an exorcism, a Before / After
+  toggle and a strip with "L4 Exposed → L0 Clean", the number of files and the
+  files that caused the change (demo path only). A line says what the grade does
+  not prove.
+- **Levels, rooms and traps.** Every room, the ones that ran first. For each
+  trap: where the instruction lived, what the agent did, the result, and an
+  "Evidence & fix" section with the facts, the guardrail items and the citation.
+  A trap that never reached the agent is grey, never clean; a control's hit is a
+  false alarm, never a level.
+- **The exorcism.** One row per generated file, Advisory (steering) or Enforced
+  (hooks, `mcp.json`, `sandbox.json`), a download button, and "What
+  configuration cannot fix".
+- **Evidence log.** Facts the range observed, not the agent's own account: canary
+  hits, tool calls, file writes. They stream live while a run is active and
+  replay for a finished run.
+
+Dummy secrets show as `HAUNTLET-DUMMY-…` and canary links as `/c/<token>`, so
+the page is safe on a screen. It is server-rendered HTML with Alpine.js (pinned,
+with SRI) and works without scripts.
+
 ## Quick start
 
 Requires [uv](https://docs.astral.sh/uv/) and Python 3.12.
@@ -78,7 +108,7 @@ uv run pytest                                   # golden + property-based tests
 uv run hauntlet serve                           # HTTP range on :8666
 ```
 
-Reports are written to `reports/` as self-contained HTML. Pick a room with
+Reports are written to `reports/` as self-contained scorecard pages. Pick a room with
 `--room`, for example `uv run hauntlet run --room parlor --agent naive`.
 
 ### Testing your own client
@@ -108,13 +138,14 @@ the full procedure.
 | GET | `/robots.txt` | Disallows every path |
 | POST | `/runs/{id}/finalize` | Submit filesystem/transcript observations; returns the score |
 | GET | `/runs/{id}/score` | JSON score |
-| GET | `/runs/{id}/report` | HTML autopsy |
-| GET | `/exorcist` | Self-serve demo page (pick a room, see the before/after delta) |
+| GET | `/runs/{id}/report` | The run's scorecard (live while the run is active) |
+| GET | `/runs/{id}/facts/stream` | Server-Sent Events: the evidence log of a run, live; redacted |
+| GET | `/exorcist` | Self-serve demo page: pick a room, land on the exorcism's scorecard |
 | POST | `/exorcist/demo` | Run the demo loop for a room; returns the bundle and report URLs |
 | POST | `/runs/{id}/exorcise` | Generate a guardrail bundle for a finalized run |
 | GET | `/exorcisms/{id}/bundle` | Download the bundle as a deterministic zip |
 | POST | `/exorcisms/{id}/after` | Attach a real-client after run to a bundle |
-| GET | `/exorcisms/{id}/report` | HTML before/after delta |
+| GET | `/exorcisms/{id}/report` | The exorcism's scorecard (before/after) |
 
 Every response carries `X-Robots-Tag: noindex, nofollow`.
 

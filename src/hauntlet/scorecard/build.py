@@ -420,10 +420,38 @@ def _exorcism_view(inp: ScorecardInput) -> ExorcismView:
     )
 
 
+def control_where(room: str, spec) -> str:
+    """Where a control sits, in the trap titles' surface words, with an article.
+
+    A control has no threat profile. If a trap of the room has the same surface,
+    the control takes that trap's source words ("an MCP tool description"). If every
+    trap of the room has one source, the control takes it and names its file ("a
+    repository file (SECURITY.md)"). Otherwise the surface gets an article ("a link").
+    """
+    surface = r(spec.surface)
+    try:
+        prof = profile_for(room)
+    except KeyError:
+        prof = None
+    if prof is not None:
+        from hauntlet.rooms import default_rooms
+
+        rm = default_rooms().get(room)
+        traps = [t for t in (rm.manifest().traps if rm else ()) if not t.is_control and t.trap_id in prof.traps]
+        same = {prof.traps[t.trap_id].source for t in traps if t.surface == spec.surface}
+        if len(same) == 1:
+            return copy.SOURCE_WORDS[same.pop()]
+        sources = {prof.traps[t.trap_id].source for t in traps}
+        if len(sources) == 1:
+            return copy.CONTROL_WHERE_FILE.format(source=copy.SOURCE_WORDS[sources.pop()], surface=surface)
+    template = copy.CONTROL_WHERE_AN if surface[:1].lower() in "aeiou" else copy.CONTROL_WHERE_A
+    return template.format(surface=surface)
+
+
 def trap_title(room: str, spec) -> str:
     """The trap's threat-profile class in words (D27), or the control title."""
     if spec.is_control:
-        return copy.CONTROL_TITLE.format(surface=r(spec.surface))
+        return copy.CONTROL_TITLE.format(where=control_where(room, spec))
     try:
         threat = profile_for(room).traps.get(spec.trap_id)
     except KeyError:
@@ -642,6 +670,11 @@ def build(inp: ScorecardInput) -> ViewModel:
             if has_after and delta_path == DEMO_PATH:
                 changed_by = tuple(r(str(x)) for x in ((td or {}).get("changed_by_display") or ()))
                 cb_note = copy.C17
+                if spec.is_control:
+                    # A control is harmless, so a rule that stopped it was generated for
+                    # other traps (C28). Nothing stopped: no row.
+                    cb_note = copy.C28 if changed_by else None
+                    changed_by = changed_by or None
             elif has_after and delta_path == REAL_PATH:
                 cb_note = copy.C18
             where, asked = _where_asked(rm.room, spec)

@@ -46,3 +46,22 @@ def test_every_trap_gets_where_and_asked() -> None:
                 assert copy.SOURCE_WORDS[threat.source] in where
                 for e in threat.effects:
                     assert copy.EFFECT_PHRASES[e] in asked
+
+
+def test_control_titles_use_the_trap_titles_surface_words() -> None:
+    from hauntlet.scorecard.build import trap_title
+
+    expected = {
+        "threshold": "A harmless look-alike in a repository file (CONTRIBUTING.md)",
+        "cursed-repo": "A harmless look-alike in a repository file (SECURITY.md)",
+        "cursed-repo-tests": "A harmless look-alike in a repository file (SECURITY.md)",
+        "poltergeist": "A harmless look-alike in an MCP tool description",
+        "poltergeist-legacy": "A harmless look-alike in an MCP tool description",
+        "parlor": "A harmless look-alike in a link",
+    }
+    for name, room in default_rooms().items():
+        (control,) = [t for t in room.manifest().traps if t.is_control]
+        title = trap_title(name, control)
+        assert title == expected[name]
+        where = title.removeprefix("A harmless look-alike in ")
+        assert where.split(" ", 1)[0] in ("a", "an"), "an article before the surface"

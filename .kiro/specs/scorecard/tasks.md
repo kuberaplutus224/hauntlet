@@ -215,15 +215,15 @@ the copy or the data to make a page look as expected.
   - `uv run pytest` passes; `uv run hauntlet selftest` unchanged; payload safety clean; core diff still only the two methods
   - `uv run hauntlet serve` started by hand: `/exorcist` → demo for `cursed-repo` and `poltergeist` → scorecard with the replay; a Poltergeist run started through `hauntlet mcp serve` shows live facts on `/runs/{id}/report`
 
-- [ ] 20. Golden pages (hard stop before pinning)
-  - [ ] 20.1 Render and report
+- [x] 20. Golden pages (hard stop before pinning)
+  - [x] 20.1 Render and report
     - With injected fixed clocks, seeds, run IDs and bundle IDs (test-only factories), render the demo scorecard for `cursed-repo` and `poltergeist` and the sample. Report the file paths and, per room, the hero, room cards and trap states as text
-  - [ ] 20.2 **Stop for the maintainer's review.** Do not pin until the maintainer has looked at the three pages. If a state looks wrong, report it; do not tune (Overview)
-  - [ ] 20.3 Pin
+  - [x] 20.2 **Stop for the maintainer's review.** Do not pin until the maintainer has looked at the three pages. If a state looks wrong, report it; do not tune (Overview)
+  - [x] 20.3 Pin
     - `tests/test_scorecard_golden.py`: byte comparison against `tests/fixtures/scorecard_golden/*.html`
     - _Requirements: 13.4, 13.6_
 
-- [ ] 21. Docs and steering
+- [x] 21. Docs and steering
   - `.kiro/steering/tech.md`: replace the layout line with the D24 wording ("… scoring and the core report; the scorecard page lives in `src/hauntlet/scorecard/`")
   - `README.md`: a short "Scorecard" section (what each section shows, the path badge, "Facts the range observed"), with `GET /runs/{id}/facts/stream` added to the route list
   - Disclosure checklist (Requirement 14, manual): no scorecard file, copy, test or sample describes a privately disclosed finding beyond the approved general wording; `mcp-summary-*.txt` is never read by `sources.py`

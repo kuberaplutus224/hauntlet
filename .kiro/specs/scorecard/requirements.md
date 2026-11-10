@@ -102,6 +102,7 @@ from data.
 | C23 | Live label | Live |
 | C26 | Exorcism, a bundle file with no item | Support file used by the hooks in this bundle. |
 | C27 | Exorcism, unreadable bundle or delta | The exorcism files for this run could not be read. |
+| C28 | Changed by heading, control | Also stopped by rules generated for other traps: |
 
 Hero sentences (C24) and the "what the agent did" phrases (C25) are fixed
 tables keyed by level and by signal. They are listed in Requirements 3.3 and
@@ -330,6 +331,9 @@ it, so I know what to change in 30 seconds.
      under heading C17. An item that depends on A4 SHALL carry the visible
      text "depends on A4", not only a style. WHEN the list is empty the row
      SHALL say "none";
+   - for a control on the demo path, the heading is C28 instead of C17, with
+     the same chips; a control that nothing stopped shows no row (review
+     2026-11-09);
    - on the real-client path: C18 and no chips.
 
    THE row SHALL NOT list an item that only cites the trap (`cites`) without

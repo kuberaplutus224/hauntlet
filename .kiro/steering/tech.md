@@ -12,7 +12,7 @@ and demo-friendly.
   `mcp` SDK (Poltergeist). The scorer is a pure, I/O-free module.
 - **Scorecard UI:** static HTML + Alpine.js, live updates over SSE. No build step.
 - **Layout:** `src/hauntlet/core/` owns runs, canaries, events, scoring and the
-  report. Rooms live in `src/hauntlet/rooms/<name>/` and only produce materials
+  core report; the scorecard page lives in `src/hauntlet/scorecard/`. Rooms live in `src/hauntlet/rooms/<name>/` and only produce materials
   and events; they never decide a score.
 - **Canary endpoint:** `GET /c/{token}` keyed by an unguessable token; serve
   hostile content only for active runs; every response carries

@@ -26,7 +26,7 @@ def _table() -> dict[str, str]:
 
 def test_every_row_is_in_copy_verbatim() -> None:
     table = _table()
-    assert set(table) == {f"C{n}" for n in (*range(1, 24), 26, 27)}
+    assert set(table) == {f"C{n}" for n in (*range(1, 24), 26, 27, 28)}
     assert table == copy.TABLE
 
 

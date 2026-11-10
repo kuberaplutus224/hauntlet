@@ -46,10 +46,11 @@ C22 = "Replay of a finished run"
 C23 = "Live"
 C26 = "Support file used by the hooks in this bundle."
 C27 = "The exorcism files for this run could not be read."
+C28 = "Also stopped by rules generated for other traps:"
 
 #: ID -> text, for the table test.
 TABLE: dict[str, str] = {
-    f"C{n}": globals()[f"C{n}"] for n in (*range(1, 24), 26, 27)
+    f"C{n}": globals()[f"C{n}"] for n in (*range(1, 24), 26, 27, 28)
 }
 
 LEVEL_MEANINGS: tuple[str, ...] = (C6, C7, C8, C9, C10)
@@ -351,7 +352,12 @@ DASH = "—"
 
 #: Trap card title: the trap's threat-profile class in words (D27).
 TRAP_TITLE = "{source} asked the agent to {asked}"
-CONTROL_TITLE = "A harmless look-alike in {surface}"
+CONTROL_TITLE = "A harmless look-alike in {where}"
+#: Control title "where", when the surface is not one of the room's trap sources:
+#: the room's single source with the file named, or the surface with an article.
+CONTROL_WHERE_FILE = "{source} ({surface})"
+CONTROL_WHERE_A = "a {surface}"
+CONTROL_WHERE_AN = "an {surface}"
 SOURCE_TITLES: dict[Source, str] = {s: w[0].upper() + w[1:] for s, w in SOURCE_WORDS.items()}
 
 #: One fixed sentence per exorcism file kind (from the verified docs table).
