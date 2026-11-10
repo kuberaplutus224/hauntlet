@@ -73,53 +73,53 @@ the copy or the data to make a page look as expected.
 - [x] 6. Checkpoint: outside changes green
   - `uv run pytest` passes (task 1's compat tests included); `uv run hauntlet selftest` passes with output unchanged; payload safety clean; `git diff --stat src/hauntlet/core` shows only `service.py`, and the diff is the two methods
 
-- [ ] 7. Pure modules: copy, theme, model, inputs
-  - [ ] 7.1 `scorecard/copy.py`
+- [x] 7. Pure modules: copy, theme, model, inputs
+  - [x] 7.1 `scorecard/copy.py`
     - C1–C27 verbatim from the requirements' table; the C24 hero phrases and C25 signal phrases from Requirements 3.3 and 6.4; the D27 effect and source tables; the fact phrases from design.md "Facts"; the section titles
     - _Requirements: 1.1, 1.2, 3.3, 6.4, D27_
-  - [ ] 7.2 `scorecard/theme.py`
+  - [x] 7.2 `scorecard/theme.py`
     - The tokens of Requirement 11.3 and `PAIRS`, the allowed (foreground, background, kind) pairs from design.md "Stylesheet and tokens"; `contrast(a, b)` with the WCAG relative-luminance formula
     - _Requirements: 11.3, 12.1_
-  - [ ] 7.3 `scorecard/model.py`, `scorecard/inputs.py`, `scorecard/rooms.py`
+  - [x] 7.3 `scorecard/model.py`, `scorecard/inputs.py`, `scorecard/rooms.py`
     - The frozen dataclasses from design.md "Inputs" and "View model"; `rooms.py` merges the four `ROOM_CARDS`
     - _Requirements: 1.1, 5.1_
-  - [ ] 7.4 Write `tests/test_scorecard_copy_table.py` and `tests/test_scorecard_rooms.py`
+  - [x] 7.4 Write `tests/test_scorecard_copy_table.py` and `tests/test_scorecard_rooms.py`
     - Every C-row in `.kiro/specs/scorecard/requirements.md` (parsed from the markdown table) equals the `copy.py` constant
     - **SP18:** `rooms.py` covers exactly `default_rooms()`; every non-control trap in every profile yields a D27 "where" and "asked to" line; every `Effect` and `Source` has a phrase
     - _Requirements: 1.1, 5.1, 6.3, SP18_
 
-- [ ] 8. Facts
-  - [ ] 8.1 `scorecard/facts.py`
+- [x] 8. Facts
+  - [x] 8.1 `scorecard/facts.py`
     - `Fact` and the normalisers `normalise_event`, `normalise_mcp`, `normalise_parlor` and `normalise_trace` from design.md "Facts", with the trap-attribution rule (8.6), the order, the content-derived `fact_id`, and `to_line(fact, run) -> FactLine` with the phrase table, the who column, the notes and the time column
     - Inputs are already redacted; `facts.py` does no I/O
     - _Requirements: 8.2–8.6_
-  - [ ] 8.2 Write `tests/test_scorecard_facts.py` (**SP15**)
+  - [x] 8.2 Write `tests/test_scorecard_facts.py` (**SP15**)
     - Strategy `facts()`: events on every channel and signal, expired and late, every MCP and Parlor record kind, and trace entries
     - Filesystem and transcript events show "at finalize"; transcript lines carry "from the submitted transcript"; expired events carry the not-scored note; only records that name a trap, or a `call` to a steered tool, get a `trap_id`; demo decisions never do
     - `fact_id` is stable across two orderings of the same events with different random `event_id`s
     - Every phrase is in `copy.py`
     - _Requirements: 8.4–8.6, SP15_
 
-- [ ] 9. Builder
-  - [ ] 9.1 `scorecard/build.py`
+- [x] 9. Builder
+  - [x] 9.1 `scorecard/build.py`
     - `build(inp: ScorecardInput) -> ViewModel`, with the rules in design.md "Builder rules": states, the after state from the delta (the change table), hero (chip, sentences, pills, toggle, provisional note), room cards and summaries, default room, trap cards (where, asked, did, fixes, no-guardrail, changed by), exorcism view (files from `digests`, C26 support files, tags, assumptions, cannot-fix, permissions, not interpreted, demo notes, env note, costs, next step), the evidence view, aggregates, late arrivals and ignored events
     - Strings copied from `bundle.json` and the delta pass through the redactor once more
     - Class texts from `hauntlet.exorcist.CLASS_TEXT`
     - _Requirements: 1.1–1.3, 1.5, 2.3, 2.4, 3.1–3.6, 4.1–4.3, 5.1–5.5, 6.1–6.7, 7.1–7.8, 9.1–9.7_
-  - [ ] 9.2 Write `tests/test_scorecard_states.py` (**SP5–SP8**)
+  - [x] 9.2 Write `tests/test_scorecard_states.py` (**SP5–SP8**)
     - **SP5:** hero chip and sentence per 3.2 and 3.3, over random runs including active, provisional, all-`not_exercised` and L2-not-assessed rooms; an active run never has a level
     - **SP6:** every before level, signal and pill value appears in the view model's After view values
     - **SP7:** no grey, control, info or not-run state has token `l0`; controls never have a level
     - **SP8:** forced higher after levels are marked "Regression"; delta costs appear as costs and never on an improved state
     - _Requirements: 3.1–3.4, 5.2, 5.3, 9.1–9.6, SP5–SP8_
-  - [ ] 9.3 Write `tests/test_scorecard_changed_by.py` (**SP9**)
+  - [x] 9.3 Write `tests/test_scorecard_changed_by.py` (**SP9**)
     - Demo deltas: chips equal `changed_by_display`; A4 items carry "depends on A4"; items only in `cites` are absent; an empty list shows "none". Real-client deltas: C18, no chips
     - _Requirements: 6.7, SP9_
-  - [ ] 9.4 Write `tests/test_scorecard_badge.py`, builder half (**SP4**)
+  - [x] 9.4 Write `tests/test_scorecard_badge.py`, builder half (**SP4**)
     - Each path maps to its exact C1–C4 string; demo view models never carry C2 or `REAL_CLIENT_LABEL`, and real-client ones never carry C1 or `DEMO_LABEL`
     - _Requirements: 2.3–2.5, SP4_
 
-- [ ] 10. Checkpoint: pure modules green
+- [x] 10. Checkpoint: pure modules green
   - `uv run pytest` passes (SP4 builder half, SP5–SP9, SP15, SP18); core unchanged since task 6
 
 - [ ] 11. Sources (I/O)
