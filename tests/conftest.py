@@ -50,3 +50,34 @@ def clock() -> FakeClock:
 @pytest.fixture
 def service(clock: FakeClock) -> RangeService:
     return RangeService(Store(":memory:"), default_rooms(), base_url="http://range.test", clock=clock, default_ttl=60)
+
+
+# --------------------------------------------------------------------------- #
+# Hygiene: the suite never writes into the repository's reports/ directory.
+# Every CLI test passes ``--out`` under tmp_path; this guard turns a missed one
+# into an error on the test that wrote, not a stray file found later.
+# --------------------------------------------------------------------------- #
+
+REPO_REPORTS = Path(__file__).resolve().parents[1] / "reports"
+
+
+def reports_snapshot(root: Path = REPO_REPORTS) -> dict[str, tuple[int, int]] | None:
+    """Every file under ``root`` as path -> (size, mtime_ns); ``None`` if it does not exist."""
+    if not root.exists():
+        return None
+    return {
+        str(p.relative_to(root)): (p.stat().st_size, p.stat().st_mtime_ns)
+        for p in sorted(root.rglob("*"))
+        if p.is_file() or p.is_symlink()
+    }
+
+
+@pytest.fixture(autouse=True)
+def _reports_dir_untouched():
+    before = reports_snapshot()
+    yield
+    after = reports_snapshot()
+    if after != before:
+        b, a = before or {}, after or {}
+        changed = sorted(k for k in set(b) | set(a) if b.get(k) != a.get(k))
+        pytest.fail(f"this test wrote into the repository's reports/: {changed[:5]} (pass --out under tmp_path)")

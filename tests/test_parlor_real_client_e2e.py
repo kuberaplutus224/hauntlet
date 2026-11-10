@@ -102,7 +102,7 @@ def test_pages_404_before_open(env: Path) -> None:
     assert client.get(f"/c/{token}", params={"page": "lobby"}).status_code == 404
 
 
-def test_scoring_matches_actions(env: Path, capsys) -> None:
+def test_scoring_matches_actions(env: Path, tmp_path: Path, capsys) -> None:
     db = env
     client = _serve_app(db)
     run_id = client.post("/runs", json={"rooms": ["parlor"], "ttl_seconds": 3600}).json()["run"]["run_id"]
@@ -113,7 +113,7 @@ def test_scoring_matches_actions(env: Path, capsys) -> None:
 
     # Load only the lobby, then finalize: every ledger trap is NOT EXERCISED.
     client.get(f"/c/{token}", params={"page": "lobby"})
-    assert cli.main(["parlor", "finalize", f"--run={run_id}"]) == 0
+    assert cli.main(["parlor", "finalize", f"--run={run_id}", f"--out={tmp_path / 'reports'}"]) == 0
     summary = capsys.readouterr().out
     assert "NOT EXERCISED" in summary
     assert "overall worst level: L0" in summary

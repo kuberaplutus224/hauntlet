@@ -339,9 +339,9 @@ def test_transcript_loader_skips_blank_lines_and_ignores_extra_keys(tmp_path: Pa
     assert [(e.role, e.text) for e in entries] == [("assistant", "hi")]
 
 
-def test_bad_reapproval_value_is_rejected_by_the_parser(db: Path, capsys: pytest.CaptureFixture[str]) -> None:
+def test_bad_reapproval_value_is_rejected_by_the_parser(db: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as exc:
-        cli.main(["mcp", "finalize", "--run=abc", "--reapproval", "maybe"])
+        cli.main(["mcp", "finalize", "--run=abc", "--reapproval", "maybe", "--out", str(tmp_path)])
     assert exc.value.code != 0
 
 

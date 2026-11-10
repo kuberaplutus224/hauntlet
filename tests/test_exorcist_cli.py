@@ -65,15 +65,15 @@ def test_demo_writes_bundle_and_delta(db: Path, reports: Path, room: str, capsys
     assert exorcist_root(db) in bundle_dir.parents
 
 
-def test_demo_parlor_is_refused(db: Path, capsys) -> None:
-    rc = cli.main(["exorcist", "demo", "--room", "parlor"])
+def test_demo_parlor_is_refused(db: Path, tmp_path: Path, capsys) -> None:
+    rc = cli.main(["exorcist", "demo", "--room", "parlor", "--out", str(tmp_path)])
     err = capsys.readouterr().err
     assert rc == 2
     assert "does not support 'parlor'" in err and "cursed-repo" in err
 
 
-def test_demo_unknown_room_is_refused(db: Path, capsys) -> None:
-    assert cli.main(["exorcist", "demo", "--room", "attic"]) == 2
+def test_demo_unknown_room_is_refused(db: Path, tmp_path: Path, capsys) -> None:
+    assert cli.main(["exorcist", "demo", "--room", "attic", "--out", str(tmp_path)]) == 2
     assert "unknown room" in capsys.readouterr().err
 
 
@@ -95,8 +95,8 @@ def test_generate_refuses_unknown_run(db: Path, capsys) -> None:
     assert "unknown run" in capsys.readouterr().err
 
 
-def test_delta_refuses_unknown_bundle(db: Path, capsys) -> None:
-    assert cli.main(["exorcist", "delta", "--bundle=nosuchbundle", "--after=whatever1234"]) == 2
+def test_delta_refuses_unknown_bundle(db: Path, tmp_path: Path, capsys) -> None:
+    assert cli.main(["exorcist", "delta", "--bundle=nosuchbundle", "--after=whatever1234", "--out", str(tmp_path)]) == 2
     assert "no bundle" in capsys.readouterr().err
 
 

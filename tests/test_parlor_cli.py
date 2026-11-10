@@ -73,12 +73,12 @@ def test_second_open_is_refused(db: Path, capsys) -> None:
     _assert_refused(["parlor", "open", f"--run={run_id}"], capsys, "already has a parlor workspace")
 
 
-def test_finalize_rejects_bad_perception(db: Path) -> None:
+def test_finalize_rejects_bad_perception(db: Path, tmp_path: Path) -> None:
     run_id = _start_run(db, ["parlor"])
     cli.main(["parlor", "open", f"--run={run_id}"])
     # argparse rejects an invalid choice (SystemExit) before our code runs.
     with pytest.raises(SystemExit):
-        cli.main(["parlor", "finalize", f"--run={run_id}", "--perception=wat"])
+        cli.main(["parlor", "finalize", f"--run={run_id}", "--perception=wat", f"--out={tmp_path}"])
 
 
 # -- open prints the task and start URL ------------------------------------- #
