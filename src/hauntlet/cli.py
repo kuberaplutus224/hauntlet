@@ -1059,6 +1059,22 @@ def render_parlor_summary(fin: ParlorFinalized) -> str:
     return "\n".join(out) + "\n"
 
 
+def _copy_parlor_fact_log(workspace: Path, run_id: str, out: Path) -> None:
+    """Copy the Parlor fact log, byte for byte, beside the run summary (D32).
+
+    The same rules as ``_copy_fact_log``: nothing is copied when the workspace has
+    no regular fact-log file (a symlink is not followed). Raises ``OSError`` on a
+    failed copy, so the caller keeps the workspace.
+    """
+    from hauntlet.paths import reports_parlor_facts_path
+    from hauntlet.rooms.parlor import factlog as parlor_factlog
+
+    log = parlor_factlog.facts_path(workspace)
+    if log.is_symlink() or not log.is_file():
+        return
+    reports_parlor_facts_path(out, run_id).write_bytes(log.read_bytes())
+
+
 def cmd_parlor_finalize(args: argparse.Namespace) -> int:
     db = _db_path()
     try:
@@ -1080,6 +1096,11 @@ def cmd_parlor_finalize(args: argparse.Namespace) -> int:
         report_path.write_text(render_run(service, fin.run_id, path="real-client", db_path=db), encoding="utf-8")
     except OSError as exc:
         _mcp_err(f"run {fin.run_id!r} is finalized, but writing to {out} failed ({exc})")
+        return 1
+    try:
+        _copy_parlor_fact_log(mcp_workspace(mcp_scratch_root(db), PARLOR_ROOM_NAME, fin.run_id), fin.run_id, out)
+    except OSError as exc:
+        _mcp_err(f"run {fin.run_id!r} is finalized, but copying its fact log to {out} failed ({exc}); workspace kept")
         return 1
     # Finalized and written: drop the workspace and its fact log.
     service.rooms[PARLOR_ROOM_NAME].teardown(

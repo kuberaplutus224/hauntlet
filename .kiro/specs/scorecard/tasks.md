@@ -245,12 +245,22 @@ the copy or the data to make a page look as expected.
   - `uv run pytest`, `uv run hauntlet selftest` (unchanged), `uv run python scripts/check_payload_safety.py`, `uv run hauntlet sample-report` (no diff), and `git diff --stat src/hauntlet/core` (only the two `service.py` methods)
   - Report the test count, the release-gate results, and anything shown as "fact log not available" on the default paths (expected: Parlor after finalize, and real-client MCP runs on the hosted range without the D19 copy)
 
+- [x] 24. Approved change D32: fact logs after finalize for served pages
+  - `server.py`: `HAUNTLET_REPORTS_DIR` (default `reports`) passed as `reports_dir` to `ExorcistService`, `exorcism_file_renderer`, the report routes and the stream; never served directly; reads keep `sources`' checks
+  - `cli.py` `parlor finalize`: copy the fact log to `<out>/parlor-facts-<run>.jsonl` before teardown (`hauntlet.paths.reports_parlor_facts_path`), `_copy_fact_log`'s rules; `sources.reports_fact_log` looks there for Parlor after the live workspace
+  - `tests/test_scorecard_reports_facts.py`: after `mcp finalize` (both MCP rooms) and `parlor finalize` with teardown, `/runs/{id}/report` shows the log's rows and no "fact log not available"; the page and stream hold no canary value (the copies do); a symlinked log is not copied; a failed copy keeps the workspace; no route serves the reports directory
+  - README: environment variable table
+  - Follow-up: `ExorcistService(write_reports=False)` on the hosted range reads the copies but writes no `exorcist-delta-*.html` into the reports directory (unswept); tests: two hosted demos leave it empty, a hosted real-client attach reads the D19 copy and adds nothing there, the CLI still writes its delta report
+  - _Requirements: 8.3, 8.9, 10.1–10.3, D32_
+
 ## Notes
 
 - Every test task is required; none is optional.
 - **Every checkpoint is a stop.** Report the test count, the selftest result
   and the payload-guard result, so the maintainer can commit before the next
   task.
+- **Task 24 (D32)** was approved after the final checkpoint and run with its own
+  full checks.
 - **Task 1 runs before any other change**, so the compatibility goldens record
   today's behaviour, not the new one.
 - **Task 20.2 is a hard stop.** Golden pages are pinned only after the

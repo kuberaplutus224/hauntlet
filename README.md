@@ -149,6 +149,23 @@ the full procedure.
 
 Every response carries `X-Robots-Tag: noindex, nofollow`.
 
+### Environment variables
+
+`hauntlet serve` and the CLI commands read the same settings, so separate
+processes share one range.
+
+| Variable | Default | Used for |
+|---|---|---|
+| `HAUNTLET_DB` | `.hauntlet/range.db` | The shared event store; real-client workspaces and Exorcist bundles live beside it |
+| `HAUNTLET_BASE_URL` | `http://127.0.0.1:8666` | Base of the canary URLs planted in rooms |
+| `HAUNTLET_REPORTS_DIR` | `reports` | Where `hauntlet serve` finds the fact-log copies `mcp finalize` and `parlor finalize` keep (the CLI's `--out` default), so a finished run's scorecard still shows its evidence. Read only: the hosted range writes nothing there, and never serves it |
+| `HAUNTLET_STREAM_MAX` | `20` | Concurrent live evidence streams (`/runs/{id}/facts/stream`); more gets 429 |
+| `HAUNTLET_STREAM_POLL_SECS` | `0.5` | How often a live stream checks for new facts |
+| `HAUNTLET_EXORCIST_DEMO_ROOMS` | `cursed-repo,poltergeist` | Rooms the hosted one-click demo offers |
+| `HAUNTLET_EXORCIST_MAX_CONCURRENT` | `1` | Hosted demos running at once |
+| `HAUNTLET_EXORCIST_PER_MINUTE` | `6` | Hosted demos per minute |
+| `HAUNTLET_EXORCIST_RETENTION_SECS` | `3600` | How long hosted bundles are kept |
+
 ## Safety
 
 Hauntlet is a **defensive** range for agents you own.

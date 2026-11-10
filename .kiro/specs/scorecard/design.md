@@ -1073,6 +1073,43 @@ Approved in design review (2026-11-09):
 
 Reserved: **D29**, a full demo-exorcism sample (requirements, Q2).
 
+Approved after the final checkpoint (2026-11-10):
+
+- **D32. Keep fact logs readable after finalize for pages served by `hauntlet
+  serve`.**
+  - *Problem:* once `mcp finalize` or `parlor finalize` tears the workspace
+    down, `/runs/{id}/report` showed "fact log not available" for Parlor and the
+    Poltergeist rooms. The server had no reports directory, so it never found the
+    D19 copy, and Parlor's log was never copied.
+  - *Change:*
+    - `server.py` reads `HAUNTLET_REPORTS_DIR` (default `reports`, the CLI's
+      `--out` default, `hauntlet.paths.DEFAULT_REPORTS_DIR`) and passes it as
+      `reports_dir` to `ExorcistService`, `exorcism_file_renderer`, the
+      run-report and exorcism-report routes' renderers, and the D22 stream. The
+      path stays server-side: no route serves a file from it, and every read goes
+      through `sources`' checks (not a symlink, resolves under the directory).
+    - `cli.py` `parlor finalize`, before teardown, copies the Parlor fact log
+      byte for byte to `<out>/parlor-facts-<run>.jsonl`
+      (`hauntlet.paths.reports_parlor_facts_path`), with `_copy_fact_log`'s rules:
+      a symlink or non-file is not copied; an `OSError` keeps the workspace and
+      exits 1. Nothing else in its output changes.
+    - `sources.reports_fact_log` covers Parlor too. Lookup order per room is
+      unchanged: the bundle's D26 evidence, then the live workspace, then the
+      reports-directory copy.
+  - *Read, never write (follow-up, 2026-11-10):* `ExorcistService` gains
+    `write_reports: bool = True`. With `False` it still reads the D19 and Parlor
+    copies from `reports_dir`, but never writes `exorcist-delta-<after>.html`
+    there. `server.py` passes `write_reports=False`: the hosted range would
+    otherwise leave one file per demo in the reports directory, which the
+    retention sweep (confined to the exorcist root) never removes, so a public
+    server's disk would grow without bound. The delta's HTML still lands in the
+    bundle's `deltas/`, which the sweep covers. The CLI is unchanged and keeps
+    writing its delta report. Attaching a real-client after run on the hosted
+    range reads the D19 copy, so the 10.9 signal is computed there.
+  - *Unchanged:* the copies can hold the run's dummy secret, as the workspace
+    did (D19); the scorecard redacts them before they reach a page or the stream.
+    No core change.
+
 Design choices that need no decision, because they stay inside the scorecard
 package or follow an approved decision:
 

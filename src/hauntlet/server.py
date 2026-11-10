@@ -46,6 +46,16 @@ def _db_path() -> Path:
     return Path(os.environ.get("HAUNTLET_DB", ".hauntlet/range.db"))
 
 
+def _reports_dir() -> Path:
+    """D32: where finalize keeps fact-log copies (the CLI's ``--out`` default).
+
+    Read by the scorecard only, through ``sources``' checks (no symlinks, under
+    this directory). No route serves a file from it."""
+    from hauntlet.paths import DEFAULT_REPORTS_DIR
+
+    return Path(os.environ.get("HAUNTLET_REPORTS_DIR", DEFAULT_REPORTS_DIR))
+
+
 def create_app(service: RangeService | None = None) -> FastAPI:
     if service is None:
         db = os.environ.get("HAUNTLET_DB", ".hauntlet/range.db")
@@ -144,6 +154,7 @@ def create_app(service: RangeService | None = None) -> FastAPI:
         try:
             return render_run(
                 service, run_id, path="not-recorded", served=True, db_path=_db_path(),
+                reports_dir=_reports_dir(),
                 stream_url=f"/runs/{run_id}/facts/stream" if live else None,
             )
         except UnknownRun:
@@ -203,7 +214,7 @@ def _mount_stream(app: FastAPI, service: RangeService) -> None:
         async def body():
             try:
                 async for chunk in facts_stream(
-                    service, run_id, db_path=db, poll_secs=poll,
+                    service, run_id, db_path=db, reports_dir=_reports_dir(), poll_secs=poll,
                     is_disconnected=request.is_disconnected,
                     last_event_id=request.headers.get("last-event-id"),
                 ):
@@ -255,7 +266,12 @@ def _mount_exorcist(app: FastAPI, service: RangeService) -> None:
     db = os.environ.get("HAUNTLET_DB", ".hauntlet/range.db")
     caps = _exorcist_caps()
     ex = HostedExorcist(
-        ExorcistService(service, exorcist_root(Path(db)), reports_dir=None, clock=service.clock),
+        # D32 follow-up: read the fact-log copies from the reports directory, never
+        # write there (the retention sweep covers only the exorcist root).
+        ExorcistService(
+            service, exorcist_root(Path(db)), reports_dir=_reports_dir(), clock=service.clock,
+            write_reports=False,
+        ),
         caps,
         clock=service.clock,
     )
@@ -264,7 +280,7 @@ def _mount_exorcist(app: FastAPI, service: RangeService) -> None:
     from hauntlet.scorecard import exorcism_file_renderer
 
     # D23: delta HTML files written by the hosted service are scorecard pages too.
-    ex.service.html_renderer = exorcism_file_renderer(ex.service, db_path=Path(db))
+    ex.service.html_renderer = exorcism_file_renderer(ex.service, db_path=Path(db), reports_dir=_reports_dir())
 
     @app.get("/exorcist", response_class=HTMLResponse)
     def exorcist_page() -> str:
@@ -326,7 +342,7 @@ def _mount_exorcist(app: FastAPI, service: RangeService) -> None:
         except NotFound as exc:
             raise HTTPException(404, str(exc)) from None
         return render_exorcism(
-            ex.service, bundle_dir, served=True, db_path=Path(db),
+            ex.service, bundle_dir, served=True, db_path=Path(db), reports_dir=_reports_dir(),
             download_url=f"/exorcisms/{bundle_id}/bundle",
         )
 

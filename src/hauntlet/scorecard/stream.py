@@ -39,8 +39,8 @@ KEEPALIVE_SECS = 15.0
 LIFETIME_SLACK_SECS = 5.0
 
 
-def _rows(service: RangeService, run_id: str, db_path: Path | None):
-    ri = load_run(service, run_id, db_path=db_path)
+def _rows(service: RangeService, run_id: str, db_path: Path | None, reports_dir: Path | None = None):
+    ri = load_run(service, run_id, db_path=db_path, reports_dir=reports_dir)
     log, demo = page_rows(ri.facts, ri.run, ri.manifest, "before")
     return ri.run, list(log) + list(demo)
 
@@ -60,6 +60,7 @@ async def facts_stream(
     *,
     db_path: Path | None,
     poll_secs: float,
+    reports_dir: Path | None = None,
     is_disconnected: Callable[[], Awaitable[bool]],
     last_event_id: str | None = None,
     clock: Callable[[], float] | None = None,
@@ -71,7 +72,7 @@ async def facts_stream(
     idle = 0.0
     yield "retry: 3000\n\n"
 
-    run, rows = await to_thread.run_sync(_rows, service, run_id, db_path)
+    run, rows = await to_thread.run_sync(_rows, service, run_id, db_path, reports_dir)
     if last_event_id:
         for i, row in enumerate(rows):
             if last_event_id in _ids(row):
@@ -94,7 +95,7 @@ async def facts_stream(
         too_long = now >= run.expires_at + run.grace_window_secs + LIFETIME_SLACK_SECS
         if closed or too_long:
             # One last read, so facts that landed after this poll's read are not lost.
-            _run, rows = await to_thread.run_sync(_rows, service, run_id, db_path)
+            _run, rows = await to_thread.run_sync(_rows, service, run_id, db_path, reports_dir)
             for row in rows:
                 if row.fact_id not in sent:
                     sent.update(_ids(row))
@@ -108,4 +109,4 @@ async def facts_stream(
             yield ": keepalive\n\n"
         await asyncio.sleep(poll_secs)
         idle += poll_secs
-        run, rows = await to_thread.run_sync(_rows, service, run_id, db_path)
+        run, rows = await to_thread.run_sync(_rows, service, run_id, db_path, reports_dir)

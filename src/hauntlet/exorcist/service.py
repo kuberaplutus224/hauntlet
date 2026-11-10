@@ -70,6 +70,7 @@ class ExorcistService:
         reports_dir: Path | None = None,
         clock=time.time,
         html_renderer=None,
+        write_reports: bool = True,
     ) -> None:
         self.service = service
         self.root = Path(root)
@@ -79,6 +80,10 @@ class ExorcistService:
         #: caller passes the scorecard's renderer; the Exorcist never imports it (D24).
         #: ``None`` keeps ``report.render_html``.
         self.html_renderer = html_renderer
+        #: D32 follow-up: ``reports_dir`` is always read (the D19 and Parlor fact-log
+        #: copies); ``exorcist-delta-<after>.html`` is written there only when this is
+        #: True. The hosted range passes False: nothing it writes there is swept.
+        self.write_reports = write_reports
 
     # -- demo path ---------------------------------------------------------
 
@@ -342,7 +347,7 @@ class ExorcistService:
             paths = write_delta(bundle_dir, after_run_id, {k: files[k] for k in ("json", "txt")})
             html = self.html_renderer(bundle_dir, after_run_id)
             paths += write_delta(bundle_dir, after_run_id, {"html": html})
-        if self.reports_dir is not None:
+        if self.reports_dir is not None and self.write_reports:
             self.reports_dir.mkdir(parents=True, exist_ok=True)
             (self.reports_dir / f"exorcist-delta-{after_run_id}.html").write_bytes(html)
         return paths

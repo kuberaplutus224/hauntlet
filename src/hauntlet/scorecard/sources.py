@@ -77,8 +77,13 @@ def live_fact_log(db_path: Path, run_id: str, room: str) -> Path | None:
 
 
 def reports_fact_log(reports_dir: Path, room: str, run_id: str) -> Path | None:
-    """The D19 copy ``hauntlet mcp finalize`` keeps (MCP rooms only)."""
+    """The copy finalize keeps beside the run summary: D19 (``mcp finalize``, MCP
+    rooms) or D32 (``parlor finalize``). Same checks as the live log."""
     from hauntlet.exorcist.mcpfacts import reports_facts_path
+    from hauntlet.paths import reports_parlor_facts_path
+
+    if room in PARLOR_ROOMS:
+        return _safe_file(reports_parlor_facts_path(Path(reports_dir), run_id), Path(reports_dir))
 
     if room not in MCP_ROOMS:
         return None
