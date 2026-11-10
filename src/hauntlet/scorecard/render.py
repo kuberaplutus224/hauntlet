@@ -607,7 +607,11 @@ def _aggregates(vm: ViewModel) -> str:
     if not vm.aggregates:
         return ""
     head = "".join(f"<th>{t(h)}</th>" for h in copy.AGG_HEADERS)
-    rows = "".join("<tr>" + "".join(f"<td>{t(c)}</td>" for c in row.cells) + "</tr>" for row in vm.aggregates)
+    # The room cell is bold, as in the core report (its tests read this table).
+    rows = "".join(
+        f"<tr><td><b>{t(row.cells[0])}</b></td>" + "".join(f"<td>{t(c)}</td>" for c in row.cells[1:]) + "</tr>"
+        for row in vm.aggregates
+    )
     note = f'<p class="muted">{t(vm.aggregates_note)}</p>' if vm.aggregates_note else ""
     return (
         '<section id="aggregates" aria-labelledby="h-agg">'

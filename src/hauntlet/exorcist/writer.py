@@ -27,6 +27,8 @@ from hauntlet.exorcist.validate import validate
 
 ID_RE = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
 DELTAS = "deltas"
+#: The demo's kept evidence (approved change D26): redacted fact logs and traces.
+EVIDENCE = "evidence"
 
 
 class WriteRefused(PermissionError):
@@ -125,15 +127,15 @@ def write_bundle(
 
 
 def write_into(bundle_dir: Path, rel: str, data: bytes) -> Path:
-    """Write one more file into an existing bundle (``deltas/``, ``baseline/``), same checks."""
+    """Write one more file into an existing bundle (``deltas/``, ``baseline/``, ``evidence/``), same checks."""
     bundle_dir = Path(bundle_dir)
     resolved = bundle_dir.resolve()
     _refuse_kiro(resolved)
     if bundle_dir.is_symlink() or not resolved.is_dir():
         raise WriteRefused(f"{bundle_dir} is not a bundle directory")
     first = PurePosixPath(rel).parts[:1]
-    if first not in ((DELTAS,), ("baseline",)):
-        raise WriteRefused(f"only deltas/ and baseline/ may be added to a bundle, not {rel!r}")
+    if first not in ((DELTAS,), ("baseline",), (EVIDENCE,)):
+        raise WriteRefused(f"only deltas/, baseline/ and evidence/ may be added to a bundle, not {rel!r}")
     return _write_rel(resolved, rel, data)
 
 

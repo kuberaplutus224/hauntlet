@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import os
-from importlib.resources import files
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -13,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from hauntlet import __version__
 from hauntlet.core.models import to_dict
-from hauntlet.core.report import render_report
+from hauntlet.scorecard import render_exorcism, render_launcher, render_run
 from hauntlet.core.room import Observation
 from hauntlet.core.service import InvalidObservation, RangeService, RunClosed, UnknownRun
 from hauntlet.core.store import Store
@@ -42,6 +40,10 @@ class ObservationIn(BaseModel):
 class Finalize(BaseModel):
     observations: list[ObservationIn] = Field(default_factory=list)
     transcript_provided: bool = False
+
+
+def _db_path() -> Path:
+    return Path(os.environ.get("HAUNTLET_DB", ".hauntlet/range.db"))
 
 
 def create_app(service: RangeService | None = None) -> FastAPI:
@@ -136,11 +138,84 @@ def create_app(service: RangeService | None = None) -> FastAPI:
 
     @app.get("/runs/{run_id}/report", response_class=HTMLResponse)
     def report(run_id: str) -> str:
-        _run_or_404(run_id)
-        return render_report(service.score(run_id), service.manifest(run_id))
+        # D23: the scorecard. Who ran the agent is not recorded for API runs (Q1: C4).
+        run = _run_or_404(run_id)
+        live = run.is_active(service.clock())
+        try:
+            return render_run(
+                service, run_id, path="not-recorded", served=True, db_path=_db_path(),
+                stream_url=f"/runs/{run_id}/facts/stream" if live else None,
+            )
+        except UnknownRun:
+            raise HTTPException(404, "unknown run") from None
 
+    _mount_stream(app, service)
     _mount_exorcist(app, service)
     return app
+
+
+def _stream_caps() -> tuple[int, float]:
+    def _num(name: str, default, cast):
+        try:
+            v = cast(os.environ[name])
+        except (KeyError, ValueError):
+            return default
+        return v if v > 0 else default
+
+    return _num("HAUNTLET_STREAM_MAX", 20, int), _num("HAUNTLET_STREAM_POLL_SECS", 0.5, float)
+
+
+def _mount_stream(app: FastAPI, service: RangeService) -> None:
+    """D22: the live evidence stream for a run. Redacted rows only; records nothing."""
+    import threading
+
+    from fastapi.responses import StreamingResponse
+    from starlette.background import BackgroundTask
+
+    from hauntlet.core.service import UnknownRun
+    from hauntlet.scorecard.sources import check_run_id
+    from hauntlet.scorecard.stream import facts_stream
+
+    max_streams, poll = _stream_caps()
+    slots = threading.BoundedSemaphore(max_streams)
+    db = Path(os.environ.get("HAUNTLET_DB", ".hauntlet/range.db"))
+    app.state.stream_slots = slots
+
+    @app.get("/runs/{run_id}/facts/stream")
+    async def facts_stream_route(run_id: str, request: Request):
+        try:
+            check_run_id(run_id)
+            service.get_run(run_id)
+        except UnknownRun:
+            raise HTTPException(404, "unknown run") from None
+        if not slots.acquire(blocking=False):
+            return PlainTextResponse("too many live streams; try again shortly", status_code=429)
+
+        released = threading.Event()
+
+        def release() -> None:
+            # Idempotent: runs from the body's finally and as a background task, so a
+            # client that leaves before the body starts still frees its slot.
+            if not released.is_set():
+                released.set()
+                slots.release()
+
+        async def body():
+            try:
+                async for chunk in facts_stream(
+                    service, run_id, db_path=db, poll_secs=poll,
+                    is_disconnected=request.is_disconnected,
+                    last_event_id=request.headers.get("last-event-id"),
+                ):
+                    yield chunk
+            finally:
+                release()
+
+        return StreamingResponse(
+            body(), media_type="text/event-stream",
+            headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"},
+            background=BackgroundTask(release),
+        )
 
 
 class _ExorciseAfter(BaseModel):
@@ -186,13 +261,15 @@ def _mount_exorcist(app: FastAPI, service: RangeService) -> None:
     )
     app.state.exorcist = ex
 
-    _PAGE = (files("hauntlet.exorcist") / "static" / "exorcist.html").read_text(encoding="utf-8")
+    from hauntlet.scorecard import exorcism_file_renderer
+
+    # D23: delta HTML files written by the hosted service are scorecard pages too.
+    ex.service.html_renderer = exorcism_file_renderer(ex.service, db_path=Path(db))
 
     @app.get("/exorcist", response_class=HTMLResponse)
     def exorcist_page() -> str:
-        rooms = json.dumps([r for r in caps.demo_rooms if ex.service.supports(r)])
-        inject = f'<body x-data="exorcist()"><script>window.__DEMO_ROOMS__ = {rooms};</script>'
-        return _PAGE.replace('<body x-data="exorcist()">', inject, 1)
+        # D23: the scorecard frame with one demo button per offered room.
+        return render_launcher([r for r in caps.demo_rooms if ex.service.supports(r)])
 
     @app.post("/exorcist/demo")
     def exorcist_demo(body: _DemoRequest) -> dict:
@@ -243,10 +320,15 @@ def _mount_exorcist(app: FastAPI, service: RangeService) -> None:
 
     @app.get("/exorcisms/{bundle_id}/report", response_class=HTMLResponse)
     def exorcism_report(bundle_id: str) -> str:
+        # D23: the scorecard of the exorcism, rendered from the bundle's files.
         try:
-            return ex.report_html(bundle_id)
+            bundle_dir = ex.bundle_dir(bundle_id)
         except NotFound as exc:
             raise HTTPException(404, str(exc)) from None
+        return render_exorcism(
+            ex.service, bundle_dir, served=True, db_path=Path(db),
+            download_url=f"/exorcisms/{bundle_id}/bundle",
+        )
 
 
 def _run_or_404_outer(service: RangeService, run_id: str) -> None:

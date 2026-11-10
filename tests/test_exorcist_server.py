@@ -79,6 +79,7 @@ def test_demo_round_trip(env, room: str) -> None:
     assert any(n.startswith(".kiro/") for n in names)
     assert "bundle.json" in names and "EXORCISM.md" in names
     assert not any(n.startswith("deltas/") for n in names)
+    assert not any(n.startswith("evidence/") for n in names)  # D26: kept evidence is not part of the bundle
 
 
 def test_page_lists_the_demo_rooms(env) -> None:

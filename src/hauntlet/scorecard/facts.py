@@ -315,6 +315,13 @@ def merge(lines: tuple[FactLine, ...]) -> tuple[FactLine, ...]:
     return tuple(out)
 
 
+def page_rows(facts: Iterable[Fact], run: Run, manifest: RunManifest, run_role: str) -> tuple[tuple[FactLine, ...], tuple[FactLine, ...]]:
+    """The evidence-log rows the page shows: (log rows, demo-decision rows), merged.
+    The live stream sends exactly these rows (SP16)."""
+    log, demo = lines(facts, run, manifest, run_role)
+    return merge(log), merge(demo)
+
+
 def lines(facts: Iterable[Fact], run: Run, manifest: RunManifest, run_role: str) -> tuple[tuple[FactLine, ...], tuple[FactLine, ...]]:
     """(log lines, demo-decision lines), ordered, with IDs."""
     log, demo = ordered(facts)

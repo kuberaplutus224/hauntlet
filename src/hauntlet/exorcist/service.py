@@ -34,7 +34,8 @@ from hauntlet.exorcist.texts import (
     REAL_CLIENT_LABEL,
 )
 from hauntlet.exorcist.validate import validate
-from hauntlet.exorcist.writer import write_bundle, write_delta
+from hauntlet.exorcist.writer import EVIDENCE, write_bundle, write_delta, write_into
+from hauntlet.redact import redactor
 
 
 class DemoUnsupported(ValueError):
@@ -68,11 +69,16 @@ class ExorcistService:
         root: Path,
         reports_dir: Path | None = None,
         clock=time.time,
+        html_renderer=None,
     ) -> None:
         self.service = service
         self.root = Path(root)
         self.reports_dir = Path(reports_dir) if reports_dir is not None else None
         self.clock = clock
+        #: D23: ``(bundle_dir, after_run_id) -> bytes`` for the delta's HTML file. The
+        #: caller passes the scorecard's renderer; the Exorcist never imports it (D24).
+        #: ``None`` keeps ``report.render_html``.
+        self.html_renderer = html_renderer
 
     # -- demo path ---------------------------------------------------------
 
@@ -98,6 +104,10 @@ class ExorcistService:
 
             after = self._run_demo(room, bundle_dir, tmp / "after")
             self._admit(before, after, created_at)
+            # D26: keep the evidence the temporary directory would lose, redacted,
+            # before the delta is written (its scorecard page reads it).
+            for run in (before, after):
+                self._write_evidence(bundle_dir, room, run)
             delta = self._delta(
                 spec, before, after, path=DEMO, path_label=DEMO_LABEL,
                 after_run_id=after.run_id, denials=after.denials,
@@ -181,6 +191,44 @@ class ExorcistService:
             rm.teardown(ctx)
         denials = tuple(d.item_id for d in agent.denials)
         return DemoRun(run_id, score, self.service.manifest(run_id), facts, denials, list(agent.trace))
+
+    def _write_evidence(self, bundle_dir: Path, room: str, run: DemoRun) -> None:
+        """D26: ``evidence/facts-<run>-<room>.jsonl`` (MCP rooms) and ``evidence/trace-<run>.jsonl``.
+
+        Every string is redacted with the run's own canaries (D30, D31), so the
+        files hold no canary value. They sit in the bundle directory, follow its
+        retention, and are left out of the download archive.
+        """
+        import json
+
+        from hauntlet.rooms.poltergeist import factlog
+
+        redact = redactor(self.service.canaries(run.run_id))
+
+        def clean(value):
+            if isinstance(value, str):
+                return redact(value)
+            if isinstance(value, dict):
+                return {k: clean(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [clean(v) for v in value]
+            return value
+
+        def dumps(record: dict) -> str:
+            return json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+        if run.facts is not None:
+            lines = [dumps(clean(factlog.to_record(f))) for f in run.facts]
+            write_into(bundle_dir, f"{EVIDENCE}/facts-{run.run_id}-{room}.jsonl",
+                       ("\n".join(lines) + "\n" if lines else "").encode("utf-8"))
+        if run.trace is not None:
+            lines = [
+                dumps(clean({"seq": i, "tool_id": tool_id, "where": where, "source": source,
+                             "proceeded": bool(proceeded), "denied_by": list(denied)}))
+                for i, (tool_id, where, source, proceeded, denied) in enumerate(run.trace)
+            ]
+            write_into(bundle_dir, f"{EVIDENCE}/trace-{run.run_id}.jsonl",
+                       ("\n".join(lines) + "\n" if lines else "").encode("utf-8"))
 
     def _read_demo_facts(self, room: str, scratch: Path, run_id: str) -> list | None:
         if profile_for(room).mcp is None:
@@ -286,10 +334,17 @@ class ExorcistService:
 
     def _write_delta(self, bundle_dir: Path, after_run_id: str, delta: Delta) -> list[Path]:
         files = report.render_all(delta)
-        paths = write_delta(bundle_dir, after_run_id, files)
+        if self.html_renderer is None:
+            paths = write_delta(bundle_dir, after_run_id, files)
+            html = files["html"]
+        else:
+            # The JSON goes first: the renderer reads the delta back from it.
+            paths = write_delta(bundle_dir, after_run_id, {k: files[k] for k in ("json", "txt")})
+            html = self.html_renderer(bundle_dir, after_run_id)
+            paths += write_delta(bundle_dir, after_run_id, {"html": html})
         if self.reports_dir is not None:
             self.reports_dir.mkdir(parents=True, exist_ok=True)
-            (self.reports_dir / f"exorcist-delta-{after_run_id}.html").write_bytes(files["html"])
+            (self.reports_dir / f"exorcist-delta-{after_run_id}.html").write_bytes(html)
         return paths
 
 

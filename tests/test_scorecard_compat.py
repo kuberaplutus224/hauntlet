@@ -192,3 +192,21 @@ def test_cases_are_deterministic() -> None:
     second = {k: report.render_json(v) for k, v in _deltas().items()}
     assert first == second
     assert _route_bodies() == _route_bodies()
+
+
+# --------------------------------------------------------------------------- #
+# second half (task 17.3): after the D23 switch
+# --------------------------------------------------------------------------- #
+
+
+def test_sample_report_is_a_deterministic_scorecard(tmp_path) -> None:
+    from hauntlet.cli import SAMPLE_RUN_ID, main
+    from hauntlet.scorecard import copy
+
+    a, b = tmp_path / "a.html", tmp_path / "b.html"
+    assert main(["sample-report", "--out", str(a)]) == 0
+    assert main(["sample-report", "--out", str(b)]) == 0
+    assert a.read_bytes() == b.read_bytes()
+    html = a.read_text(encoding="utf-8")
+    assert f"<code>{SAMPLE_RUN_ID}</code>" in html
+    assert copy.C3.format(name="naive") in html and 'class="badge"' in html

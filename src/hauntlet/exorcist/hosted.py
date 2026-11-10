@@ -20,7 +20,7 @@ from hauntlet.exorcist import report as report_mod
 from hauntlet.exorcist.service import DemoUnsupported, ExorcistService
 
 #: Files in a bundle that make up the applyable archive (not deltas or baseline).
-_ARCHIVE_SKIP = ("deltas", "baseline")
+_ARCHIVE_SKIP = ("deltas", "baseline", "evidence")  # D26: the demo's evidence is not part of the bundle
 _ZIP_EPOCH = (1980, 1, 1, 0, 0, 0)  # fixed, so the archive is byte-deterministic
 
 
@@ -153,6 +153,11 @@ class HostedExorcist:
         if latest is not None:
             return latest.read_text(encoding="utf-8")
         return report_mod.render_html(self.service.before_only_delta(bundle_dir))
+
+    def bundle_dir(self, bundle_id: str) -> Path:
+        """The bundle directory for an unexpired ID (after a sweep), else ``NotFound``."""
+        self.sweep()
+        return self._bundle(bundle_id)
 
     def _bundle(self, bundle_id: str) -> Path:
         try:

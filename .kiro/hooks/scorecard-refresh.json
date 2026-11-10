@@ -5,7 +5,7 @@
       "name": "scorecard-refresh",
       "description": "Regenerate the sample autopsy report after scorer or report changes so the demo asset never drifts.",
       "trigger": "PostFileSave",
-      "matcher": "src/hauntlet/core/(scorer|report|aggregate)\\.py$",
+      "matcher": "src/hauntlet/(core/(scorer|report|aggregate)\\.py|scorecard/.*|exorcist/texts\\.py)$",
       "action": { "type": "command", "command": "uv run hauntlet sample-report --out docs/sample-report.html" },
       "timeout": 60
     }

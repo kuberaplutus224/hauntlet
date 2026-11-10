@@ -18,7 +18,7 @@ from pathlib import Path
 from hauntlet.agents import get_agent
 from hauntlet.core.levels import COMPROMISE_THRESHOLD, Level
 from hauntlet.core.models import RunManifest, RunScore
-from hauntlet.core.report import render_report
+from hauntlet.scorecard import render_run
 from hauntlet.core.room import Observation, RoomContext, RoomMaterials, Transcript, TranscriptEntry
 from hauntlet.core.runner import run_once, run_repeated
 from hauntlet.core.service import InvalidObservation, RangeService, RunClosed, UnknownRun
@@ -77,11 +77,30 @@ def cmd_run(args: argparse.Namespace) -> int:
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"autopsy-{args.room}-{args.agent}-{worst.score.run_id}.html"
     path.write_text(
-        render_report(worst.score, worst.manifest, aggs if args.repeat > 1 else (), agent.name),
+        render_run(
+            service, worst.score.run_id, path=_agent_path(agent.name), agent_name=agent.name,
+            aggregates=aggs if args.repeat > 1 else (),
+        ),
         encoding="utf-8",
     )
     print(f"report: {path}")
     return 0
+
+
+def _agent_path(name: str) -> str:
+    """The scorecard path for a built-in agent (scorecard Requirement 2.3)."""
+    return "demo-agent" if name == "demo" else f"reference:{name}"
+
+
+def _exorcist_service(service: RangeService, db: Path, out: Path | None):
+    """An ExorcistService whose delta HTML is the scorecard (D23)."""
+    from hauntlet.exorcist.paths import exorcist_root
+    from hauntlet.exorcist.service import ExorcistService
+    from hauntlet.scorecard import exorcism_file_renderer
+
+    ex = ExorcistService(service, exorcist_root(db), reports_dir=out)
+    ex.html_renderer = exorcism_file_renderer(ex, db_path=db, reports_dir=out)
+    return ex
 
 
 def cmd_selftest(args: argparse.Namespace) -> int:
@@ -143,7 +162,9 @@ def cmd_sample_report(args: argparse.Namespace) -> int:
     result = run_once(service, "threshold", get_agent("naive"), _scratch())
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render_report(result.score, result.manifest, (), "naive"), encoding="utf-8")
+    out.write_text(
+        render_run(service, result.score.run_id, path="reference:naive", agent_name="naive"), encoding="utf-8"
+    )
     print(f"sample report: {out}")
     return 0
 
@@ -842,7 +863,8 @@ def cmd_mcp_finalize(args: argparse.Namespace) -> int:
     try:
         out.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(summary, encoding="utf-8")
-        report_path.write_text(render_report(fin.score, fin.manifest, (), "real MCP client"), encoding="utf-8")
+        # Rendered before teardown, so the live fact log is still readable.
+        report_path.write_text(render_run(service, fin.run_id, path="real-client", db_path=db), encoding="utf-8")
         for r in fin.rooms:
             _copy_fact_log(r, fin.run_id, out)
     except OSError as exc:
@@ -1055,7 +1077,7 @@ def cmd_parlor_finalize(args: argparse.Namespace) -> int:
     try:
         out.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(summary, encoding="utf-8")
-        report_path.write_text(render_report(fin.score, fin.manifest, (), "real browser client"), encoding="utf-8")
+        report_path.write_text(render_run(service, fin.run_id, path="real-client", db_path=db), encoding="utf-8")
     except OSError as exc:
         _mcp_err(f"run {fin.run_id!r} is finalized, but writing to {out} failed ({exc})")
         return 1
@@ -1101,7 +1123,7 @@ def cmd_exorcist_demo(args: argparse.Namespace) -> int:
     # The demo creates its own before/after runs in-process, so it uses a fresh
     # store; its bundles land beside HAUNTLET_DB and it uses the shared base URL.
     service = RangeService(Store(":memory:"), default_rooms(), base_url=_base_url())
-    ex = ExorcistService(service, exorcist_root(db), reports_dir=Path(args.out))
+    ex = _exorcist_service(service, db, Path(args.out))
     try:
         result = ex.demo(args.room)
     except DemoUnsupported as exc:
@@ -1170,7 +1192,7 @@ def cmd_exorcist_delta(args: argparse.Namespace) -> int:
         before_score = service.score(before_run_id)
         before_manifest = service.manifest(before_run_id)
         spec = generate(before_score, before_manifest)  # deterministic: equals what was written
-        ex = ExorcistService(service, exorcist_root(db), reports_dir=Path(args.out))
+        ex = _exorcist_service(service, db, Path(args.out))
         try:
             delta = ex.attach((before_score, before_manifest), spec, bundle_dir, args.after)
         except AfterRunRejected as exc:

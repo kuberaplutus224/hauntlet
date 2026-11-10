@@ -174,44 +174,44 @@ the copy or the data to make a page look as expected.
   - Regenerate the six review pages in `/tmp/hauntlet-scorecard-pages` and stop
   - _Requirements: 3.1, 5.1, 6.2, 7.1–7.3, 8.2, 11.1, 11.3, 12.1, 12.6_
 
-- [ ] 15. Approved change D26: keep the demo's evidence
+- [x] 15. Approved change D26: keep the demo's evidence
   - `src/hauntlet/exorcist/service.py` `demo`: after the after run, write `evidence/facts-<run_id>-<room>.jsonl` (MCP rooms, before and after; records redacted with the D31 redactor and the run's D30 canaries) and `evidence/trace-<run_id>.jsonl` (both runs) through `writer.write_into`
   - `src/hauntlet/exorcist/hosted.py`: `_ARCHIVE_SKIP` gains `"evidence"`
   - Tests: `tests/test_exorcist_server.py` zip listing has no `evidence/`; a new `tests/test_exorcist_demo_evidence.py` checks that the files exist for `cursed-repo` (trace only) and `poltergeist` (facts and trace), contain no canary value, and are removed by the retention sweep with their bundle
   - _Requirements: 8.3, D26_
 
-- [ ] 16. Approved change D22: the live stream
-  - [ ] 16.1 `scorecard/stream.py` and the route
+- [x] 16. Approved change D22: the live stream
+  - [x] 16.1 `scorecard/stream.py` and the route
     - `GET /runs/{run_id}/facts/stream` in `src/hauntlet/server.py`, with the loop, events, keepalive, `Last-Event-ID`, `Cache-Control: no-store`, the caps `HAUNTLET_STREAM_MAX` and `HAUNTLET_STREAM_POLL_SECS`, thread offload and disconnect handling from design.md "Live stream". Paths only through `sources.live_fact_log`
     - _Requirements: 8.7, 10.3, 10.7, D22_
-  - [ ] 16.2 Write `tests/test_scorecard_stream.py` (**SP16**, stream half of **SP10**)
+  - [x] 16.2 Write `tests/test_scorecard_stream.py` (**SP16**, stream half of **SP10**)
     - Finished runs (random rooms): the `fact` events up to `done` equal the embedded `<li>` IDs and texts, in order; no canary value appears in the stream bytes
     - Active run: a second thread records a canary hit and then finalizes; the client sees the hit, then `finalized`, then `done`
     - `Last-Event-ID` resumes without duplicates; 404 for unknown and hostile IDs; 429 over the cap (cap 1); `X-Robots-Tag` present
     - _Requirements: 8.7, 8.8, 10.3, SP10, SP16_
 
-- [ ] 17. Approved change D23: switch routes and writers
-  - [ ] 17.1 Routes
+- [x] 17. Approved change D23: switch routes and writers
+  - [x] 17.1 Routes
     - `src/hauntlet/server.py`: `/runs/{id}/report` → `render_run(path="not-recorded", served=True)`, with `stream_url` while the run is active; `/exorcisms/{id}/report` → `render_exorcism`; `/exorcist` → `render_launcher`. JSON routes are untouched
     - _Requirements: 13.1, D23_
-  - [ ] 17.2 Writers
+  - [x] 17.2 Writers
     - `ExorcistService(…, html_renderer=None)`: `_write_delta` uses it for `html` when set. `cli.py` and `server.py` pass `scorecard.exorcism_file_renderer`
     - `cli.py`: `hauntlet run` (path per agent, aggregates when `--repeat > 1`), `mcp finalize` and `parlor finalize` (path `real-client`, rendered before teardown), and `sample-report` (`reference:naive`) write scorecard HTML under the same file names
     - `core/report.py`, `exorcist/report.render_html` and `exorcist.html` stay; nothing on the default paths uses them
     - _Requirements: 13.3, 13.4, D23_
-  - [ ] 17.3 Write `tests/test_scorecard_server.py` and finish **SP17**
+  - [x] 17.3 Write `tests/test_scorecard_server.py` and finish **SP17**
     - Each route: 200 and `noindex` (header and meta), 404s; the launcher demo round trip shows C1 and `DEMO_LABEL`; an active run's report carries `stream_url`
     - `tests/test_scorecard_compat.py` (second half of **SP17**): task 1's goldens still match after the switch; `sample-report` is identical twice and contains `<code>sample-report</code>`
     - The existing HTML tests listed in design.md "Routes and writers" pass unchanged
     - _Requirements: 13.1–13.6, SP17_
 
-- [ ] 18. Approved change D25: the hook
+- [x] 18. Approved change D25: the hook
   - `.kiro/hooks/scorecard-refresh.json`: set the matcher to the design's regex; the command and timeout are unchanged
   - Regenerate `docs/sample-report.html` with `uv run hauntlet sample-report --out docs/sample-report.html`; the run again produces no diff
   - A test checks the matcher against `src/hauntlet/scorecard/render.py`, `src/hauntlet/exorcist/texts.py`, `src/hauntlet/core/report.py` (match) and `src/hauntlet/rooms/parlor/room.py` (no match)
   - _Requirements: 13.4, 13.5, D25_
 
-- [ ] 19. Checkpoint: wired up
+- [x] 19. Checkpoint: wired up
   - `uv run pytest` passes; `uv run hauntlet selftest` unchanged; payload safety clean; core diff still only the two methods
   - `uv run hauntlet serve` started by hand: `/exorcist` → demo for `cursed-repo` and `poltergeist` → scorecard with the replay; a Poltergeist run started through `hauntlet mcp serve` shows live facts on `/runs/{id}/report`
 

@@ -306,6 +306,18 @@ def _lines(ri: RunInput | None, role: str) -> tuple[tuple[FactLine, ...], tuple[
     return facts_mod.lines(ri.facts, ri.run, ri.manifest, role)
 
 
+def _rows(ri: RunInput | None, role: str):
+    if ri is None:
+        return (), ()
+    return facts_mod.page_rows(ri.facts, ri.run, ri.manifest, role)
+
+
+def _evidence_view(before: RunInput, after: RunInput | None, unavailable) -> EvidenceView:
+    b_log, b_demo = _rows(before, "before")
+    a_log, a_demo = _rows(after, "after")
+    return EvidenceView(b_log, a_log, b_demo, a_demo, unavailable)
+
+
 def _fix_lines(bundle: Mapping[str, Any]) -> list[FixLine]:
     out = []
     for it in bundle.get("items", ()):
@@ -672,10 +684,7 @@ def build(inp: ScorecardInput) -> ViewModel:
     for rd in delta.get("rooms", ()):
         if rd.get("fact_log_available") is False and ("after", rd["room"]) not in unavailable:
             unavailable.append(("after", rd["room"]))
-    evidence = EvidenceView(
-        facts_mod.merge(before_log), facts_mod.merge(after_log),
-        facts_mod.merge(before_demo), facts_mod.merge(after_demo), tuple(unavailable),
-    )
+    evidence = _evidence_view(before, after_ri, tuple(unavailable))
 
     # -- aggregates and late -------------------------------------------------
     agg_rows = []
