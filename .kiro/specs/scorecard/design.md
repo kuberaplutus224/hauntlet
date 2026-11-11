@@ -1152,6 +1152,12 @@ and add browser hardening (L1, L2).
     the number of `X-Forwarded-For` entries, whether `CF-Connecting-IP` and
     `True-Client-IP` are present (never their values beyond the key), and the
     method and path. It is for checking what Render forwards, once, then off.
+  - **Render (verified live 2026-11-11):** on Render the last `X-Forwarded-For`
+    entry is an internal load balancer, not the client, so that rule would put
+    every visitor under one key. Cloudflare, in front of Render, sets
+    `CF-Connecting-IP` and rejects a client-set one, so `render.yaml` sets
+    `HAUNTLET_CLIENT_IP_HEADER=CF-Connecting-IP`. The last-entry rule stays the
+    default for other proxies.
   - **Scope choice:** the per-client quotas apply only when hosted. A tester's
     local `hauntlet serve` keeps no quotas, so repeated real-client runs are not
     throttled. The stream lifetime applies everywhere.

@@ -204,8 +204,11 @@ request is `https`. That is only safe behind Render's proxy: on a host where
 clients can reach the container directly, set it to the proxy's address instead.
 
 The Blueprint also sets `HAUNTLET_HOSTED=1` (limits for a public range, no API
-docs) and `HAUNTLET_TRUST_PROXY=1` (per-client limits key on the last
-`X-Forwarded-For` entry, the address Render's proxy saw). To try the image locally:
+docs), `HAUNTLET_TRUST_PROXY=1` and `HAUNTLET_CLIENT_IP_HEADER=CF-Connecting-IP`.
+Per-client limits key on `CF-Connecting-IP`: on Render the last
+`X-Forwarded-For` entry is an internal load balancer, not the visitor (checked
+live on 2026-11-11), and Cloudflare in front of Render sets `CF-Connecting-IP`
+itself. `GET /` redirects to `/exorcist`. To try the image locally:
 
 ```bash
 docker build -t hauntlet .

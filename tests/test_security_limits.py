@@ -398,3 +398,24 @@ def test_client_key_log_shows_the_configured_header_value_only_as_the_key(env, c
     (line,) = [r.getMessage() for r in caplog.records if r.name == "hauntlet.client_key"]
     assert line.startswith("key=198.51.100.77 xff_entries=1 cf_connecting_ip=present true_client_ip=present")
     assert "198.51.100.78" not in line and "203.0.113.50" not in line
+
+
+@pytest.mark.parametrize("hosted", [False, True])
+def test_root_redirects_to_the_launcher(env, hosted) -> None:
+    _, c = env[0](**({"HAUNTLET_HOSTED": "1"} if hosted else {}))
+    for method in ("GET", "HEAD"):
+        r = c.request(method, "/", follow_redirects=False)
+        assert r.status_code == 307 and r.headers["location"] == "/exorcist", method
+        for k, v in HEADERS.items():
+            assert r.headers.get(k) == v, (method, k)
+        assert r.headers.get("content-security-policy") == BASE_CSP
+    assert c.get("/").status_code == 200 and "data-room=" in c.get("/").text  # lands on the launcher
+    assert c.post("/").status_code == 405
+
+
+def test_render_blueprint_keys_clients_on_cf_connecting_ip() -> None:
+    from pathlib import Path
+
+    text = (Path(__file__).resolve().parents[1] / "render.yaml").read_text(encoding="utf-8")
+    assert "key: HAUNTLET_CLIENT_IP_HEADER\n        value: CF-Connecting-IP" in text
+    assert "key: HAUNTLET_TRUST_PROXY\n        value: \"1\"" in text

@@ -253,6 +253,14 @@ def create_app(service: RangeService | None = None) -> FastAPI:
         except UnknownRun:
             raise HTTPException(404, "unknown run") from None
 
+    @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+    def root() -> Response:
+        # The hosted range's front door is the demo launcher. The middleware still adds
+        # the security headers and noindex to this response.
+        from fastapi.responses import RedirectResponse
+
+        return RedirectResponse("/exorcist", status_code=307)
+
     @app.get("/health")
     def health() -> dict:
         return {"status": "ok", "version": __version__, "rooms": sorted(service.rooms)}

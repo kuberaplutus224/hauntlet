@@ -19,9 +19,14 @@ services:
       # Hosted-range limits (D33, D34) and no API docs (D35).
       - key: HAUNTLET_HOSTED
         value: "1"
-      # Client key = the last X-Forwarded-For entry, the address Render's proxy saw.
+      # Per-client limits (D34) trust the proxy's headers.
       - key: HAUNTLET_TRUST_PROXY
         value: "1"
+      # On Render the last X-Forwarded-For entry is an internal load balancer, not the
+      # client (verified live 2026-11-11), so it would put every visitor under one key.
+      # Cloudflare, in front of Render, sets CF-Connecting-IP and rejects a client-set one.
+      - key: HAUNTLET_CLIENT_IP_HEADER
+        value: CF-Connecting-IP
       # Render's proxy terminates TLS; trust its X-Forwarded-Proto so any URL
       # uvicorn builds from the request is https.
       - key: FORWARDED_ALLOW_IPS
