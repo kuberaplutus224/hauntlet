@@ -56,6 +56,33 @@ class Finalize(BaseModel):
     transcript_provided: bool = False
 
 
+def _log_client_key(request: Request, key: str) -> None:
+    """D34 check (``HAUNTLET_LOG_CLIENT_KEY=1``, off by default): one line per request.
+
+    It shows the derived key, how many ``X-Forwarded-For`` entries arrived, and
+    whether ``CF-Connecting-IP`` / ``True-Client-IP`` are present. Their values are
+    never logged, beyond what the key itself is.
+    """
+    import logging
+
+    from hauntlet.limits import forwarded_entries
+
+    log = logging.getLogger("hauntlet.client_key")
+    if not log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("hauntlet client key: %(message)s"))
+        log.addHandler(handler)
+        log.setLevel(logging.INFO)
+    h = request.headers
+    log.info(
+        "key=%s xff_entries=%d cf_connecting_ip=%s true_client_ip=%s %s %s",
+        key, len(forwarded_entries(h)),
+        "present" if "cf-connecting-ip" in h else "absent",
+        "present" if "true-client-ip" in h else "absent",
+        request.method, request.url.path,
+    )
+
+
 def _flag(name: str) -> bool:
     return os.environ.get(name, "") == "1"
 
@@ -177,13 +204,20 @@ def create_app(service: RangeService | None = None) -> FastAPI:
     app.state.hosted = hosted
     app.add_middleware(_BodyLimit, limit=MAX_BODY_BYTES)
 
+    ip_header = os.environ.get("HAUNTLET_CLIENT_IP_HEADER", "").strip() or None
+    log_keys = _flag("HAUNTLET_LOG_CLIENT_KEY")
+
     def key_of(request: Request) -> str:
-        return client_key(request.headers, request.client.host if request.client else None, trust_proxy)
+        return client_key(
+            request.headers, request.client.host if request.client else None, trust_proxy, ip_header,
+        )
 
     app.state.client_key = key_of
 
     @app.middleware("http")
     async def noindex(request: Request, call_next):
+        if log_keys:
+            _log_client_key(request, key_of(request))
         response = await call_next(request)
         response.headers["X-Robots-Tag"] = "noindex, nofollow"
         for k, v in SECURITY_HEADERS.items():

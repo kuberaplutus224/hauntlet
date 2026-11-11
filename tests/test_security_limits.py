@@ -32,7 +32,8 @@ class Clock:
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("HAUNTLET_DB", str(tmp_path / "range.db"))
     monkeypatch.setenv("HAUNTLET_REPORTS_DIR", str(tmp_path / "reports"))
-    for k in ("HAUNTLET_HOSTED", "HAUNTLET_TRUST_PROXY", "HAUNTLET_BASE_URL", "RENDER_EXTERNAL_URL"):
+    for k in ("HAUNTLET_HOSTED", "HAUNTLET_TRUST_PROXY", "HAUNTLET_BASE_URL", "RENDER_EXTERNAL_URL",
+              "HAUNTLET_CLIENT_IP_HEADER", "HAUNTLET_LOG_CLIENT_KEY"):
         monkeypatch.delenv(k, raising=False)
     clock = Clock()
 
@@ -332,3 +333,68 @@ def test_base_url_falls_back_to_render_external_url(env, monkeypatch) -> None:
     c = TestClient(create_app())  # the service built from the environment, as `hauntlet serve` does
     url = next(x["url"] for x in c.post("/runs", json={"rooms": ["threshold"]}).json()["canaries"] if x["url"])
     assert url.startswith("https://range.example/c/")
+
+
+# --------------------------------------------------------------------------- #
+# D34 addition: a configured client-IP header, and the opt-in key log
+# --------------------------------------------------------------------------- #
+
+
+def test_client_ip_header_is_used_only_behind_a_trusted_proxy() -> None:
+    h = {"cf-connecting-ip": "198.51.100.20", "x-forwarded-for": "1.1.1.1, 203.0.113.9"}
+    assert client_key(h, "10.0.0.5", True, "CF-Connecting-IP") == "198.51.100.20"
+    assert client_key(h, "10.0.0.5", True) == "203.0.113.9"  # not configured: last XFF entry
+    assert client_key(h, "10.0.0.5", False, "CF-Connecting-IP") == "10.0.0.5"  # untrusted: socket
+    missing = {"x-forwarded-for": "1.1.1.1, 203.0.113.9"}
+    assert client_key(missing, "10.0.0.5", True, "CF-Connecting-IP") == "203.0.113.9"  # absent: fall back
+    assert client_key({"cf-connecting-ip": "  "}, "10.0.0.5", True, "CF-Connecting-IP") == "10.0.0.5"
+    assert len(client_key({"cf-connecting-ip": "x" * 500}, None, True, "CF-Connecting-IP")) == 64
+
+
+def test_client_ip_header_keys_the_quota(env) -> None:
+    _, c = env[0](HAUNTLET_HOSTED="1", HAUNTLET_TRUST_PROXY="1", HAUNTLET_CLIENT_IP_HEADER="CF-Connecting-IP",
+                  HAUNTLET_RUNS_PER_HOUR="2", HAUNTLET_MAX_OPEN_RUNS="100")
+    same = lambda xff: {"CF-Connecting-IP": "198.51.100.30", "X-Forwarded-For": xff}  # noqa: E731
+    assert c.post("/runs", json={"rooms": ["threshold"]}, headers=same("10.0.0.1")).status_code == 201
+    assert c.post("/runs", json={"rooms": ["threshold"]}, headers=same("10.0.0.2")).status_code == 201
+    # A different last XFF entry does not help: the configured header is the key.
+    assert c.post("/runs", json={"rooms": ["threshold"]}, headers=same("10.0.0.3")).status_code == 429
+    other = {"CF-Connecting-IP": "198.51.100.31", "X-Forwarded-For": "10.0.0.1"}
+    assert c.post("/runs", json={"rooms": ["threshold"]}, headers=other).status_code == 201
+
+
+def test_client_key_log_is_off_by_default(env, caplog) -> None:
+    import logging
+
+    caplog.set_level(logging.INFO, logger="hauntlet.client_key")
+    _, c = env[0](HAUNTLET_TRUST_PROXY="1")
+    c.get("/health", headers={"X-Forwarded-For": "203.0.113.50"})
+    assert not [r for r in caplog.records if r.name == "hauntlet.client_key"]
+
+
+def test_client_key_log_line(env, caplog) -> None:
+    import logging
+
+    caplog.set_level(logging.INFO, logger="hauntlet.client_key")
+    _, c = env[0](HAUNTLET_TRUST_PROXY="1", HAUNTLET_LOG_CLIENT_KEY="1")
+    c.get("/health", headers={"X-Forwarded-For": "6.6.6.6, 203.0.113.50", "CF-Connecting-IP": "198.51.100.77",
+                              "True-Client-IP": "198.51.100.78"})
+    c.get("/robots.txt")
+    lines = [r.getMessage() for r in caplog.records if r.name == "hauntlet.client_key"]
+    assert len(lines) == 2  # one per request
+    first, second = lines
+    assert first == "key=203.0.113.50 xff_entries=2 cf_connecting_ip=present true_client_ip=present GET /health"
+    assert "198.51.100.77" not in first and "198.51.100.78" not in first and "6.6.6.6" not in first
+    assert second == "key=testclient xff_entries=0 cf_connecting_ip=absent true_client_ip=absent GET /robots.txt"
+
+
+def test_client_key_log_shows_the_configured_header_value_only_as_the_key(env, caplog) -> None:
+    import logging
+
+    caplog.set_level(logging.INFO, logger="hauntlet.client_key")
+    _, c = env[0](HAUNTLET_TRUST_PROXY="1", HAUNTLET_LOG_CLIENT_KEY="1", HAUNTLET_CLIENT_IP_HEADER="CF-Connecting-IP")
+    c.get("/health", headers={"X-Forwarded-For": "203.0.113.50", "CF-Connecting-IP": "198.51.100.77",
+                              "True-Client-IP": "198.51.100.78"})
+    (line,) = [r.getMessage() for r in caplog.records if r.name == "hauntlet.client_key"]
+    assert line.startswith("key=198.51.100.77 xff_entries=1 cf_connecting_ip=present true_client_ip=present")
+    assert "198.51.100.78" not in line and "203.0.113.50" not in line

@@ -21,12 +21,31 @@ from collections.abc import Callable, Mapping
 MAX_KEYS = 10_000
 
 
-def client_key(headers: Mapping[str, str], socket_host: str | None, trust_proxy: bool) -> str:
+#: Longest client key kept; a longer header value is cut, so keys stay small.
+MAX_KEY_CHARS = 64
+
+
+def forwarded_entries(headers: Mapping[str, str]) -> list[str]:
+    return [e.strip() for e in headers.get("x-forwarded-for", "").split(",") if e.strip()]
+
+
+def client_key(
+    headers: Mapping[str, str], socket_host: str | None, trust_proxy: bool, ip_header: str | None = None,
+) -> str:
+    """Who a request comes from (D34).
+
+    Behind a trusted proxy (``trust_proxy``): the value of ``ip_header`` when one is
+    configured and present (for example ``CF-Connecting-IP``), else the last
+    ``X-Forwarded-For`` entry. Never an earlier entry. Otherwise the socket address.
+    """
     if trust_proxy:
-        xff = headers.get("x-forwarded-for", "")
-        entries = [e.strip() for e in xff.split(",") if e.strip()]
+        if ip_header:
+            value = headers.get(ip_header.lower(), "").strip()
+            if value:
+                return value[:MAX_KEY_CHARS]
+        entries = forwarded_entries(headers)
         if entries:
-            return entries[-1]
+            return entries[-1][:MAX_KEY_CHARS]
     return socket_host or "unknown"
 
 

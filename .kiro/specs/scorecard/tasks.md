@@ -259,6 +259,7 @@ the copy or the data to make a page look as expected.
   - D35: security headers on every response (CSP added only when none is set); docs off when `HAUNTLET_HOSTED=1`
   - L3: base images by digest, GitHub Actions by SHA; L4: README line; `RENDER_EXTERNAL_URL` as the base-URL fallback
   - `tests/test_security_limits.py`: each cap just under and just over, the sweep, the XFF rule, quota reset, stream timeout, headers on HTML/JSON/plain/404/413, Parlor's CSP kept, docs off when hosted, base-URL fallback
+  - Addition: `HAUNTLET_CLIENT_IP_HEADER` (a trusted header as the client key, falling back to the last XFF entry) and `HAUNTLET_LOG_CLIENT_KEY=1` (one log line per request: key, XFF entry count, CF-Connecting-IP / True-Client-IP presence); 5 more tests
   - _Decisions: D33, D34, D35_
 
 ## Notes

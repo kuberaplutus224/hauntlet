@@ -1142,6 +1142,16 @@ and add browser hardening (L1, L2).
     own with `Last-Event-ID`. Once the run is over, the reconnected stream sends
     the remaining rows and `done`, and the page stops, so reconnects happen only
     while the run is active. The page script is unchanged.
+  - **Addition (2026-11-11):** `HAUNTLET_CLIENT_IP_HEADER` (optional). With
+    `HAUNTLET_TRUST_PROXY=1`, the client key is that header's value (for example
+    `CF-Connecting-IP`), cut to 64 characters; when the header is absent or empty,
+    it falls back to the last `X-Forwarded-For` entry. Without trust, the socket
+    address, as before.
+  - **Addition (2026-11-11):** `HAUNTLET_LOG_CLIENT_KEY=1` (off by default) logs
+    one line per request to the `hauntlet.client_key` logger: the derived key,
+    the number of `X-Forwarded-For` entries, whether `CF-Connecting-IP` and
+    `True-Client-IP` are present (never their values beyond the key), and the
+    method and path. It is for checking what Render forwards, once, then off.
   - **Scope choice:** the per-client quotas apply only when hosted. A tester's
     local `hauntlet serve` keeps no quotas, so repeated real-client runs are not
     throttled. The stream lifetime applies everywhere.

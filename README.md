@@ -167,6 +167,8 @@ processes share one range.
 | `HAUNTLET_EXORCIST_RETENTION_SECS` | `3600` | How long hosted bundles are kept |
 | `HAUNTLET_HOSTED` | unset | `1` on a public range: at most `HAUNTLET_MAX_OPEN_RUNS` (50) unfinished runs, a lazy sweep of runs closed over `HAUNTLET_RUN_RETENTION_SECS` (86400) ago, per-client limits, and no `/docs`, `/redoc`, `/openapi.json` |
 | `HAUNTLET_TRUST_PROXY` | unset | `1` behind a trusted proxy: the client key is the last `X-Forwarded-For` entry, never the first |
+| `HAUNTLET_CLIENT_IP_HEADER` | unset | With `HAUNTLET_TRUST_PROXY=1`, use this header as the client key (for example `CF-Connecting-IP`); absent or empty falls back to the last `X-Forwarded-For` entry |
+| `HAUNTLET_LOG_CLIENT_KEY` | unset | `1` logs one line per request: the derived client key, the number of `X-Forwarded-For` entries, and whether `CF-Connecting-IP` / `True-Client-IP` are present. For checking a proxy setup once; turn it off afterwards |
 | `HAUNTLET_RUNS_PER_HOUR` | `10` | Runs one client may create per hour (hosted) |
 | `HAUNTLET_DEMOS_PER_MINUTE_PER_CLIENT` | `3` | Demos one client may run per minute (hosted; the global cap still applies) |
 | `HAUNTLET_STREAMS_PER_CLIENT` | `2` | Live streams one client may hold open (hosted) |
