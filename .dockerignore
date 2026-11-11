@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+.hauntlet
+.hypothesis
+.pytest_cache
+.kiro
+reports
+tests
+docs
+scripts
+**/__pycache__
+**/*.py[cod]
+.DS_Store
+Dockerfile
+render.yaml

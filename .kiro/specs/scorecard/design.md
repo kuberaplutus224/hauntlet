@@ -1110,6 +1110,59 @@ Approved after the final checkpoint (2026-11-10):
     did (D19); the scorecard redacts them before they reach a page or the stream.
     No core change.
 
+Approved after the security review (2026-11-10). The review found no injection,
+XSS, traversal or secret exposure; these close its availability findings (M1–M3)
+and add browser hardening (L1, L2).
+
+- **D33. Request caps and retention (M1, M2).**
+  - Everywhere: `POST /runs` refuses duplicate rooms (422; unknown rooms stay
+    400). `finalize` refuses `detail` over 4,096 characters and more than 500
+    observations (422). Every request body over 64 KiB gets 413, checked on
+    `Content-Length` and on the bytes actually received (an ASGI wrapper, so a
+    chunked body cannot get around it). Nothing is ever truncated.
+  - Hosted (`HAUNTLET_HOSTED=1`): at most `HAUNTLET_MAX_OPEN_RUNS` (50)
+    unfinished runs (not finalized, not expired) created by the server; over it,
+    429. The check and the new run happen under one lock.
+  - Hosted: a lazy retention sweep, run at most once a minute from `POST /runs`,
+    deletes runs whose window closed more than `HAUNTLET_RUN_RETENTION_SECS`
+    (86400) ago, with their canaries and events.
+  - **Core change:** one method, `Store.delete_closed_before(cutoff)`. It uses
+    `Run.window_close`'s rule (`min(finalized_at, expires_at) + grace`), so an
+    active or provisional run is never deleted. Nothing else in `core/` changes.
+- **D34. Per-client limits (M3).**
+  - Client key (`hauntlet/limits.py`): with `HAUNTLET_TRUST_PROXY=1`, the
+    **last** `X-Forwarded-For` entry, the address Render's proxy saw connect.
+    Earlier entries are client-controlled and never used. Otherwise, the socket
+    address.
+  - Hosted, per client: 3 demos a minute (the global 6/min stays), 2 open live
+    streams, 10 run creations an hour. In-memory, one process; at most 10,000
+    keys are tracked, so forged addresses cannot grow memory without bound.
+  - Every live stream closes after `HAUNTLET_STREAM_MAX_SECS` (600) with
+    `event: timeout` and no `done`. The browser's `EventSource` reconnects on its
+    own with `Last-Event-ID`. Once the run is over, the reconnected stream sends
+    the remaining rows and `done`, and the page stops, so reconnects happen only
+    while the run is active. The page script is unchanged.
+  - **Scope choice:** the per-client quotas apply only when hosted. A tester's
+    local `hauntlet serve` keeps no quotas, so repeated real-client runs are not
+    throttled. The stream lifetime applies everywhere.
+- **D35. Browser headers and docs (L1, L2).**
+  - Every response: `X-Content-Type-Options: nosniff`, `Referrer-Policy:
+    no-referrer`, `X-Frame-Options: DENY`, and `Content-Security-Policy:
+    frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action
+    'self'`, unless the response sets its own CSP. Parlor's stricter page policy
+    is kept.
+  - **No `script-src` yet:** the scorecard inlines its script and loads Alpine's
+    standard build, which evaluates directive expressions. A script policy needs
+    hashes for the inline script and the Alpine CSP build first. Escaping (SP12)
+    is the XSS defence until then.
+  - Hosted: `/docs`, `/redoc` and `/openapi.json` return 404.
+- **L3.** The Docker base images are pinned by digest and the GitHub Actions by
+  commit SHA, with the tag in a comment.
+- **L4.** The README says `FORWARDED_ALLOW_IPS=*` is only safe behind Render's
+  proxy.
+- **Base URL.** `hauntlet serve` uses `HAUNTLET_BASE_URL`, else Render's
+  `RENDER_EXTERNAL_URL`, else the local default. An empty value counts as unset.
+
 Design choices that need no decision, because they stay inside the scorecard
 package or follow an approved decision:
 

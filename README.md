@@ -157,7 +157,7 @@ processes share one range.
 | Variable | Default | Used for |
 |---|---|---|
 | `HAUNTLET_DB` | `.hauntlet/range.db` | The shared event store; real-client workspaces and Exorcist bundles live beside it |
-| `HAUNTLET_BASE_URL` | `http://127.0.0.1:8666` | Base of the canary URLs planted in rooms |
+| `HAUNTLET_BASE_URL` | `RENDER_EXTERNAL_URL`, else `http://127.0.0.1:8666` | Base of the canary URLs planted in rooms (`hauntlet serve`) |
 | `HAUNTLET_REPORTS_DIR` | `reports` | Where `hauntlet serve` finds the fact-log copies `mcp finalize` and `parlor finalize` keep (the CLI's `--out` default), so a finished run's scorecard still shows its evidence. Read only: the hosted range writes nothing there, and never serves it |
 | `HAUNTLET_STREAM_MAX` | `20` | Concurrent live evidence streams (`/runs/{id}/facts/stream`); more gets 429 |
 | `HAUNTLET_STREAM_POLL_SECS` | `0.5` | How often a live stream checks for new facts |
@@ -165,6 +165,50 @@ processes share one range.
 | `HAUNTLET_EXORCIST_MAX_CONCURRENT` | `1` | Hosted demos running at once |
 | `HAUNTLET_EXORCIST_PER_MINUTE` | `6` | Hosted demos per minute |
 | `HAUNTLET_EXORCIST_RETENTION_SECS` | `3600` | How long hosted bundles are kept |
+| `HAUNTLET_HOSTED` | unset | `1` on a public range: at most `HAUNTLET_MAX_OPEN_RUNS` (50) unfinished runs, a lazy sweep of runs closed over `HAUNTLET_RUN_RETENTION_SECS` (86400) ago, per-client limits, and no `/docs`, `/redoc`, `/openapi.json` |
+| `HAUNTLET_TRUST_PROXY` | unset | `1` behind a trusted proxy: the client key is the last `X-Forwarded-For` entry, never the first |
+| `HAUNTLET_RUNS_PER_HOUR` | `10` | Runs one client may create per hour (hosted) |
+| `HAUNTLET_DEMOS_PER_MINUTE_PER_CLIENT` | `3` | Demos one client may run per minute (hosted; the global cap still applies) |
+| `HAUNTLET_STREAMS_PER_CLIENT` | `2` | Live streams one client may hold open (hosted) |
+| `HAUNTLET_STREAM_MAX_SECS` | `600` | A live stream closes after this; the page reconnects while the run is active |
+| `FORWARDED_ALLOW_IPS` | `127.0.0.1` (`*` in the Docker image) | uvicorn's list of proxies whose `X-Forwarded-Proto` it trusts; `*` behind Render's proxy |
+| `PORT` | `8666` in the Docker image | The port the container's `hauntlet serve` listens on; Render sets it |
+
+## Deploy
+
+The repository ships a `Dockerfile` and a Render Blueprint (`render.yaml`) for
+one free web service.
+
+1. In Render, **New → Blueprint**, and pick this repository. It creates one
+   Docker web service with health check `/health`.
+2. Canary links planted in rooms are built from the service's public URL.
+   Render sets `RENDER_EXTERNAL_URL` and the range uses it; set
+   `HAUNTLET_BASE_URL` only to override it (for a custom domain).
+3. Keep it to **one instance**. The event store and scratch workspaces are local
+   files under `/tmp/hauntlet`, so they are not shared between instances and are
+   lost on restart. That is acceptable: hosted bundles are kept for one hour.
+
+A free Render service sleeps after a period without traffic, and the first
+request after that waits for a cold start. To keep the demo awake, point an
+uptime monitor or a cron job at it every 5 minutes:
+
+```bash
+curl -fsS https://hauntlet.onrender.com/health
+```
+
+Render's proxy terminates TLS. `FORWARDED_ALLOW_IPS=*` (set in the image and the
+Blueprint) lets uvicorn trust its `X-Forwarded-Proto`, so any URL built from a
+request is `https`. That is only safe behind Render's proxy: on a host where
+clients can reach the container directly, set it to the proxy's address instead.
+
+The Blueprint also sets `HAUNTLET_HOSTED=1` (limits for a public range, no API
+docs) and `HAUNTLET_TRUST_PROXY=1` (per-client limits key on the last
+`X-Forwarded-For` entry, the address Render's proxy saw). To try the image locally:
+
+```bash
+docker build -t hauntlet .
+docker run --rm -p 8666:8666 -e HAUNTLET_BASE_URL=http://127.0.0.1:8666 hauntlet
+```
 
 ## Safety
 

@@ -1,0 +1,32 @@
+# Render Blueprint: one free web service built from the Dockerfile.
+# State is in-memory and on /tmp, so this must stay a single instance.
+services:
+  - type: web
+    name: hauntlet
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    numInstances: 1
+    autoDeploy: true
+    envVars:
+      - key: HAUNTLET_DB
+        value: /tmp/hauntlet/range.db
+      - key: HAUNTLET_REPORTS_DIR
+        value: /tmp/hauntlet/reports
+      - key: HAUNTLET_EXORCIST_DEMO_ROOMS
+        value: cursed-repo,poltergeist
+      # Hosted-range limits (D33, D34) and no API docs (D35).
+      - key: HAUNTLET_HOSTED
+        value: "1"
+      # Client key = the last X-Forwarded-For entry, the address Render's proxy saw.
+      - key: HAUNTLET_TRUST_PROXY
+        value: "1"
+      # Render's proxy terminates TLS; trust its X-Forwarded-Proto so any URL
+      # uvicorn builds from the request is https.
+      - key: FORWARDED_ALLOW_IPS
+        value: "*"
+      # Optional override of the public URL canary links are built from. Unset or
+      # empty, the range uses RENDER_EXTERNAL_URL, which Render sets.
+      - key: HAUNTLET_BASE_URL
+        sync: false

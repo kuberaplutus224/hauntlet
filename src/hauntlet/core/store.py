@@ -118,6 +118,26 @@ class Store:
                     (json.dumps(to_dict(manifest)), run_id),
                 )
 
+    def delete_closed_before(self, cutoff: float) -> int:
+        """Delete runs whose window closed before ``cutoff``, with their canaries and
+        events (approved change D33, the hosted retention sweep). Returns how many runs.
+
+        A run's window closes at ``min(finalized_at, expires_at) + grace_window_secs``
+        (``Run.window_close``), so an active or provisional run is never deleted.
+        """
+        closed = "MIN(COALESCE(finalized_at, expires_at), expires_at) + grace_window_secs < ?"
+        with self._lock, self._db:
+            ids = [r[0] for r in self._db.execute(f"SELECT run_id FROM runs WHERE {closed}", (cutoff,))]
+            if not ids:
+                return 0
+            for i in range(0, len(ids), 500):
+                chunk = ids[i : i + 500]
+                marks = ",".join("?" * len(chunk))
+                self._db.execute(f"DELETE FROM events WHERE run_id IN ({marks})", chunk)
+                self._db.execute(f"DELETE FROM canaries WHERE run_id IN ({marks})", chunk)
+                self._db.execute(f"DELETE FROM runs WHERE run_id IN ({marks})", chunk)
+            return len(ids)
+
     # -- canaries -----------------------------------------------------------
 
     def canaries_for_run(self, run_id: str) -> list[Canary]:

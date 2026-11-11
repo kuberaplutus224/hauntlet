@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import asdict
 from pathlib import Path
@@ -61,6 +62,8 @@ async def facts_stream(
     db_path: Path | None,
     poll_secs: float,
     reports_dir: Path | None = None,
+    max_secs: float | None = None,
+    monotonic: Callable[[], float] = time.monotonic,
     is_disconnected: Callable[[], Awaitable[bool]],
     last_event_id: str | None = None,
     clock: Callable[[], float] | None = None,
@@ -71,6 +74,7 @@ async def facts_stream(
     finalized_sent = False
     idle = 0.0
     yield "retry: 3000\n\n"
+    started = monotonic()
 
     run, rows = await to_thread.run_sync(_rows, service, run_id, db_path, reports_dir)
     if last_event_id:
@@ -103,6 +107,12 @@ async def facts_stream(
             yield _event("done", {})
             return
         if await is_disconnected():
+            return
+        if max_secs is not None and monotonic() - started >= max_secs:
+            # D34: a stream is not held for a run's whole TTL. No ``done``: the browser
+            # reconnects with Last-Event-ID; once the run is over, that stream ends with
+            # ``done`` and the page stops.
+            yield _event("timeout", {})
             return
         if idle >= KEEPALIVE_SECS:
             idle = 0.0

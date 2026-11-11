@@ -253,6 +253,14 @@ the copy or the data to make a page look as expected.
   - Follow-up: `ExorcistService(write_reports=False)` on the hosted range reads the copies but writes no `exorcist-delta-*.html` into the reports directory (unswept); tests: two hosted demos leave it empty, a hosted real-client attach reads the D19 copy and adds nothing there, the CLI still writes its delta report
   - _Requirements: 8.3, 8.9, 10.1–10.3, D32_
 
+- [x] 25. Security review fixes: D33, D34, D35, L3, L4
+  - D33: duplicate rooms refused; `finalize` caps on `detail` (4 KiB) and observations (500); a 64 KiB body cap on every request (413, by length and by bytes received); hosted open-run cap (50) and lazy retention sweep (`Store.delete_closed_before`, the one core change)
+  - D34: client key from the last `X-Forwarded-For` entry when `HAUNTLET_TRUST_PROXY=1`; hosted per-client quotas (3 demos/min, 2 streams, 10 runs/hour); stream lifetime `HAUNTLET_STREAM_MAX_SECS` (600)
+  - D35: security headers on every response (CSP added only when none is set); docs off when `HAUNTLET_HOSTED=1`
+  - L3: base images by digest, GitHub Actions by SHA; L4: README line; `RENDER_EXTERNAL_URL` as the base-URL fallback
+  - `tests/test_security_limits.py`: each cap just under and just over, the sweep, the XFF rule, quota reset, stream timeout, headers on HTML/JSON/plain/404/413, Parlor's CSP kept, docs off when hosted, base-URL fallback
+  - _Decisions: D33, D34, D35_
+
 ## Notes
 
 - Every test task is required; none is optional.
