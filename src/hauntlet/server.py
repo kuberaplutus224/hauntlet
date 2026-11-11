@@ -265,6 +265,12 @@ def create_app(service: RangeService | None = None) -> FastAPI:
     def health() -> dict:
         return {"status": "ok", "version": __version__, "rooms": sorted(service.rooms)}
 
+    # Uptime monitors (UptimeRobot's default) probe with HEAD. A separate route, out
+    # of the schema, so GET keeps the only /health operationId.
+    @app.head("/health", include_in_schema=False)
+    def health_head() -> Response:
+        return Response(status_code=200)
+
     def _run_dict(run) -> dict:
         """Serialize a Run, adding the computed window_close field."""
         d = to_dict(run)

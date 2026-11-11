@@ -119,3 +119,19 @@ def test_finalize_rejections_return_409(service, clock) -> None:
     closed = c.post(f"/runs/{closed_id}/finalize", json={})
     assert closed.status_code == 409
     assert "run closed" in closed.json()["detail"]
+
+
+def test_health_answers_head_for_uptime_monitors(service) -> None:
+    c = _client(service)
+    get = c.get("/health")
+    assert get.status_code == 200
+    from hauntlet import __version__
+
+    assert get.json() == {"status": "ok", "version": __version__, "rooms": sorted(service.rooms)}  # as before
+    head = c.head("/health")
+    assert head.status_code == 200
+    assert head.content == b""
+    assert head.headers["x-content-type-options"] == "nosniff"
+    assert head.headers["x-frame-options"] == "DENY"
+    assert "frame-ancestors 'none'" in head.headers["content-security-policy"]
+    assert head.headers["x-robots-tag"] == "noindex, nofollow"
