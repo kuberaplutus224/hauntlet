@@ -33,7 +33,8 @@ The bundle's `mcp.json` names the server `hauntlet_poltergeist` (or
 - with a local checkout, keep `"command": "uv"` and put the checkout's
   absolute path in place of `<hauntlet-checkout>`;
 - with no checkout, use the `command` and `args` from
-  `skills/test-my-mcp-client/references/scratch-workspace.md` instead, with
+  `../../test-my-mcp-client/references/scratch-workspace.md` (relative to
+  this file) instead, with
   the after run's ID.
 
 The resulting server command must still be the `mcp serve` subcommand for the

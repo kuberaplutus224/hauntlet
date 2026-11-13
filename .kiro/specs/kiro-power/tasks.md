@@ -60,7 +60,8 @@ Nothing under `src/`, `scripts/`, `.kiro/steering/`, `.kiro/hooks/` or
   - In a temp range directory, run each skill's commands by hand with the local form: `selftest`, one `run`, one `exorcist demo`, and the real-client steps up to writing the scratch `mcp.json` (no client session). Confirm the scratch checks reject the user's workspace and `~/.kiro`, and that no file appears in the repository working tree outside `reports/` and `.hauntlet/`
   - Report anything a skill says that the CLI does not do
 
-- [ ] 7. Manual gate: import into Kiro (maintainer)
+- [x] 7. Manual gate: import into Kiro (maintainer)
+  - _Note: Checked 2026-11-12: folder import, details view, activation on 'run Hauntlet on my agent' (run-range end to end, no tracked files changed). Not checked: the test-my-mcp-client walk in a client session (so fact 4 is still open); Q4 waits until the repo is public._
   - Powers panel → Add Custom Power → Import power from a folder → `power/`; check that the details view shows the manifest's description, author, keywords and repository link
   - In a fresh chat, "run Hauntlet on my agent" activates the power and starts `run-range`
   - Walk `test-my-mcp-client` once with Poltergeist in a scratch window; confirm nothing was written to the user's workspace `.kiro/` or `~/.kiro/`

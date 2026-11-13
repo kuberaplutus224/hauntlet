@@ -304,12 +304,49 @@ def test_skill_frontmatter_and_size(name):
     assert len(text.splitlines()) < 500
 
 
-@pytest.mark.parametrize("name", sorted(EXPECTED_SKILLS))
-def test_skill_references_exist(name):
-    text = (SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
-    for m in re.finditer(r"(skills/[a-z0-9-]+/)?references/[\w.-]+\.md", text):
-        base = POWER if m.group(1) else SKILLS / name
-        assert (base / m.group(0)).is_file(), m.group(0)
+REFERENCE_RE = re.compile(r"[\w./-]*references/[\w.-]+\.md")
+
+
+def missing_references(md: Path) -> list[str]:
+    """Reference paths named in ``md`` that don't exist relative to it.
+
+    Kiro installs a copy of the power, so a path only resolves reliably from
+    the file being read. Any prefix (``../other-skill/``, or a stale
+    ``skills/...`` one) is resolved against that file's own directory.
+    """
+    text = md.read_text(encoding="utf-8")
+    return [
+        m.group(0)
+        for m in REFERENCE_RE.finditer(text)
+        if not (md.parent / m.group(0)).resolve().is_file()
+    ]
+
+
+@pytest.mark.parametrize(
+    "md", sorted(SKILLS.rglob("*.md")), ids=lambda p: str(p.relative_to(SKILLS))
+)
+def test_skill_references_exist(md):
+    assert missing_references(md) == []
+
+
+def test_missing_reference_is_reported(tmp_path):
+    skill = tmp_path / "skills" / "a"
+    (skill / "references").mkdir(parents=True)
+    (skill / "references" / "here.md").write_text("x", encoding="utf-8")
+    other = tmp_path / "skills" / "b" / "references"
+    other.mkdir(parents=True)
+    (other / "there.md").write_text("x", encoding="utf-8")
+    (skill / "SKILL.md").write_text(
+        "`references/here.md` `../b/references/there.md` "
+        "`references/gone.md` `../b/references/gone.md` "
+        "`skills/b/references/there.md`",
+        encoding="utf-8",
+    )
+    assert missing_references(skill / "SKILL.md") == [
+        "references/gone.md",
+        "../b/references/gone.md",
+        "skills/b/references/there.md",
+    ]
 
 
 @pytest.mark.parametrize("name", sorted(EXPECTED_SKILLS))

@@ -12,7 +12,8 @@ trap. There are two paths. Always say which one produced a result.
 ## Safety (read first)
 
 This power follows the Hauntlet repository's `.kiro/steering/safety-rules.md`
-(summary in `skills/run-range/references/safety.md`). For this skill:
+(summary in `../run-range/references/safety.md`; paths are relative to this
+SKILL.md). For this skill:
 
 - Show dummy secrets only as `HAUNTLET-DUMMY-…`.
 - Everything runs on `127.0.0.1`. Name no other host.
@@ -87,7 +88,8 @@ skill (Poltergeist rooms) or the `test-my-browser-agent` skill (Parlor). Then:
    - copy the bundle's `.kiro/steering/` and `.kiro/hooks/` into the scratch
      client workspace;
    - build its `.kiro/settings/mcp.json` from the bundle's entry, as in
-     `references/reading-a-bundle.md` ("Filling in the bundle's MCP entry");
+     `references/reading-a-bundle.md`, in the `references/` folder next to
+     this SKILL.md ("Filling in the bundle's MCP entry");
    - copy `.kiro/settings/sandbox.json` if the bundle has one;
    - tell the user the remaining manual steps in `EXORCISM.md` (approvals,
      saved permission rules, trusting the workspace). They are the user's to

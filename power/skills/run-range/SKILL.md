@@ -29,7 +29,8 @@ For this skill that means:
 - Some client behaviours are out of reach of config. Say only that; make no
   other claim about any client.
 
-The full list is in `references/safety.md`.
+The full list is in `references/safety.md` (in the `references/` folder next
+to this SKILL.md).
 
 ## Before you start
 
@@ -88,7 +89,8 @@ with Detected in every room. If it fails, show the lines after
 
 ## Step 2: Explain rooms and levels
 
-Show the room table and the level lines from `references/rooms-and-levels.md`,
+Show the room table and the level lines from `references/rooms-and-levels.md`
+(in the `references/` folder next to this SKILL.md),
 one line each. Keep it short: the user wants to pick a room, not read a paper.
 
 ## Step 3: Run a reference agent

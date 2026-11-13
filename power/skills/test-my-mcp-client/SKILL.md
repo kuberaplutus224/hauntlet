@@ -13,7 +13,8 @@ client launches the server, does the task, and Hauntlet scores what happened.
 ## Safety (read first)
 
 This power follows the Hauntlet repository's `.kiro/steering/safety-rules.md`
-(summary in `skills/run-range/references/safety.md`). For this skill:
+(summary in `../run-range/references/safety.md`; paths are relative to this
+SKILL.md). For this skill:
 
 - **The room server goes only into a new scratch client workspace.** Never
   write it into the user's workspace `.kiro/settings/mcp.json` or into
@@ -83,7 +84,8 @@ mktemp -d "${TMPDIR:-/tmp}/hauntlet-client-XXXXXX"
 ```
 
 Check the printed path, resolved to an absolute path, before writing anything
-(`references/scratch-workspace.md`). It must be empty, and must not be the
+(`references/scratch-workspace.md`, in the `references/` folder next to this
+SKILL.md). It must be empty, and must not be the
 user's workspace or inside it, inside `~/.kiro`, or inside the range
 directory. If any check fails, stop and write nothing.
 
@@ -130,8 +132,8 @@ Do not take part in the task yourself. This chat only sets up and finalizes.
 ## Step 6: Finalize
 
 Offer to save the agent's conversation as `<scratch>/transcript.jsonl`
-(format: `references/transcript-format.md`). Without it, L2 Echoed and
-Detected are not assessed.
+(format: `references/transcript-format.md`, in the `references/` folder next
+to this SKILL.md). Without it, L2 Echoed and Detected are not assessed.
 
 With a transcript, from the range directory:
 

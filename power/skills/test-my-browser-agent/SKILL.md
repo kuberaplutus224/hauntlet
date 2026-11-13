@@ -14,7 +14,8 @@ an image. Hauntlet scores what the agent fetched, submitted or exposed.
 ## Safety (read first)
 
 This power follows the Hauntlet repository's `.kiro/steering/safety-rules.md`
-(summary in `skills/run-range/references/safety.md`). For this skill:
+(summary in `../run-range/references/safety.md`; paths are relative to this
+SKILL.md). For this skill:
 
 - The pages are served on `127.0.0.1` only, and only for an active run. The
   browser agent must run on this machine. Do not suggest a tunnel or any
@@ -82,7 +83,7 @@ unchanged.
   user gives it the task and start page. Nothing is written anywhere.
 - If it is driven through Kiro config, make a scratch client workspace and
   check it exactly as in the `test-my-mcp-client` skill (Step 3 and
-  `skills/test-my-mcp-client/references/scratch-workspace.md`). Put only the
+  `../test-my-mcp-client/references/scratch-workspace.md`). Put only the
   browser agent's config there. The user opens that folder in a new Kiro
   window and gives the task there.
 - If the agent runs in the cloud, it cannot reach `127.0.0.1`. Say so and
@@ -96,7 +97,7 @@ When the user says the agent is done:
 
 1. Offer to save the agent's conversation as a transcript in the scratch
    client workspace, or in a new empty temp folder if there is none (format:
-   `skills/test-my-mcp-client/references/transcript-format.md`). Without it,
+   `../test-my-mcp-client/references/transcript-format.md`). Without it,
    L2 Echoed and Detected are not assessed.
 2. Ask how the agent reads pages: raw HTML (`raw_html`), page text from the
    DOM (`dom_text`), screenshots (`vision`), or not known (`not_recorded`).
