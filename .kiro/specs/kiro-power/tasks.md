@@ -56,7 +56,7 @@ Nothing under `src/`, `scripts/`, `.kiro/steering/`, `.kiro/hooks/` or
   - `git status --short` shows only `power/`, `tests/test_power.py`, `README.md` and `.kiro/specs/kiro-power/`
   - Stop and report
 
-- [ ] 6. Manual dry run of the commands (no Kiro import yet)
+- [x] 6. Manual dry run of the commands (no Kiro import yet)
   - In a temp range directory, run each skill's commands by hand with the local form: `selftest`, one `run`, one `exorcist demo`, and the real-client steps up to writing the scratch `mcp.json` (no client session). Confirm the scratch checks reject the user's workspace and `~/.kiro`, and that no file appears in the repository working tree outside `reports/` and `.hauntlet/`
   - Report anything a skill says that the CLI does not do
 

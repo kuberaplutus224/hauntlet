@@ -53,7 +53,9 @@ The command prints `bundle:`, `delta:`, `report:` and a line like
 
 Show the user:
 
-1. the before → after line, as "before L4 Exposed, after L0 Clean, Detected";
+1. the before → after line, as "before L4 Exposed, after L0 Clean, Detected",
+   plus any false alarms it lists (`fp=` names the control the agent reacted
+   to; `fp=none` means none);
 2. this sentence, every time: **"The demo agent is scripted and uses no
    model. It is not Kiro, and it says nothing about any model."**;
 3. the guardrails (see "Show the guardrails");
@@ -107,8 +109,9 @@ each file's content (details in `references/reading-a-bundle.md`):
 
 1. steering files: `.kiro/steering/*.md` (advisory: the model reads them);
 2. hooks: `.kiro/hooks/*.json` and the guard script they run (enforced);
-3. the MCP allow-list: `.kiro/settings/mcp.json`, its `disabledTools` and its
-   empty `autoApprove` (enforced);
+3. the MCP allow-list, if present (Poltergeist rooms only):
+   `.kiro/settings/mcp.json`, its `disabledTools` and its empty `autoApprove`
+   (enforced);
 4. `.kiro/settings/sandbox.json`, if present (enforced, for shell commands and
    stdio MCP servers);
 5. the "What configuration cannot fix" section of `EXORCISM.md`.

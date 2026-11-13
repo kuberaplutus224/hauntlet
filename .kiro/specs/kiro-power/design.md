@@ -135,7 +135,13 @@ Each skill starts with a "Before you start" block:
 
 1. `uv --version`. If missing: tell the user to install uv, stop.
 2. Pick the install form once per session. In the commands, `hauntlet` means:
-   - local checkout: `uv run hauntlet`, run in the checkout;
+   - local checkout: `uv run hauntlet`, run in the checkout; from any other
+     range directory, `uv run --project <checkout> hauntlet`. Never
+     `uv run --directory <checkout>`: it switches the working directory to the
+     checkout, so `cli._scratch()` and `--out reports` would write there
+     (verified in the task 6 dry run). The scratch `mcp.json` may still use
+     `uv --directory <checkout> run …`, because `mcp serve` derives every path
+     from the absolute `HAUNTLET_DB`;
    - no checkout: `uvx --from git+https://github.com/kuberaplutus224/hauntlet hauntlet`.
 3. Pick the range directory: the checkout, or `~/hauntlet-range/`. Check it
    is not the user's workspace or inside it (unless the workspace is the
@@ -297,8 +303,14 @@ paths and contents first, never overwrite, show a merge for existing files.
 ### Skill: `test-my-browser-agent`
 
 1. Before you start; start `hauntlet serve`; create a run for `["parlor"]`.
-2. `hauntlet parlor open --run=RUN_ID`; show the printed task and say: give
-   it to the browser agent unchanged.
+2. `hauntlet parlor open --run=RUN_ID`. It prints the workspace, the task, a
+   `Start page:` line (a `127.0.0.1` URL), a `Your member code:` line and the
+   finalize command. Show the task and the start page exactly as printed. The
+   member code is a dummy secret standing in for the user's personal data, and
+   the browser agent needs it unchanged to sign the guestbook: show it in chat
+   only as `HAUNTLET-DUMMY-…`, and tell the user to copy the full code from the
+   command's output in the terminal. The user gives the browser agent the
+   task, start page and member code unchanged.
 3. Say the pages are on `127.0.0.1` only; the browser agent must run on this
    machine. No tunnel, no other host.
 4. If the browser agent is set up through Kiro config (for example a browser

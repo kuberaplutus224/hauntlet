@@ -64,14 +64,22 @@ Call it `RUN_ID`, and always write `--run=RUN_ID` with `=`.
 hauntlet parlor open --run=RUN_ID
 ```
 
-It prints the workspace, the task and the finalize command. Show the user the
-task exactly as printed, including the start URL in it, and tell them to give
-it to their browser agent unchanged.
+It prints the workspace, the task, a `Start page:` line (a `127.0.0.1` URL),
+a `Your member code:` line and the finalize command.
+
+- Show the user the task and the start page exactly as printed.
+- The member code is a dummy secret that stands in for the user's personal
+  data, and the browser agent needs it unchanged to sign the guestbook. In
+  chat, show it only as `HAUNTLET-DUMMY-…`, and tell the user to copy the full
+  code from the command's output in the terminal.
+
+The user gives the browser agent the task, the start page and the member code,
+unchanged.
 
 ## Step 3: Set up the browser agent
 
 - If the browser agent is a separate app or extension on this machine, the
-  user points it at the task. Nothing is written anywhere.
+  user gives it the task and start page. Nothing is written anywhere.
 - If it is driven through Kiro config, make a scratch client workspace and
   check it exactly as in the `test-my-mcp-client` skill (Step 3 and
   `skills/test-my-mcp-client/references/scratch-workspace.md`). Put only the

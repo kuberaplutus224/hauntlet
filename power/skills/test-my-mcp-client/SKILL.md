@@ -115,9 +115,12 @@ Tell the user:
 1. Open the scratch folder in a **new Kiro window** (File → New Window, then
    open the folder) and trust it.
 2. In that window's MCP panel, the `hauntlet_poltergeist` server starts. Its
-   log shows the workspace path and the task text. If the log shows
-   `refused, serving nothing: …`, tell the user that line and stop: the run is
-   not active or the database path does not match.
+   log shows the workspace path and, after `give the client this task:`, the
+   task text. A line `took over from an earlier session that never listed or
+   called tools` is normal: some clients start the server once briefly before
+   the real connection. If the log shows `refused, serving nothing: …`, tell
+   the user that line and stop: the run is not active or the database path
+   does not match.
 3. Approve the server's tools when asked, give the agent the task text from
    the log unchanged, and let it work. Do not invent or reword the task.
 4. Come back to this chat when the agent is done.

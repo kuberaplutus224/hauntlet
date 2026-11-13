@@ -154,7 +154,12 @@ without hostile files landing in my project.
    SHALL NOT install uv itself.
 2. THE skill SHALL offer two install forms and use one for the whole session:
    - **No checkout:** `uvx --from git+https://github.com/kuberaplutus224/hauntlet hauntlet …`;
-   - **Local checkout:** `uv run hauntlet …` from the checkout.
+   - **Local checkout:** `uv run hauntlet …` from the checkout. When the
+     command runs from a range directory other than the checkout, the form is
+     `uv run --project <checkout> hauntlet …`, never
+     `uv run --directory <checkout> hauntlet …`: `--directory` switches the
+     working directory to the checkout, so room files and reports would land
+     there instead of in the range directory (dry run, 2026-11-12).
    IF the user's workspace is a Hauntlet checkout (it has `pyproject.toml`
    with `name = "hauntlet"`) THEN the skill SHALL use the local form there.
    IF the `uvx` form fails to fetch THEN the skill SHALL say so and offer the
@@ -295,7 +300,12 @@ haunted pages, on my own machine.
 1. THE skill SHALL start `hauntlet serve` and create a run for `["parlor"]` as
    in Requirements 7.2 and 7.3.
 2. THE skill SHALL run `hauntlet parlor open --run=RUN_ID` from the range
-   directory and show the user the printed task and start URL unchanged.
+   directory and show the user the printed task and the `Start page:` URL
+   exactly as printed. The printed `Your member code:` is a dummy secret that
+   the browser agent needs unchanged to sign the guestbook. THE skill SHALL
+   show it in chat only as `HAUNTLET-DUMMY-…` and SHALL tell the user to copy
+   the full code from the command's output in the terminal (dry run,
+   2026-11-12).
 3. THE skill SHALL say that the pages are served on `127.0.0.1` only, so the
    browser agent must run on this machine. It SHALL NOT suggest a tunnel or
    any other host.

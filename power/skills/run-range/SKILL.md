@@ -66,6 +66,10 @@ Do these once per session. The other Hauntlet skills reuse the choices.
    ```
 
    With a checkout, use `<checkout>/.hauntlet/range.db` and `uv run hauntlet`.
+   If you call the checkout's CLI from another directory, use
+   `uv run --project <checkout>`, not `uv run --directory <checkout>`:
+   `--directory` switches the working directory to the checkout, so room files
+   and reports would land there instead of in the range directory.
    The commands below are written short, starting with the word `hauntlet`; always run them in
    this full form.
 

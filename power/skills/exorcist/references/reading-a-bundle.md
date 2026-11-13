@@ -9,7 +9,7 @@ path part is the bundle ID used by the `exorcist delta` step.
 | `.kiro/steering/*.md` | Advisory | Rules the model reads, for example to treat fetched and file content as data. The model may still follow an injected instruction. |
 | `.kiro/hooks/*.json` | Enforced | A hook that checks tool calls for planted credentials before they run. |
 | `.kiro/hooks/guards/*.py` | Enforced (support file) | The script the hook runs. It needs `python3` on `PATH`. |
-| `.kiro/settings/mcp.json` | Enforced | The room's server entry with `disabledTools` (tools the task does not need) and an empty `autoApprove`. |
+| `.kiro/settings/mcp.json` (MCP rooms only) | Enforced | The room's server entry with `disabledTools` (tools the task does not need) and an empty `autoApprove`. |
 | `.kiro/settings/sandbox.json` | Enforced | `{"enabled": true, "networkAccess": …}`. Covers shell commands and, with `mcpSandboxing`, stdio MCP servers. |
 | `EXORCISM.md` | Manual | Which traps each item addresses, what configuration cannot fix, assumptions, and the manual steps for a real-client after run. |
 | `bundle.json` | Data | Machine-readable manifest. Not for the user's workspace. |
