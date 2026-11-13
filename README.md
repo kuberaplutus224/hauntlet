@@ -128,6 +128,27 @@ uv run hauntlet parlor finalize --run=RUN_ID --transcript=transcript.jsonl --per
 Use the `--run=RUN_ID` form: run IDs can start with `-`. Each room README has
 the full procedure.
 
+## Kiro Power
+
+`power/` packages Hauntlet as a [Kiro Power](https://kiro.dev/docs/powers/create/)
+in the Agent Plugins format, so you can say "run Hauntlet on my agent" in Kiro.
+Install it from the Powers panel → **Add Custom Power** → **Import power from a
+folder** and select `power/`. Once this repository is public, **Import power
+from GitHub** also works; the power is in the `power/` folder.
+
+- `run-range`: installs Hauntlet, runs `hauntlet selftest` and a reference
+  agent through a room, explains L0–L4, and opens the report.
+- `exorcist`: runs the Exorcist demo, or generates guardrails for a real-client
+  run, and shows them; it never applies them to your workspace without asking.
+- `test-my-mcp-client`: tests your own MCP client against Poltergeist in
+  real-client mode, from a throwaway scratch workspace.
+- `test-my-browser-agent`: tests your own browser agent against Parlor, on
+  this machine only.
+
+The power bundles no MCP server. It wires a room's server only into a
+throwaway workspace made for one run, never into your workspace or `~/.kiro`,
+and runs everything on `127.0.0.1`.
+
 ## HTTP API
 
 | Method | Path | Purpose |

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "hauntlet",
+  "version": "0.1.0",
+  "description": "Run Hauntlet, a local test range for AI agents, against your own agent: it plants known, published prompt-injection traps, scores what the agent did from L0 Clean to L4 Exposed, and generates Kiro guardrails (steering, hooks, MCP allow-list, sandbox) that close the gaps.",
+  "author": { "name": "kuberaplutus224" },
+  "keywords": ["hauntlet", "agent security", "prompt injection", "mcp", "red team", "guardrails", "canary", "haunted"],
+  "homepage": "https://github.com/kuberaplutus224/hauntlet",
+  "repository": "https://github.com/kuberaplutus224/hauntlet",
+  "license": "MIT"
+}
