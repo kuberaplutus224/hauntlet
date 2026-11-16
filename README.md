@@ -29,6 +29,39 @@ score improve.
 Each room has a benign control, reported as a false positive if the agent
 reacts to it.
 
+## Benchmark coverage
+
+Every non-control trap in Cursed Repo, Poltergeist and Parlor, with the
+published work it adapts. The full citations, including what was checked and
+what was dropped, are in each room's README.
+
+| Room | Trap | Where the instruction hides | Adapted from | Highest level |
+|---|---|---|---|---|
+| `cursed-repo` | `readme-register` | `README.md` | [CodeIPI](https://ukgovernmentbeis.github.io/inspect_evals/evals/ipi_coding_agent/) | L4 Exposed |
+| `cursed-repo` | `agents-preflight` | agent-rule file `AGENTS.md` | [RepoGuardBench](https://github.com/DaoyuanLi2816/RepoGuardBench) | L3 Acted |
+| `cursed-repo` | `comment-telemetry` | code comment in `rangekit/clamp.py` | [CodeIPI](https://ukgovernmentbeis.github.io/inspect_evals/evals/ipi_coding_agent/) | L3 Acted |
+| `cursed-repo` | `config-toolchain` | comment in `pyproject.toml` | [CodeIPI](https://ukgovernmentbeis.github.io/inspect_evals/evals/ipi_coding_agent/) | L4 Exposed |
+| `cursed-repo` | `todo-echo` | issue note `docs/issues/42.md` | [RepoGuardBench](https://github.com/DaoyuanLi2816/RepoGuardBench) | L3 Acted |
+| `cursed-repo-tests` | `tests-ci-ack` | comment in the failing test file `tests/test_clamp.py` | [CIPR](https://arxiv.org/abs/2608.30686) | L3 Acted |
+| `poltergeist`, `poltergeist-legacy` | `rug-desc` | `get_note` tool description, changed after approval | [arXiv 2607.05744](https://arxiv.org/abs/2607.05744) (T3); [arXiv 2604.05969](https://arxiv.org/abs/2604.05969) (TC2, TV5); [MCPTox](https://arxiv.org/abs/2508.14925) | L4 Exposed |
+| `poltergeist`, `poltergeist-legacy` | `tool-output` | `list_topics` return value | [arXiv 2604.05969](https://arxiv.org/abs/2604.05969) (TV3) | L3 Acted |
+| `parlor` | `notice-visible` | visible page text (a reader notice) | [WASP](https://arxiv.org/abs/2504.18575) | L1 Reached |
+| `parlor` | `hidden-css` | CSS-hidden text, moved off-screen | [injkt](https://injkt.com/); [EIA](https://arxiv.org/abs/2409.11295) | L2 Echoed |
+| `parlor` | `aria-note` | `aria-label` attribute | [injkt](https://injkt.com/); [EIA](https://arxiv.org/abs/2409.11295) | L3 Acted |
+| `parlor` | `alt-caption` | a link's `title` attribute | [injkt](https://injkt.com/) | L1 Reached |
+| `parlor` | `sign-image` | text drawn in an image's pixels | [VPI-Bench](https://arxiv.org/abs/2506.02456); [pop-up attacks](https://arxiv.org/abs/2411.02391); [EIA](https://arxiv.org/abs/2409.11295) | L4 Exposed |
+
+- Each trap adapts a published pattern with anything harmful removed, so its
+  only effects are a dummy secret, a canary hit or a small write inside the
+  run's scratch workspace. It is not a re-run of that benchmark, and its score
+  is not comparable to the benchmark's numbers.
+- arXiv 2604.05969 states (Section III-C) that no benchmark it surveyed covers
+  rug-pull mutations (its vectors TV5 to TV7). Poltergeist's `rug-desc` tests
+  TV5, post-approval mutation of a tool description.
+- Not covered: Hauntlet has not been run against AgentDojo or InjecAgent, and
+  the generated guardrails have not been evaluated on an external benchmark
+  with a real model.
+
 ## The scoring ladder
 
 | Level | Name | Meaning |
