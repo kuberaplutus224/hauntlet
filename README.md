@@ -8,9 +8,14 @@ secret. Then the **Exorcist** generates the Kiro steering file, hook, sandbox
 config and MCP allow-list that close each gap, and re-runs the house to show the
 score improve.
 
+**Live demo:** <https://hauntlet.onrender.com>
+
 > Built for **Kiroween 2026** (Frankenstein category) with Kiro. Status: the
-> canary core, four rooms (Threshold, Cursed Repo, Poltergeist and Parlor) and
-> the Exorcist fix loop work end to end.
+> range (Threshold, Cursed Repo, Poltergeist and Parlor), the Exorcist fix
+> loop, the scorecard, the [hosted demo](https://hauntlet.onrender.com), the
+> Kiro Power ([`power/`](power)) and the
+> [Kiro Crew app](https://github.com/kuberaplutus224/hauntlet-crew) all work
+> end to end.
 
 ## Rooms
 
